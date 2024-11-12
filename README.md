@@ -1,8 +1,31 @@
-# React + Vite
+# Sbt Inforactive - Office 3D version
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Project setup
 
-Currently, two official plugins are available:
+```bash
+npm install
+```
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Run project
+
+```bash
+npm run dev
+```
+
+## Build project
+
+```bash
+npm run build
+```
+
+### Deploy project
+
+```bash
+npm run deploy
+```
+
+### Notes
+
+- This project uses Vite as the build tool.
+- The project is set up with React and React Router.
+- The project is set up with Tailwind CSS for styling.
