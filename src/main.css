@@ -1,0 +1,44 @@
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+        "Pretendard Variable", Pretendard, Roboto, "Noto Sans KR", "Segoe UI",
+        "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji",
+        "Segoe UI Symbol", sans-serif !important;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow: hidden;
+    user-select: none;
+}
+
+::-webkit-tap-highlight-color {
+    background-color: transparent;
+}
+
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+    padding: 5px;
+    border-radius: 4px;
+    background-color: #242f3b;
+}
+::-webkit-scrollbar-track {
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb {
+    border-radius: 20px;
+    background-color: #344a64;
+}
+::-webkit-scrollbar-button {
+    display: none;
+}
+::-webkit-scrollbar-corner {
+    display: none;
+}
