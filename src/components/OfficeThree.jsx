@@ -25,6 +25,7 @@ const OfficeThree = () => {
   const rendererRef = useRef(null);
   const controlsRef = useRef(null);
   const sceneRef = useRef(new THREE.Scene());
+  const animateRef = useRef(null); // 애니메이션 참조 추가
 
   // SIZES
   const sizes = {
@@ -138,7 +139,7 @@ const OfficeThree = () => {
     if (rendererRef.current && cameraRef.current) {
       rendererRef.current.render(sceneRef.current, cameraRef.current);
     }
-    requestAnimationFrame(animate);
+    animateRef.current = requestAnimationFrame(animate);
   };
 
   /**
@@ -150,8 +151,9 @@ const OfficeThree = () => {
     animate();
 
     const cleanupScene = () => {
-      if (rendererRef.current) rendererRef.current.dispose();
       if (sceneRef.current) sceneRef.current.clear();
+      if (rendererRef.current) rendererRef.current.dispose();
+      if (animateRef.current) cancelAnimationFrame(animateRef.current);
     };
 
     const handleResize = throttle(onWindowResize, 500);
