@@ -1,4 +1,4 @@
-const scene_cleanup = async (sceneRef, gltf_obj) => {
+const scene_cleanup = async (scene, renderer, gltf_obj) => {
     let texture_maps = [
         "map",
         "aoMap",
@@ -26,9 +26,9 @@ const scene_cleanup = async (sceneRef, gltf_obj) => {
         "transmissionMap",
     ];
 
-    sceneRef.current.scene.remove(gltf_obj);
+    scene.remove(gltf_obj);
 
-    sceneRef.current.renderer.clear();
+    renderer.clear();
 
     if (gltf_obj.skeleton && gltf_obj.skeleton.boneTexture)
         gltf_obj.skeleton.boneTexture.dispose();
@@ -106,26 +106,24 @@ const scene_cleanup = async (sceneRef, gltf_obj) => {
     });
 };
 
-export const clearScene = (sceneRef, animRef) => {
-    cancelAnimationFrame(animRef.current);
-    animRef.current = null;
+export const clearScene = (scene, controls, renderer, animate) => {
+    cancelAnimationFrame(animate);
+    animate = null;
 
-    sceneRef.current.controls.dispose();
-    sceneRef.current.controls = null;
+    controls.dispose();
+    controls = null;
 
-    for (let i = 0; i < sceneRef.current.scene.children.length; i++) {
-        scene_cleanup(sceneRef, sceneRef.current.scene.children[i]);
+    for (let i = 0; i < scene.children.length; i++) {
+        scene_cleanup(scene, renderer, scene.children[i]);
     }
 
-    sceneRef.current.renderer.dispose();
-    sceneRef.current.renderer.forceContextLoss();
-    sceneRef.current.renderer = null;
+    renderer.dispose();
+    renderer.forceContextLoss();
+    renderer = null;
 
-    sceneRef.current.scene.environment.dispose();
-    sceneRef.current.scene.environment = null;
+    scene.environment.dispose();
+    scene.environment = null;
 
-    sceneRef.current.scene.clear();
-    sceneRef.current.scene = null;
-
-    sceneRef.current = null;
+    scene.clear();
+    scene = null;
 };
