@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { Suspense, useEffect, useRef } from "react";
 import style from "@/styles/officeThree.module.css";
 
@@ -15,6 +16,8 @@ import model from "@/assets/model/office.glb";
 import { throttle } from "lodash-es";
 import { ErrorBoundary } from "react-error-boundary";
 import BarLoader from "react-spinners/BarLoader";
+import ObjectSelect from "../utils/three/ObjectSelect";
+import { clearScene } from "../utils/three/SceneCleanUp";
 
 const ErrorFallback = (error) => <div>An error occurred: {error.message}</div>;
 
@@ -24,8 +27,10 @@ const OfficeThree = () => {
   const cameraRef = useRef(null);
   const rendererRef = useRef(null);
   const controlsRef = useRef(null);
+  const selectRef = useRef(null);
+  const animRef = useRef(null);
+
   const sceneRef = useRef(new THREE.Scene());
-  const animateRef = useRef(null); // 애니메이션 참조 추가
 
   // SIZES
   const sizes = {
@@ -47,6 +52,19 @@ const OfficeThree = () => {
     controlsRef.current.enableDamping = false;
     controlsRef.current.maxPolarAngle = Math.PI / 2;
     controlsRef.current.minPolarAngle = 0;
+  };
+
+  const setObjectSelect = () => {
+    selectRef.current = new ObjectSelect(sceneRef.current, canvasRef.current, cameraRef.current);
+
+    selectRef.current.setEvent(selectObject);
+  };
+
+  const selectObject = (obj) => {
+    if (obj) {
+      console.log(obj.name);
+      obj.position.set(obj.position.x, obj.position.y + 50, obj.position.z);
+    }
   };
 
   // LIGHT
@@ -80,6 +98,9 @@ const OfficeThree = () => {
     setupCamera();
     setupControls();
     setupLights();
+    setObjectSelect();
+
+    animRef.current = requestAnimationFrame(animate);
   };
 
   // RESIZE EVENT
@@ -139,7 +160,7 @@ const OfficeThree = () => {
     if (rendererRef.current && cameraRef.current) {
       rendererRef.current.render(sceneRef.current, cameraRef.current);
     }
-    animateRef.current = requestAnimationFrame(animate);
+    animRef.current = requestAnimationFrame(animate);
   };
 
   /**
@@ -148,19 +169,12 @@ const OfficeThree = () => {
   useEffect(() => {
     createScene();
     loadModel();
-    animate();
-
-    const cleanupScene = () => {
-      if (sceneRef.current) sceneRef.current.clear();
-      if (rendererRef.current) rendererRef.current.dispose();
-      if (animateRef.current) cancelAnimationFrame(animateRef.current);
-    };
 
     const handleResize = throttle(onWindowResize, 500);
     window.addEventListener("resize", handleResize);
 
     return () => {
-      cleanupScene();
+      clearScene(sceneRef.current, controlsRef.current, rendererRef.current, animRef.current);
       window.removeEventListener("resize", handleResize);
     };
   }, []);
