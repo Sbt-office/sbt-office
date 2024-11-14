@@ -1,6 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { Suspense, useEffect, useRef } from "react";
-import style from "@/styles/officeThree.module.css";
+import { useEffect, useRef } from "react";
 
 // 3D IMPORT
 import * as THREE from "three";
@@ -14,12 +13,8 @@ import hdr from "@/assets/three.hdr";
 import model from "@/assets/model/office.glb";
 
 import { throttle } from "lodash-es";
-import { ErrorBoundary } from "react-error-boundary";
-import BarLoader from "react-spinners/BarLoader";
 import ObjectSelect from "../utils/three/ObjectSelect";
 import { clearScene } from "../utils/three/SceneCleanUp";
-
-const ErrorFallback = (error) => <div>An error occurred: {error.message}</div>;
 
 const OfficeThree = () => {
   const modelRef = useRef(null);
@@ -62,7 +57,6 @@ const OfficeThree = () => {
 
   const selectObject = (obj) => {
     if (obj) {
-      console.log(obj.name);
       obj.position.set(obj.position.x, obj.position.y + 50, obj.position.z);
     }
   };
@@ -180,19 +174,9 @@ const OfficeThree = () => {
   }, []);
 
   return (
-    <div className={style.container}>
-      <ErrorBoundary FallbackComponent={ErrorFallback}>
-        <Suspense
-          fallback={
-            <div className={style.loading}>
-              <BarLoader color="#3485ff" height={8} speedMultiplier={0.8} width={150} />
-            </div>
-          }
-        >
-          <canvas ref={canvasRef} />
-        </Suspense>
-      </ErrorBoundary>
-    </div>
+    <main className="absolute z-0 bg-[#292929] w-[calc(100dvw - 250px)] h-dvh left-64">
+      <canvas ref={canvasRef} />
+    </main>
   );
 };
 

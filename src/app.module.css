@@ -1,21 +1,6 @@
 * {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  font-family: sans-serif;
   outline: none;
   -webkit-tap-highlight-color: transparent;
-}
-
-div {
-  user-select: none;
-  -webkit-user-select: none;
-  /* (safari, chrome) browsers */
-  -moz-user-select: none;
-  /* mozilla browsers */
-  -khtml-user-select: none;
-  /* konqueror browsers */
-  -ms-user-select: none; /* IE10+ */
 }
 
 *::-webkit-scrollbar {
