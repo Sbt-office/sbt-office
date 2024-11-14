@@ -52,17 +52,20 @@ const ManagePersonnelPopup = () => {
     searchFields: ["name", "department"],
   });
 
+  // 'com'이 포함된 직원 필터링
+  const filteredEmployeesWithoutCom = filteredEmployees.filter((emp) => !emp.id.includes("com"));
+
   const itemsPerPage = 16;
-  const pageCount = Math.max(1, Math.ceil(filteredEmployees.length / itemsPerPage));
+  const pageCount = Math.max(1, Math.ceil(filteredEmployeesWithoutCom.length / itemsPerPage));
 
   // 현재 페이지에 표시할 직원 목록을 계산
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = Math.min(startIndex + itemsPerPage, filteredEmployees.length);
+  const endIndex = Math.min(startIndex + itemsPerPage, filteredEmployeesWithoutCom.length);
 
   // 부서 필터링 적용
   const filteredByDepartment = selectedDepartment
-    ? filteredEmployees.filter((emp) => emp.department === selectedDepartment)
-    : filteredEmployees;
+    ? filteredEmployeesWithoutCom.filter((emp) => emp.department === selectedDepartment)
+    : filteredEmployeesWithoutCom;
 
   const currentEmployees = filteredByDepartment.slice(startIndex, endIndex);
 
@@ -101,11 +104,13 @@ const ManagePersonnelPopup = () => {
             className="border rounded p-1"
           >
             <option value="">전체</option>
-            {Array.from(new Set(employees.map((emp) => emp.department))).map((department) => (
-              <option key={department} value={department}>
-                {department}
-              </option>
-            ))}
+            {Array.from(new Set(employees.map((emp) => emp.department)))
+              .filter((department) => !department.includes("세일즈포스"))
+              .map((department) => (
+                <option key={department} value={department}>
+                  {department}
+                </option>
+              ))}
           </select>
         </div>
         {/* 직원 리스트 */}
