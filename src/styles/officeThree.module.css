@@ -1,8 +1,0 @@
-.container {
-  position: absolute;
-  z-index: 0;
-  background-color: #292929;
-  width: calc(100dvw - 250px);
-  height: 100dvh;
-  left: 250px;
-}
