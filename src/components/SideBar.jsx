@@ -10,6 +10,7 @@ import logo from "@/assets/images/logo.png";
 import PersonnelInfoCard from "./PersonnelInfoCard";
 import ManagePersonnelPopup from "./ManagePersonnelPopup";
 import { usePopupStore } from "../store/usePopupStore";
+import WorkGoAndLeave from "./WorkGoAndLeave";
 
 const SideBar = () => {
   const [openSection, setOpenSection] = useState(null);
@@ -173,53 +174,56 @@ const SideBar = () => {
 
   return (
     <div className="flex items-center h-dvh w-full">
-      <aside className="text-[#424242] h-full w-64">
-        <header className="w-64 h-16 flex items-center px-14 fixed bg-sbtLightBlue/75 backdrop-blur-sm z-10">
-          <img src={logo} alt="logo" draggable={false} className="h-8 object-contain" />
-        </header>
-        <ul className="flex flex-col px-8 py-[5.5rem]">
-          {sidebarItems.map((item, index) => (
-            <li key={index} className="list-none mb-5">
-              <div
-                onClick={() => toggleSection(index)}
-                className={`${
-                  selectedItem === `${index}` ? "text-sbtDarkBlue font-semibold" : "text-[#424242]"
-                } cursor-pointer flex items-center gap-2 transition duration-150 ease-in-out transform`}
-              >
-                {item.subItems && (
-                  <span>{openSection === index ? <HiMenuAlt1 size={18} /> : <HiOutlineMenu size={18} />}</span>
-                )}
-                {item.title}
-              </div>
-              {item.subItems && openSection === index && (
-                <motion.ul
-                  initial={{ height: 0 }}
-                  animate={{ height: "auto" }}
-                  exit={{ height: 0 }}
-                  transition={{ duration: 0.08 }}
-                  className="pl-5 mt-2 text-[0.9rem]"
+      <aside className="text-[#424242] h-full w-64 overflow-y-auto flex flex-col justify-between">
+        <div>
+          <header className="w-64 h-16 flex items-center px-14 fixed bg-sbtLightBlue/75 backdrop-blur-sm z-10">
+            <img src={logo} alt="logo" draggable={false} className="h-8 object-contain" />
+          </header>
+          <ul className="flex flex-col px-8 py-[5.5rem]">
+            {sidebarItems.map((item, index) => (
+              <li key={index} className="list-none mb-5">
+                <div
+                  onClick={() => toggleSection(index)}
+                  className={`${
+                    selectedItem === `${index}` ? "text-sbtDarkBlue font-semibold" : "text-[#424242]"
+                  } cursor-pointer flex items-center gap-2 transition duration-150 ease-in-out transform`}
                 >
-                  {renderSubItems(item.subItems, index)}
-                </motion.ul>
-              )}
-            </li>
-          ))}
-          {/* 상단 타이틀 */}
-          <div
-            className="flex items-center gap-2 mb-6 cursor-pointer"
-            onClick={togglePopup}
-            role="button"
-            tabIndex={0}
-            aria-label="인사정보관리 열기/닫기"
-            onKeyDown={(e) => e.key === "Enter" && togglePopup()}
-          >
-            <IoSettingsOutline size={18} className={`text-base ${isPopupOpen ? "text-sbtDarkBlue" : ""}`} />
-            <span className={`text-base ${isPopupOpen ? "text-sbtDarkBlue font-semibold" : ""}`}>인사정보관리</span>
-          </div>
-        </ul>
-        {personnelInfo.id && personnelInfo.id !== "" && (
-          <PersonnelInfoCard personnelInfo={personnelInfo} onClose={handleCloseInfoCard} />
-        )}
+                  {item.subItems && (
+                    <span>{openSection === index ? <HiMenuAlt1 size={18} /> : <HiOutlineMenu size={18} />}</span>
+                  )}
+                  {item.title}
+                </div>
+                {item.subItems && openSection === index && (
+                  <motion.ul
+                    initial={{ height: 0 }}
+                    animate={{ height: "auto" }}
+                    exit={{ height: 0 }}
+                    transition={{ duration: 0.08 }}
+                    className="pl-5 mt-2 text-[0.9rem]"
+                  >
+                    {renderSubItems(item.subItems, index)}
+                  </motion.ul>
+                )}
+              </li>
+            ))}
+            {/* 상단 타이틀 */}
+            <div
+              className="flex items-center gap-2 mb-6 cursor-pointer"
+              onClick={togglePopup}
+              role="button"
+              tabIndex={0}
+              aria-label="인사정보관리 열기/닫기"
+              onKeyDown={(e) => e.key === "Enter" && togglePopup()}
+            >
+              <IoSettingsOutline size={18} className={`text-base ${isPopupOpen ? "text-sbtDarkBlue" : ""}`} />
+              <span className={`text-base ${isPopupOpen ? "text-sbtDarkBlue font-semibold" : ""}`}>인사정보관리</span>
+            </div>
+          </ul>
+          {personnelInfo.id && personnelInfo.id !== "" && (
+            <PersonnelInfoCard personnelInfo={personnelInfo} onClose={handleCloseInfoCard} />
+          )}
+        </div>
+        <WorkGoAndLeave />
       </aside>
       {isPopupOpen && <ManagePersonnelPopup onClose={togglePopup} />}
     </div>
