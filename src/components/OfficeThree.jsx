@@ -51,14 +51,6 @@ const OfficeThree = () => {
 
   const setObjectSelect = () => {
     selectRef.current = new ObjectSelect(sceneRef.current, canvasRef.current, cameraRef.current);
-
-    selectRef.current.setEvent(selectObject);
-  };
-
-  const selectObject = (obj) => {
-    if (obj) {
-      obj.position.set(obj.position.x, obj.position.y + 50, obj.position.z);
-    }
   };
 
   // LIGHT
