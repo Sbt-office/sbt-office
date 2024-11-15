@@ -9,6 +9,7 @@ import { MdOutlineSpeakerGroup, MdSpeakerGroup } from "react-icons/md";
 import logo from "@/assets/images/logo.png";
 import PersonnelInfoCard from "./PersonnelInfoCard";
 import ManagePersonnelPopup from "./ManagePersonnelPopup";
+import { usePopupStore } from "../store/usePopupStore";
 
 const SideBar = () => {
   const [openSection, setOpenSection] = useState(null);
@@ -16,7 +17,8 @@ const SideBar = () => {
   const [selectedItem, setSelectedItem] = useState(null);
   const [openNestedSubItem, setOpenNestedSubItem] = useState(null);
   const [personnelInfo, setPersonnelInfo] = useState({ id: "", title: "" });
-  const [isPopupOpen, setIsPopupOpen] = useState(false);
+
+  const { isPopupOpen, togglePopup } = usePopupStore();
 
   const handleItemClick = (itemPath) => {
     setSelectedItem(itemPath);
@@ -56,10 +58,6 @@ const SideBar = () => {
   const handleCloseInfoCard = () => {
     setSelectedItem(null);
     setPersonnelInfo({ id: "", title: "" });
-  };
-
-  const togglePopup = () => {
-    setIsPopupOpen((prev) => !prev);
   };
 
   // 중첩 서브 아이템 렌더링
@@ -174,7 +172,7 @@ const SideBar = () => {
   };
 
   return (
-    <div className="flex items-center h-dvh">
+    <div className="flex items-center h-dvh w-full">
       <aside className="text-[#424242] h-full w-64">
         <header className="w-64 h-16 flex items-center px-14 fixed bg-sbtLightBlue/75 backdrop-blur-sm z-10">
           <img src={logo} alt="logo" draggable={false} className="h-8 object-contain" />
