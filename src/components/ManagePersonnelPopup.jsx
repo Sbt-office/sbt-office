@@ -80,6 +80,7 @@ const ManagePersonnelPopup = () => {
   const handlePageChange = (newPage) => {
     if (newPage < 1 || newPage > pageCount) return;
     setCurrentPage(newPage);
+    window.scrollTo(0, 0); // 페이지 변경 시 스크롤을 최상단으로 이동
   };
 
   const handleDepartmentFilter = (department) => {
@@ -88,12 +89,12 @@ const ManagePersonnelPopup = () => {
   };
 
   return (
-    <div className="absolute top-0 left-64 w-[calc(100dvw-16rem)] h-full text-black z-10 bg-white">
+    <div className="h-dvh text-black z-10 bg-white flex flex-col flex-1">
       {/* 상단 타이틀 */}
-      <div className="flex items-center gap-2 mb-6 bg-sbtLightBlue/75 w-full h-16 ">
-        <h2 className="text-2xl font-semibold text-center w-full">인사정보관리</h2>
-      </div>
-      <div className="p-6">
+      <header className="bg-sbtLightBlue/75">
+        <h2 className="text-2xl font-semibold  w-full h-16 flex justify-center items-center">인사정보관리</h2>
+      </header>
+      <div className="w-full h-full flex flex-col px-3 py-7">
         {/* 검색바 */}
         <SearchInput value={searchTerm} onChange={handleSearch} />
         {/* 필터 기능 */}
@@ -118,7 +119,7 @@ const ManagePersonnelPopup = () => {
           {currentEmployees.map((emp) => (
             <div
               key={emp.id}
-              className="flex items-center gap-4 px-4 py-6 border-[0.1rem] border-sbtDarkBlue/50 rounded-lg hover:bg-sbtLightBlue2/40"
+              className="flex items-center gap-4 px-4 py-6 border-[0.1rem] border-sbtDarkBlue/50 rounded-lg hover:bg-sbtLightBlue2/40 h-36"
             >
               <Checkbox
                 checked={selectedItems[emp.id] || false}

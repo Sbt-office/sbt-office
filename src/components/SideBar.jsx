@@ -59,7 +59,7 @@ const SideBar = () => {
   };
 
   const togglePopup = () => {
-    setIsPopupOpen((prev) => !prev); // 팝업 상태 토글
+    setIsPopupOpen((prev) => !prev);
   };
 
   // 중첩 서브 아이템 렌더링
@@ -69,7 +69,7 @@ const SideBar = () => {
         key={nestedItem.id}
         className={`${
           selectedItem === `${index}-${subIndex}-${nestedIndex}` ? "text-sbtDarkBlue font-semibold" : "text-[#424242]"
-        } cursor-pointer flex flex-col justify-center gap-2 mb-2 transition duration-150 ease-in-out transform`}
+        } cursor-pointer justify-center gap-2 transition duration-150 ease-in-out transform flex flex-col py-1`}
       >
         <div
           onClick={() => {
@@ -91,8 +91,8 @@ const SideBar = () => {
             initial={{ height: 0 }}
             animate={{ height: "auto" }}
             exit={{ height: 0 }}
-            transition={{ duration: 0.2 }}
-            className="ml-4 mb-1 font-normal"
+            transition={{ duration: 0.08 }}
+            className="font-normal flex flex-col py-1 px-5"
           >
             {nestedItem.subItems.map((deepNestedItem, deepNestedIndex) => (
               <li
@@ -101,7 +101,7 @@ const SideBar = () => {
                   selectedItem === `${index}-${subIndex}-${nestedIndex}-${deepNestedIndex}`
                     ? "text-sbtDarkBlue font-semibold"
                     : "text-[#424242]"
-                } cursor-pointer flex items-center gap-2 mb-2 transition duration-150 ease-in-out transform`}
+                } cursor-pointer flex py-1 items-center gap-2 transition duration-150 ease-in-out transform`}
                 onClick={() => {
                   handleItemClick(`${index}-${subIndex}-${nestedIndex}-${deepNestedIndex}`);
                   if (!deepNestedItem.id.includes("com") && deepNestedItem.id) {
@@ -131,7 +131,7 @@ const SideBar = () => {
       const teamPartName = subItem.subItems && subItem.subItems.length > 1 ? subItem.title : null;
 
       return (
-        <li key={subIndex} className="list-none mb-2">
+        <li key={subIndex} className="list-none flex py-1 flex-col">
           <div
             onClick={() => {
               toggleSubItem(subIndex);
@@ -144,7 +144,7 @@ const SideBar = () => {
             }}
             className={`${
               selectedItem === `${index}-${subIndex}` ? "text-sbtDarkBlue font-semibold" : "text-[#424242]"
-            } cursor-pointer flex items-center gap-2 transition duration-150 ease-in-out transform`}
+            } cursor-pointer flex items-center gap-2`}
           >
             {subItem.subItems ? (
               <span className="mr-1">
@@ -162,7 +162,7 @@ const SideBar = () => {
               initial={{ height: 0 }}
               animate={{ height: "auto" }}
               exit={{ height: 0 }}
-              transition={{ duration: 0.1 }}
+              transition={{ duration: 0.08 }}
               className="pl-7 mt-2"
             >
               {renderNestedItems(subItem.subItems, index, subIndex, teamName, teamPartName)}
@@ -174,24 +174,12 @@ const SideBar = () => {
   };
 
   return (
-    <aside className="text-[#424242] w-64 h-dvh">
-      <motion.div
-        initial={{ width: 0 }}
-        animate={{ width: 300 }}
-        transition={{ duration: 0.5 }}
-        className="sidebar"
-        style={{
-          height: "100vh",
-          overflowY: "auto",
-          position: "fixed",
-          left: 0,
-          top: 0,
-        }}
-      >
-        <div className="w-full h-16 flex items-center px-14 fixed bg-sbtLightBlue/75 backdrop-blur-sm z-10">
+    <div className="flex items-center h-dvh">
+      <aside className="text-[#424242] h-full w-64">
+        <header className="w-64 h-16 flex items-center px-14 fixed bg-sbtLightBlue/75 backdrop-blur-sm z-10">
           <img src={logo} alt="logo" draggable={false} className="h-8 object-contain" />
-        </div>
-        <ul className="mt-20 ml-6">
+        </header>
+        <ul className="flex flex-col px-8 py-[5.5rem]">
           {sidebarItems.map((item, index) => (
             <li key={index} className="list-none mb-5">
               <div
@@ -210,7 +198,7 @@ const SideBar = () => {
                   initial={{ height: 0 }}
                   animate={{ height: "auto" }}
                   exit={{ height: 0 }}
-                  transition={{ duration: 0.2 }} // 애니메이션 속도를 빠르게 조정
+                  transition={{ duration: 0.08 }}
                   className="pl-5 mt-2 text-[0.9rem]"
                 >
                   {renderSubItems(item.subItems, index)}
@@ -221,7 +209,7 @@ const SideBar = () => {
           {/* 상단 타이틀 */}
           <div
             className="flex items-center gap-2 mb-6 cursor-pointer"
-            onClick={togglePopup} // 클릭 시 팝업 열기/닫기
+            onClick={togglePopup}
             role="button"
             tabIndex={0}
             aria-label="인사정보관리 열기/닫기"
@@ -231,12 +219,12 @@ const SideBar = () => {
             <span className={`text-base ${isPopupOpen ? "text-sbtDarkBlue font-semibold" : ""}`}>인사정보관리</span>
           </div>
         </ul>
-      </motion.div>
-      {personnelInfo.id && personnelInfo.id !== "" && (
-        <PersonnelInfoCard personnelInfo={personnelInfo} onClose={handleCloseInfoCard} />
-      )}
+        {personnelInfo.id && personnelInfo.id !== "" && (
+          <PersonnelInfoCard personnelInfo={personnelInfo} onClose={handleCloseInfoCard} />
+        )}
+      </aside>
       {isPopupOpen && <ManagePersonnelPopup onClose={togglePopup} />}
-    </aside>
+    </div>
   );
 };
 
