@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 // 3D IMPORT
 import * as THREE from "three";
@@ -18,6 +18,7 @@ import { clearScene } from "../utils/three/SceneCleanUp";
 import { usePopupStore } from "../store/usePopupStore";
 
 const OfficeThree = () => {
+  const mainRef = useRef();
   const modelRef = useRef(null);
   const canvasRef = useRef(null);
   const cameraRef = useRef(null);
@@ -27,6 +28,8 @@ const OfficeThree = () => {
   const animRef = useRef(null);
 
   const sceneRef = useRef(new THREE.Scene());
+
+  const [isEdit, setIsEdit] = useState(false);
 
   const { isPopupOpen } = usePopupStore();
 
@@ -38,7 +41,12 @@ const OfficeThree = () => {
 
   // CAMERA
   const setupCamera = () => {
-    cameraRef.current = new THREE.PerspectiveCamera(45, sizes.width / sizes.height, 1, 2000);
+    cameraRef.current = new THREE.PerspectiveCamera(
+      45,
+      mainRef.current.offsetWidth / mainRef.current.offsetHeight,
+      1,
+      2000
+    );
     cameraRef.current.position.set(-3.684, 13.704, -19.717);
     sceneRef.current.add(cameraRef.current);
   };
@@ -78,7 +86,7 @@ const OfficeThree = () => {
       antialias: true,
       alpha: true,
     });
-    rendererRef.current.setSize(sizes.width, sizes.height);
+    rendererRef.current.setSize(mainRef.current.offsetWidth, mainRef.current.offsetHeight);
     rendererRef.current.setPixelRatio(Math.min(window.devicePixelRatio, 1)); // 성능 최적화를 위해 1로 설정
     rendererRef.current.setClearColor(0x292929, 0);
     rendererRef.current.toneMapping = THREE.ACESFilmicToneMapping;
@@ -94,16 +102,23 @@ const OfficeThree = () => {
 
   // RESIZE EVENT
   const onWindowResize = () => {
-    sizes.width = window.innerWidth;
-    sizes.height = window.innerHeight;
+    const w = mainRef.current.offsetWidth;
+    const h = mainRef.current.offsetHeight;
+
+    // sizes.width = window.innerWidth;
+    // sizes.height = window.innerHeight;
 
     if (cameraRef.current) {
-      cameraRef.current.aspect = sizes.width / sizes.height;
+      cameraRef.current.aspect = w / h;
       cameraRef.current.updateProjectionMatrix();
     }
 
     if (rendererRef.current) {
-      rendererRef.current.setSize(sizes.width, sizes.height);
+      rendererRef.current.setSize(w, h);
+    }
+
+    if (rendererRef.current && cameraRef.current) {
+      rendererRef.current.render(sceneRef.current, cameraRef.current);
     }
   };
 
@@ -149,28 +164,54 @@ const OfficeThree = () => {
     if (rendererRef.current && cameraRef.current) {
       rendererRef.current.render(sceneRef.current, cameraRef.current);
     }
+
+    // 부모영역과 캔버스 영역 비교 후 Resize 실행
+    if (mainRef.current && canvasRef.current) {
+      if (
+        mainRef.current.offsetWidth !== canvasRef.current.offsetWidth ||
+        mainRef.current.offsetHeight !== canvasRef.current.offsetHeight
+      )
+        onWindowResize();
+    }
+
     animRef.current = requestAnimationFrame(animate);
   };
 
   /**
    * CLEAN-UP
    */
-  useEffect(() => {
-    createScene();
-    loadModel();
+  // useEffect(() => {
+  //     createScene();
+  //     loadModel();
 
-    const handleResize = throttle(onWindowResize, 500);
-    window.addEventListener("resize", handleResize);
+  //     const handleResize = throttle(onWindowResize, 500);
+  //     window.addEventListener("resize", handleResize);
+
+  //     return () => {
+  //         clearScene(
+  //             sceneRef.current,
+  //             controlsRef.current,
+  //             rendererRef.current,
+  //             animRef.current
+  //         );
+  //         window.removeEventListener("resize", handleResize);
+  //     };
+  // }, []);
+
+  useEffect(() => {
+    if (mainRef.current) {
+      createScene();
+      loadModel();
+    }
 
     return () => {
       clearScene(sceneRef.current, controlsRef.current, rendererRef.current, animRef.current);
-      window.removeEventListener("resize", handleResize);
     };
-  }, []);
+  }, [mainRef]);
 
   return (
-    <main className={`z-0 bg-[#292929] flex-1 ${isPopupOpen ? "absolute left-64" : ""}`}>
-      <canvas ref={canvasRef} />
+    <main ref={mainRef} className={`relative z-0 bg-[#292929] flex-1 ${isPopupOpen ? "absolute left-64" : ""}`}>
+      <canvas className="absolute top-0 left-0" ref={canvasRef} />
     </main>
   );
 };

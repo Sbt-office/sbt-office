@@ -77,7 +77,12 @@ const SideBar = () => {
             }
             handleItemClick(`${index}-${subIndex}-${nestedIndex}`);
             if (!nestedItem.id.includes("com") && nestedItem.id) {
-              setPersonnelInfo({ id: nestedItem.id, title: nestedItem.title, teamName, teamPartName });
+              setPersonnelInfo({
+                id: nestedItem.id,
+                title: nestedItem.title,
+                teamName,
+                teamPartName,
+              });
             }
           }}
           className="flex items-center gap-2"
@@ -136,7 +141,12 @@ const SideBar = () => {
               toggleSubItem(subIndex);
               handleItemClick(`${index}-${subIndex}`);
               if (!subItem.id?.includes("com") && subItem.id) {
-                setPersonnelInfo({ id: subItem.id, title: subItem.title, teamName, teamPartName });
+                setPersonnelInfo({
+                  id: subItem.id,
+                  title: subItem.title,
+                  teamName,
+                  teamPartName,
+                });
               } else {
                 setPersonnelInfo({ id: "", title: "" });
               }
@@ -173,7 +183,7 @@ const SideBar = () => {
   };
 
   return (
-    <div className="flex items-center h-dvh w-full">
+    <div className="flex items-center h-dvh">
       <aside className="text-[#424242] h-full w-64 overflow-y-auto flex flex-col justify-between">
         <div>
           <header className="w-64 h-16 flex items-center px-14 fixed bg-sbtLightBlue/75 backdrop-blur-sm z-10">
