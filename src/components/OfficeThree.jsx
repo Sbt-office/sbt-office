@@ -15,6 +15,7 @@ import model from "@/assets/model/office.glb";
 import { throttle } from "lodash-es";
 import ObjectSelect from "../utils/three/ObjectSelect";
 import { clearScene } from "../utils/three/SceneCleanUp";
+import { usePopupStore } from "../store/usePopupStore";
 
 const OfficeThree = () => {
   const modelRef = useRef(null);
@@ -26,6 +27,8 @@ const OfficeThree = () => {
   const animRef = useRef(null);
 
   const sceneRef = useRef(new THREE.Scene());
+
+  const { isPopupOpen } = usePopupStore();
 
   // SIZES
   const sizes = {
@@ -166,7 +169,7 @@ const OfficeThree = () => {
   }, []);
 
   return (
-    <main className="absolute z-0 bg-[#292929] w-[calc(100dvw - 250px)] h-dvh left-64">
+    <main className={`z-0 bg-[#292929] flex-1 ${isPopupOpen ? "absolute left-64" : ""}`}>
       <canvas ref={canvasRef} />
     </main>
   );
