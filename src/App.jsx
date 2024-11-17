@@ -4,7 +4,7 @@ import style from "./app.module.css";
 import BarLoader from "react-spinners/BarLoader";
 import { ErrorBoundary } from "react-error-boundary";
 
-import Login from "./pages/Login";
+// import Login from "./pages/Login";
 import MainLayout from "./layouts/MainLayout";
 
 const ErrorFallback = (error) => <div>An error occurred: {error.message}</div>;
@@ -21,8 +21,8 @@ const App = () => {
           }
         >
           <Routes>
-            <Route path="/" element={<Login />} />
-            <Route path="/main" element={<MainLayout />} />
+            {/* <Route path="/" element={<Login />} />  로그인이 추후 개발 진행 시 다시 사용 예정 */}
+            <Route path="/" element={<MainLayout />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>
