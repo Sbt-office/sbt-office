@@ -99,9 +99,14 @@ const scene_cleanup = async (scene, renderer, gltf_obj) => {
   });
 };
 
-export const clearScene = (scene, controls, renderer, animate) => {
+export const clearScene = (scene, controls, renderer, animate, objectSelect) => {
   cancelAnimationFrame(animate);
   animate = null;
+
+  if (objectSelect) {
+    objectSelect.clearEvent();
+    objectSelect = null;
+  }
 
   controls.dispose();
   controls = null;

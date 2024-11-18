@@ -3,16 +3,12 @@ import { useEffect, useRef, useState } from "react";
 
 // 3D IMPORT
 import * as THREE from "three";
-import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
-import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
-import { RGBELoader } from "three/addons/loaders/RGBELoader.js";
-import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { DRACOLoader, GLTFLoader, OrbitControls, RGBELoader, TransformControls } from "three/examples/jsm/Addons.js";
 
 // 3D MODEL
 import hdr from "@/assets/three.hdr";
 import model from "@/assets/model/office.glb";
 
-import { throttle } from "lodash-es";
 import ObjectSelect from "../utils/three/ObjectSelect";
 import { clearScene } from "../utils/three/SceneCleanUp";
 import { usePopupStore } from "../store/usePopupStore";
@@ -26,18 +22,13 @@ const OfficeThree = () => {
   const controlsRef = useRef(null);
   const selectRef = useRef(null);
   const animRef = useRef(null);
+  const transControlsRef = useRef();
 
   const sceneRef = useRef(new THREE.Scene());
 
   const [isEdit, setIsEdit] = useState(false);
 
   const { isPopupOpen } = usePopupStore();
-
-  // SIZES
-  const sizes = {
-    width: window.innerWidth,
-    height: window.innerHeight,
-  };
 
   // CAMERA
   const setupCamera = () => {
@@ -64,6 +55,12 @@ const OfficeThree = () => {
     selectRef.current = new ObjectSelect(sceneRef.current, canvasRef.current, cameraRef.current);
   };
 
+  const selectObject = (obj) => {
+    if (obj) {
+      console.log(obj);
+    }
+  };
+
   // LIGHT
   const setupLights = () => {
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
@@ -76,6 +73,26 @@ const OfficeThree = () => {
     const fillLight = new THREE.DirectionalLight(0xb6ceff, 0.3);
     fillLight.position.set(-2, 1, -1);
     sceneRef.current.add(fillLight);
+  };
+
+  const setupTransformControls = () => {
+    transControlsRef.current = new TransformControls(cameraRef.current, rendererRef.current.domElement);
+    transControlsRef.current.space = "local";
+    transControlsRef.current.addEventListener("dragging-changed", draggingChangedEvent);
+
+    const gizmo = transControlsRef.current.getHelper();
+    sceneRef.current.add(gizmo);
+  };
+
+  const draggingChangedEvent = (e) => {
+    controlsRef.current.enabled = !e.value;
+
+    if (!e.value) {
+      const target = transControlsRef.current.object;
+      if (target) {
+        console.log("update transformControls");
+      }
+    }
   };
 
   // SCENE CREATE
@@ -96,6 +113,7 @@ const OfficeThree = () => {
     setupControls();
     setupLights();
     setObjectSelect();
+    setupTransformControls();
 
     animRef.current = requestAnimationFrame(animate);
   };
@@ -104,9 +122,6 @@ const OfficeThree = () => {
   const onWindowResize = () => {
     const w = mainRef.current.offsetWidth;
     const h = mainRef.current.offsetHeight;
-
-    // sizes.width = window.innerWidth;
-    // sizes.height = window.innerHeight;
 
     if (cameraRef.current) {
       cameraRef.current.aspect = w / h;
@@ -180,24 +195,6 @@ const OfficeThree = () => {
   /**
    * CLEAN-UP
    */
-  // useEffect(() => {
-  //     createScene();
-  //     loadModel();
-
-  //     const handleResize = throttle(onWindowResize, 500);
-  //     window.addEventListener("resize", handleResize);
-
-  //     return () => {
-  //         clearScene(
-  //             sceneRef.current,
-  //             controlsRef.current,
-  //             rendererRef.current,
-  //             animRef.current
-  //         );
-  //         window.removeEventListener("resize", handleResize);
-  //     };
-  // }, []);
-
   useEffect(() => {
     if (mainRef.current) {
       createScene();
@@ -205,13 +202,29 @@ const OfficeThree = () => {
     }
 
     return () => {
-      clearScene(sceneRef.current, controlsRef.current, rendererRef.current, animRef.current);
+      clearScene(sceneRef.current, controlsRef.current, rendererRef.current, animRef.current, selectRef.current);
     };
   }, [mainRef]);
+
+  useEffect(() => {
+    if (selectRef.current) {
+      if (isEdit) {
+        selectRef.current.setEvent(selectObject);
+      } else {
+        selectRef.current.clearEvent(true);
+      }
+    }
+  }, [isEdit]);
 
   return (
     <main ref={mainRef} className={`relative z-0 bg-[#292929] flex-1 ${isPopupOpen ? "absolute left-64" : ""}`}>
       <canvas className="absolute top-0 left-0" ref={canvasRef} />
+      <button
+        className="absolute top-4 right-4 bg-white rounded-lg px-2 py-2 text-black"
+        onClick={() => setIsEdit((prev) => !prev)}
+      >
+        {isEdit ? "완료" : "수정"}
+      </button>
     </main>
   );
 };

@@ -10,25 +10,30 @@ class ObjectSelect {
     this.mouse = new THREE.Vector2(1, 1);
     this.beforeMouse = new THREE.Vector2(0, 0);
     this.callback;
+
+    this.mouseDownHandle = this.mouseDownEvent.bind(this);
+    this.mouseUpHandle = this.mouseUpEvent.bind(this);
   }
 
   setEvent(callback) {
     this.callback = callback;
-    this.canvas.addEventListener("mousedown", (e) => this.mouseDownEvent(e));
-    this.canvas.addEventListener("mouseup", (e) => this.mouseUpEvent(e, callback));
+    this.canvas.addEventListener("mousedown", this.mouseDownHandle);
+    this.canvas.addEventListener("mouseup", this.mouseUpHandle);
   }
 
-  clearEvent() {
-    this.canvas.removeEventListener("mousedown", (e) => this.mouseDownEvent(e));
-    this.canvas.removeEventListener("mouseup", (e) => this.mouseUpEvent(e, this.callback));
-
-    this.scene = null;
-    this.canvas = null;
-    this.camera = null;
-    this.raycaster = null;
-    this.mouse = null;
-    this.beforeMouse = null;
+  clearEvent(onlyEvent = false) {
+    this.canvas.removeEventListener("mousedown", this.mouseDownHandle);
+    this.canvas.removeEventListener("mouseup", this.mouseUpHandle);
     this.callback = null;
+
+    if (!onlyEvent) {
+      this.scene = null;
+      this.canvas = null;
+      this.camera = null;
+      this.raycaster = null;
+      this.mouse = null;
+      this.beforeMouse = null;
+    }
   }
 
   mouseDownEvent(e) {
@@ -36,14 +41,14 @@ class ObjectSelect {
     this.beforeMouse.y = e.clientY;
   }
 
-  mouseUpEvent(e, callback) {
+  mouseUpEvent(e) {
     if (Math.abs(e.clientX - this.beforeMouse.x) < 2 && Math.abs(e.clientY - this.beforeMouse.y) < 2) {
       const cw = this.canvas.offsetWidth ?? this.canvas.width ?? this.canvas.innerWidth ?? window.innerWidth;
       const ch = this.canvas.offsetHeight ?? this.canvas.height ?? this.canvas.innerHeight ?? window.innerHeight;
       const rect = this.canvas.getBoundingClientRect();
       this.mouse.x = ((e.clientX - rect.left) / cw) * 2 - 1;
       this.mouse.y = -((e.clientY - rect.top) / ch) * 2 + 1;
-      if (callback) callback(this.getObject());
+      if (this.callback) this.callback(this.getObject());
     }
   }
 
