@@ -18,8 +18,6 @@ const Login = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Add your authentication logic here
-    console.log("Form submitted:", formData);
     navigate("/main");
   };
 
