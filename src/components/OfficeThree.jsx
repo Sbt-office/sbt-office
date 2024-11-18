@@ -3,18 +3,27 @@ import { useEffect, useRef, useState } from "react";
 
 // 3D IMPORT
 import * as THREE from "three";
-import { DRACOLoader, GLTFLoader, OrbitControls, RGBELoader, TransformControls } from "three/examples/jsm/Addons.js";
+import {
+  CSS2DObject,
+  CSS2DRenderer,
+  DRACOLoader,
+  GLTFLoader,
+  OrbitControls,
+  RGBELoader,
+} from "three/examples/jsm/Addons.js";
 
 // 3D MODEL
 import hdr from "@/assets/three.hdr";
 import model from "@/assets/model/office.glb";
 
-import ObjectSelect from "../utils/three/ObjectSelect";
 import { clearScene } from "../utils/three/SceneCleanUp";
 import { usePopupStore } from "../store/usePopupStore";
+import { getAllUserFetch } from "../utils/api";
 
 const OfficeThree = () => {
   const mainRef = useRef();
+  const labelRendererRef = useRef();
+  const labelRef = useRef();
   const modelRef = useRef(null);
   const canvasRef = useRef(null);
   const cameraRef = useRef(null);
@@ -22,13 +31,12 @@ const OfficeThree = () => {
   const controlsRef = useRef(null);
   const selectRef = useRef(null);
   const animRef = useRef(null);
-  const transControlsRef = useRef();
-
+  const sitRef = useRef({ startDist: 0 });
   const sceneRef = useRef(new THREE.Scene());
 
-  const [isEdit, setIsEdit] = useState(false);
-
   const { isPopupOpen } = usePopupStore();
+
+  const [userList, setUserList] = useState([]);
 
   // CAMERA
   const setupCamera = () => {
@@ -40,6 +48,8 @@ const OfficeThree = () => {
     );
     cameraRef.current.position.set(-3.684, 13.704, -19.717);
     sceneRef.current.add(cameraRef.current);
+
+    sitRef.current.startDist = cameraRef.current.position.distanceTo(new THREE.Vector3());
   };
 
   // CONTROL
@@ -49,16 +59,6 @@ const OfficeThree = () => {
     controlsRef.current.enableDamping = false;
     controlsRef.current.maxPolarAngle = Math.PI / 2;
     controlsRef.current.minPolarAngle = 0;
-  };
-
-  const setObjectSelect = () => {
-    selectRef.current = new ObjectSelect(sceneRef.current, canvasRef.current, cameraRef.current);
-  };
-
-  const selectObject = (obj) => {
-    if (obj) {
-      console.log(obj);
-    }
   };
 
   // LIGHT
@@ -75,24 +75,14 @@ const OfficeThree = () => {
     sceneRef.current.add(fillLight);
   };
 
-  const setupTransformControls = () => {
-    transControlsRef.current = new TransformControls(cameraRef.current, rendererRef.current.domElement);
-    transControlsRef.current.space = "local";
-    transControlsRef.current.addEventListener("dragging-changed", draggingChangedEvent);
-
-    const gizmo = transControlsRef.current.getHelper();
-    sceneRef.current.add(gizmo);
-  };
-
-  const draggingChangedEvent = (e) => {
-    controlsRef.current.enabled = !e.value;
-
-    if (!e.value) {
-      const target = transControlsRef.current.object;
-      if (target) {
-        console.log("update transformControls");
-      }
-    }
+  // LABEL
+  const setupLabelRenderer = () => {
+    labelRendererRef.current = new CSS2DRenderer();
+    labelRendererRef.current.setSize(mainRef.current.offsetWidth, mainRef.current.offsetHeight);
+    labelRendererRef.current.domElement.style.position = "absolute";
+    labelRendererRef.current.domElement.style.top = 0;
+    labelRendererRef.current.domElement.style.left = 0;
+    canvasRef.current.before(labelRendererRef.current.domElement);
   };
 
   // SCENE CREATE
@@ -112,8 +102,7 @@ const OfficeThree = () => {
     setupCamera();
     setupControls();
     setupLights();
-    setObjectSelect();
-    setupTransformControls();
+    setupLabelRenderer();
 
     animRef.current = requestAnimationFrame(animate);
   };
@@ -134,6 +123,10 @@ const OfficeThree = () => {
 
     if (rendererRef.current && cameraRef.current) {
       rendererRef.current.render(sceneRef.current, cameraRef.current);
+
+      if (labelRendererRef.current) {
+        labelRendererRef.current.setSize(mainRef.current.offsetWidth, mainRef.current.offsetHeight);
+      }
     }
   };
 
@@ -160,6 +153,10 @@ const OfficeThree = () => {
           if (node.name.includes("ceiling")) {
             node.visible = false;
           }
+
+          if (node.name.includes("seat-")) {
+            createLabel(node);
+          }
         });
         sceneRef.current.add(gltf.scene);
       },
@@ -170,6 +167,20 @@ const OfficeThree = () => {
     );
   };
 
+  const createLabel = (obj) => {
+    const div = labelRef.current.cloneNode(true);
+    div.id = "label_" + obj.name;
+    div.style.display = "";
+    const color = Math.random() > 0.5 ? "#f00" : "#0f0";
+    div.style.color = color;
+    div.style.borderColor = color;
+    div.children[1].innerHTML = obj.name;
+    const label = new CSS2DObject(div);
+    label.position.set(0, 1, 0);
+    obj.add(label);
+    sitRef.current[obj.name] = label;
+  };
+
   // ANIMATION
   const animate = () => {
     if (controlsRef.current) {
@@ -178,6 +189,10 @@ const OfficeThree = () => {
 
     if (rendererRef.current && cameraRef.current) {
       rendererRef.current.render(sceneRef.current, cameraRef.current);
+
+      if (labelRendererRef.current) {
+        labelRendererRef.current.render(sceneRef.current, cameraRef.current);
+      }
     }
 
     // 부모영역과 캔버스 영역 비교 후 Resize 실행
@@ -189,7 +204,23 @@ const OfficeThree = () => {
         onWindowResize();
     }
 
+    if (cameraRef.current) {
+      const dist = cameraRef.current.position.distanceTo(new THREE.Vector3());
+      const size = sitRef.current.startDist / dist;
+      const newSize = size > 1 ? 1 : size;
+
+      Object.keys(sitRef.current).map((key) => {
+        const dom = document.getElementById("label_" + key);
+        if (dom) dom.style.transform = `${dom.style.transform} scale(${newSize})`;
+      });
+    }
+
     animRef.current = requestAnimationFrame(animate);
+  };
+
+  const getAllUser = async () => {
+    const res = await getAllUserFetch();
+    setUserList(res);
   };
 
   /**
@@ -206,25 +237,23 @@ const OfficeThree = () => {
     };
   }, [mainRef]);
 
-  useEffect(() => {
-    if (selectRef.current) {
-      if (isEdit) {
-        selectRef.current.setEvent(selectObject);
-      } else {
-        selectRef.current.clearEvent(true);
-      }
-    }
-  }, [isEdit]);
-
   return (
-    <main ref={mainRef} className={`relative z-0 bg-[#292929] flex-1 ${isPopupOpen ? "absolute left-64" : ""}`}>
+    <main ref={mainRef} className={`z-0 bg-[#292929] flex-1 ${isPopupOpen ? "absolute left-64" : "relative"}`}>
       <canvas className="absolute top-0 left-0" ref={canvasRef} />
-      <button
-        className="absolute top-4 right-4 bg-white rounded-lg px-2 py-2 text-black"
-        onClick={() => setIsEdit((prev) => !prev)}
+      <div
+        ref={labelRef}
+        className="absolute top-0 left-0 w-12 h-12 px-2 py-2 rounded-full bg-transparent border-x-2 border-y-2 border-black text-black cursor-pointer"
+        style={{ display: "none" }}
       >
-        {isEdit ? "완료" : "수정"}
-      </button>
+        <svg fill="none" width="100%" height="100%" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+          <path
+            d="M8 7C9.65685 7 11 5.65685 11 4C11 2.34315 9.65685 1 8 1C6.34315 1 5 2.34315 5 4C5 5.65685 6.34315 7 8 7Z"
+            fill="currentColor"
+          />
+          <path d="M14 12C14 10.3431 12.6569 9 11 9H5C3.34315 9 2 10.3431 2 12V15H14V12Z" fill="currentColor" />
+        </svg>
+        <div className="absolute top-14 left-1/2 -translate-x-1/2 px-2 py-2 text-black bg-white text-nowrap"></div>
+      </div>
     </main>
   );
 };
