@@ -19,6 +19,9 @@ import model from "@/assets/model/office.glb";
 import { clearScene } from "../utils/three/SceneCleanUp";
 import { usePopupStore } from "../store/usePopupStore";
 import { getAllUserFetch } from "../utils/api";
+import { userIcon } from "../utils/icon";
+import { useSetRecoilState } from "recoil";
+import { newAlertState } from "../utils/recoil";
 
 const OfficeThree = () => {
   const mainRef = useRef();
@@ -37,6 +40,9 @@ const OfficeThree = () => {
   const { isPopupOpen } = usePopupStore();
 
   const [userList, setUserList] = useState([]);
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  const setNewAlert = useSetRecoilState(newAlertState);
 
   // CAMERA
   const setupCamera = () => {
@@ -155,30 +161,20 @@ const OfficeThree = () => {
           }
 
           if (node.name.includes("seat-")) {
-            createLabel(node);
+            sitRef.current[node.name] = {
+              ...sitRef.current[node.name],
+              obj: node,
+            };
           }
         });
         sceneRef.current.add(gltf.scene);
+        setIsLoaded(true);
       },
       undefined,
       (error) => {
         console.error("An error happened during loading:", error);
       }
     );
-  };
-
-  const createLabel = (obj) => {
-    const div = labelRef.current.cloneNode(true);
-    div.id = "label_" + obj.name;
-    div.style.display = "";
-    const color = Math.random() > 0.5 ? "#f00" : "#0f0";
-    div.style.color = color;
-    div.style.borderColor = color;
-    div.children[1].innerHTML = obj.name;
-    const label = new CSS2DObject(div);
-    label.position.set(0, 1, 0);
-    obj.add(label);
-    sitRef.current[obj.name] = label;
   };
 
   // ANIMATION
@@ -218,14 +214,47 @@ const OfficeThree = () => {
     animRef.current = requestAnimationFrame(animate);
   };
 
-  const getAllUser = async () => {
-    const res = await getAllUserFetch();
-    setUserList(res);
+  const createLabel = (obj, name) => {
+    const div = labelRef.current.cloneNode(true);
+    div.id = "label_" + obj.name;
+    div.style.display = "";
+    const color = Math.random() > 0.5 ? "#f00" : "#0f0";
+    div.style.color = color;
+    div.style.borderColor = color;
+    if (name) name = "<br />" + name;
+    div.children[1].innerHTML = obj.name + name;
+    const label = new CSS2DObject(div);
+    label.position.set(0, 1, 0);
+    obj.add(label);
+    sitRef.current[obj.name] = {
+      ...sitRef.current[obj.name],
+      label,
+    };
   };
 
-  /**
-   * CLEAN-UP
-   */
+  const getAllUser = async () => {
+    const res = await getAllUserFetch();
+    if (res.message) setNewAlert(`${res.status || res.code}: ${res.message}`);
+    else setUserList(res);
+  };
+
+  const drawUserIcon = () => {
+    userList.map((user) => {
+      const sit = sitRef.current[user.ou_seat_cd];
+      if (sit && sit.obj && !sit.label) {
+        createLabel(sit.obj, user.ou_nm);
+      }
+    });
+  };
+
+  useEffect(() => {
+    getAllUser();
+  }, []);
+
+  useEffect(() => {
+    if (userList.length > 0 && isLoaded) drawUserIcon();
+  }, [userList, isLoaded]);
+
   useEffect(() => {
     if (mainRef.current) {
       createScene();
@@ -245,13 +274,7 @@ const OfficeThree = () => {
         className="absolute top-0 left-0 w-12 h-12 px-2 py-2 rounded-full bg-transparent border-x-2 border-y-2 border-black text-black cursor-pointer"
         style={{ display: "none" }}
       >
-        <svg fill="none" width="100%" height="100%" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
-          <path
-            d="M8 7C9.65685 7 11 5.65685 11 4C11 2.34315 9.65685 1 8 1C6.34315 1 5 2.34315 5 4C5 5.65685 6.34315 7 8 7Z"
-            fill="currentColor"
-          />
-          <path d="M14 12C14 10.3431 12.6569 9 11 9H5C3.34315 9 2 10.3431 2 12V15H14V12Z" fill="currentColor" />
-        </svg>
+        {userIcon()}
         <div className="absolute top-14 left-1/2 -translate-x-1/2 px-2 py-2 text-black bg-white text-nowrap"></div>
       </div>
     </main>
