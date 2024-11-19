@@ -29,5 +29,14 @@ export default defineConfig({
     host: "localhost",
     port: 3000,
     historyApiFallback: true,
+    // 모든 요청을 index.html로 리다이렉트 (배포 시 필요)
+    middleware: (app) => {
+      app.use((req, res, next) => {
+        if (req.method === "GET" && !req.path.startsWith("/api")) {
+          req.url = "/index.html";
+        }
+        next();
+      });
+    },
   },
 });
