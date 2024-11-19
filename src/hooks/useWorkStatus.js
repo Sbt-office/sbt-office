@@ -2,6 +2,7 @@ import { useMutation } from "@tanstack/react-query";
 import { getDailyFetch, setDailyFetch } from "../utils/api";
 import useWorkStatusStore from "../store/useWorkStatusStore";
 import { useToast } from "../hooks/useToast";
+import dayjs from "dayjs";
 
 export const setWorkStatusStore = () => {
   const { setData, setShowModal } = useWorkStatusStore();
@@ -26,8 +27,11 @@ export const getWorkStatusStore = () => {
   return useMutation({
     mutationFn: getDailyFetch,
     onSuccess: (data) => {
-      if (data.data) setData(data.data[0]);
-      else if (data.message === "미출근") setData({ userStatus: "미출근" });
+      if (data.data) {
+        const today = dayjs().format("YYYY-MM-DD");
+        if (dayjs(data.data[0].ouds_upt_dt).format("YYYY-MM-DD") === today) setData(data.data[0]);
+        else setData({ userStatus: "미출근" });
+      } else if (data.message === "미출근") setData({ userStatus: "미출근" });
     },
     onError: (error) => {
       addToast({ type: "error", message: error.message });
