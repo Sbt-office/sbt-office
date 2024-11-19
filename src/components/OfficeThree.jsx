@@ -18,7 +18,7 @@ import model from "@/assets/model/office.glb";
 
 import { clearScene } from "../utils/three/SceneCleanUp";
 import { usePopupStore } from "../store/usePopupStore";
-import { getAllUserFetch } from "../utils/api";
+import { getDailyListFetch, getUserListFetch } from "../utils/api";
 import { userIcon } from "../utils/icon";
 import { useSetRecoilState } from "recoil";
 import { newAlertState } from "../utils/recoil";
@@ -40,6 +40,7 @@ const OfficeThree = () => {
   const { isPopupOpen } = usePopupStore();
 
   const [userList, setUserList] = useState([]);
+  const [dailyList, setDailyList] = useState([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
   const setNewAlert = useSetRecoilState(newAlertState);
@@ -214,18 +215,23 @@ const OfficeThree = () => {
     animRef.current = requestAnimationFrame(animate);
   };
 
-  const createLabel = (obj, name) => {
+  const createLabel = (obj, name, daily = "퇴근") => {
     const div = labelRef.current.cloneNode(true);
     div.id = "label_" + obj.name;
     div.style.display = "";
-    const color = Math.random() > 0.5 ? "#f00" : "#0f0";
+
+    const color = daily === "출근" ? "#0f0" : "#f00";
     div.style.color = color;
     div.style.borderColor = color;
+
     if (name) name = "<br />" + name;
+    else name = "";
     div.children[1].innerHTML = obj.name + name;
+
     const label = new CSS2DObject(div);
     label.position.set(0, 1, 0);
     obj.add(label);
+
     sitRef.current[obj.name] = {
       ...sitRef.current[obj.name],
       label,
@@ -233,9 +239,15 @@ const OfficeThree = () => {
   };
 
   const getAllUser = async () => {
-    const res = await getAllUserFetch();
-    if (res.message) setNewAlert(`${res.status || res.code}: ${res.message}`);
-    else setUserList(res);
+    const res = await getUserListFetch();
+    if (res.status === 200) setUserList(res.data);
+    else setNewAlert(res);
+  };
+
+  const getDailyList = async () => {
+    const res = await getDailyListFetch();
+    if (res.status === 200) setDailyList(res.data.data);
+    else setNewAlert(res);
   };
 
   const drawUserIcon = () => {
@@ -249,6 +261,7 @@ const OfficeThree = () => {
 
   useEffect(() => {
     getAllUser();
+    getDailyList();
   }, []);
 
   useEffect(() => {

@@ -24,7 +24,7 @@ export const resgisterFetch = async (sabeon, username, password) => {
   }
 };
 
-export const getAllUserFetch = async () => {
+export const getUserListFetch = async () => {
   try {
     const res = await axios.get(`${baseURL}/api/office_user_all`);
     return res;
@@ -33,7 +33,7 @@ export const getAllUserFetch = async () => {
   }
 };
 
-export const getAllDailyListFetch = async () => {
+export const getDailyListFetch = async () => {
   try {
     const res = await axios.get(`${baseURL}/api/office_daily_list`);
     return res;

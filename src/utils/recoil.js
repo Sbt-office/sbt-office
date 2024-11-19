@@ -2,7 +2,7 @@ import { atom } from "recoil";
 
 export const newAlertState = atom({
   key: "alertListState",
-  default: "",
+  default: { message: "" },
 });
 
 export const alertHistoryState = atom({
