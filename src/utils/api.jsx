@@ -17,6 +17,7 @@ export const loginCheckFetch = async (credentials) => {
       return {
         success: true,
         user: res.data,
+        sabeon: credentials.sabeon,
       };
     }
     throw new Error(res.data.message || "로그인에 실패했습니다.");
