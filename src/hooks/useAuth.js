@@ -3,7 +3,7 @@ import { useAuthStore } from "@/store/authStore";
 import { loginCheckFetch, registerFetch } from "@/utils/api";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/useToast";
-import { setCookie, removeCookie } from "@/utils/cookie";
+import { setCookie } from "@/utils/cookie";
 
 export const useLogin = () => {
   const navigate = useNavigate();
@@ -55,7 +55,6 @@ export const useLogout = () => {
 
   const handleLogout = () => {
     logout();
-    removeCookie("sabeon");
     addToast({ type: "success", message: "로그아웃되었습니다." });
     navigate("/");
   };
