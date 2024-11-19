@@ -1,16 +1,23 @@
 import useWorkStatusStore from "@/store/useWorkStatusStore";
+import { useWorkStatus } from "../hooks/useWorkStatus";
+import { useAuthStore } from "../store/authStore";
 
 const WorkGoAndLeave = () => {
   const { isWorking, setIsWorking, setShowModal } = useWorkStatusStore();
+  const { user, logout } = useAuthStore();
+
+  console.log(user);
+
+  const workStatus = useWorkStatus();
 
   const handleWorkStart = () => {
-    setIsWorking(true);
-    setShowModal(true, "start");
+    // setIsWorking(true);
+    // setShowModal(true, "start");
   };
 
   const handleWorkEnd = () => {
-    setIsWorking(false);
-    setShowModal(true, "end");
+    // setIsWorking(false);
+    // setShowModal(true, "end");
   };
 
   return (
@@ -43,6 +50,12 @@ const WorkGoAndLeave = () => {
             }`}
         >
           퇴근
+        </button>
+        <button
+          onClick={logout}
+          className="flex-1 w-full text-center py-1 rounded-md text-sm bg-sbtLightBlue hover:bg-sbtDarkBlue hover:text-white"
+        >
+          로그아웃
         </button>
       </div>
     </div>

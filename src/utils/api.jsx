@@ -43,16 +43,34 @@ export const getUserListFetch = async () => {
     if (res.status === 200) return res.data;
     throw new Error(res.data.message);
   } catch (err) {
-    return err;
+    throw new Error(err.message);
   }
 };
 
 export const getDailyListFetch = async () => {
   try {
     const res = await axios.get(`${baseURL}/api/office_daily_list`);
-    if (res.status === 200 && res.data.status === "200") return res.data.data;
-    throw new Error(res.data.message);
+    if (res.status === 200) {
+      if (res.data.status === "200") return res.data.data;
+      throw new Error(res.data.message);
+    }
+    throw new Error(res.message);
   } catch (err) {
-    return err;
+    throw new Error(err.message);
+  }
+};
+
+// status => 1: 출근 2: 퇴근
+export const setDailyFetch = async (sabeon, status) => {
+  try {
+    const params = { sabeon, status };
+    const res = await axios.post(`${baseURL}/api/office_daily_checkIn`, params);
+    if (res.status === 200) {
+      if (res.data.status === "200") return { ...res.data.data, userStatus: status === 1 };
+      throw new Error(res.data.message);
+    }
+    throw new Error(res.message);
+  } catch (err) {
+    throw new Error(err.message);
   }
 };

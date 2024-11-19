@@ -40,6 +40,7 @@ const OfficeThree = () => {
   const [userList, setUserList] = useState([]);
   const [dailyList, setDailyList] = useState([]);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isRefresh, setIsRefresh] = useState(false);
 
   // CAMERA
   const setupCamera = () => {
@@ -220,9 +221,7 @@ const OfficeThree = () => {
     div.style.color = color;
     div.style.borderColor = color;
 
-    if (name) name = "<br />" + name;
-    else name = "";
-    if (div.children[1]) div.children[1].innerHTML = obj.name + name;
+    if (name && div.children[1]) div.children[1].innerHTML = name;
 
     const label = new CSS2DObject(div);
     label.position.set(0, 1, 0);
@@ -261,7 +260,9 @@ const OfficeThree = () => {
       const sit = sitRef.current[user.ou_seat_cd];
       const daily = dailyList.find((item) => item.ouds_sabeon === user.ou_sabeon);
       if (sit && sit.obj && !sit.label) {
-        createLabel(sit.obj, user.ou_nm, daily ? daily.userStatus : null);
+        createLabel(sit.obj, sit.obj.name + "<br />" + user.ou_nm, daily ? daily.userStatus : null);
+      } else if (sit && sit.obj && sit.label) {
+        updateLabel(sit.obj, sit.obj.name + "<br />" + user.ou_nm, daily ? daily.userStatus : null);
       }
     });
   };
@@ -269,7 +270,7 @@ const OfficeThree = () => {
   useEffect(() => {
     getAllUser();
     getDailyList();
-  }, []);
+  }, [isRefresh]);
 
   useEffect(() => {
     if (userList.length > 0 && dailyList.length > 0 && isLoaded) drawUserIcon();
@@ -295,7 +296,13 @@ const OfficeThree = () => {
         style={{ display: "none" }}
       >
         {userIcon()}
-        {/* <div className="absolute top-14 left-1/2 -translate-x-1/2 px-2 py-2 text-black bg-white text-nowrap"></div> */}
+        <div className="absolute top-14 left-1/2 -translate-x-1/2 px-2 py-2 text-black bg-white text-nowrap"></div>
+      </div>
+      <div
+        className="absolute top-4 right-4 bg-white text-black px-2 py-2"
+        onClick={() => setIsRefresh((prev) => !prev)}
+      >
+        테스트
       </div>
     </main>
   );
