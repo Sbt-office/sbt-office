@@ -21,6 +21,7 @@ import { usePopupStore } from "../store/usePopupStore";
 import { getDailyListFetch, getUserListFetch } from "../utils/api";
 import { userIcon } from "../utils/icon";
 import useWorkStatusStore from "../store/useWorkStatusStore";
+import dayjs from "dayjs";
 
 const OfficeThree = () => {
   const mainRef = useRef();
@@ -260,7 +261,10 @@ const OfficeThree = () => {
   const drawUserIcon = () => {
     userList.map((user) => {
       const sit = sitRef.current[user.ou_seat_cd];
-      const daily = dailyList.find((item) => item.ouds_sabeon === user.ou_sabeon);
+      const today = dayjs().format("YYYY-MM-DD");
+      const daily = dailyList.find(
+        (item) => item.ouds_sabeon === user.ou_sabeon && today === dayjs(item.ouds_upt_dt).format("YYYY-MM-DD")
+      );
       if (sit && sit.obj) {
         if (sit.label) updateLabel(sit.obj, sit.obj.name + "<br />" + user.ou_nm, daily ? daily.userStatus : undefined);
         else createLabel(sit.obj, sit.obj.name + "<br />" + user.ou_nm, daily ? daily.userStatus : undefined);
