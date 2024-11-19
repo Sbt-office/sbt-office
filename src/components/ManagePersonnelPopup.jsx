@@ -10,7 +10,7 @@ import { sidebarItems } from "../data/sidebarItems";
 import { Checkbox } from "antd";
 
 import profile from "@/assets/images/profile.png";
-import { useSearch } from "../hooks/useSearch";
+import { useSearch } from "@/hooks/useSearch";
 import { SearchInput } from "./SearchInput";
 
 const ManagePersonnelPopup = () => {
@@ -89,7 +89,7 @@ const ManagePersonnelPopup = () => {
   };
 
   return (
-    <div className="h-dvh text-black z-10 bg-white flex flex-col flex-1">
+    <div className="h-dvh text-black z-10 bg-white flex flex-col w-[calc(100vw-16rem)]">
       {/* 상단 타이틀 */}
       <header className="bg-sbtLightBlue/75">
         <h2 className="text-2xl font-semibold  w-full h-16 flex justify-center items-center">인사정보관리</h2>

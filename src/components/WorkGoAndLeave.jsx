@@ -1,4 +1,4 @@
-import useWorkStatusStore from "../store/useWorkStatusStore";
+import useWorkStatusStore from "@/store/useWorkStatusStore";
 
 const WorkGoAndLeave = () => {
   const { isWorking, setIsWorking, setShowModal } = useWorkStatusStore();

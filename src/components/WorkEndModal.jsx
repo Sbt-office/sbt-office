@@ -1,21 +1,21 @@
 /* eslint-disable react/prop-types */
 import dayjs from "dayjs";
-import useWorkStatusStore from "../store/useWorkStatusStore";
+import useWorkStatusStore from "@/store/useWorkStatusStore";
 
 const WorkEndModal = ({ onClose }) => {
   const { modalType, workStartTime } = useWorkStatusStore();
 
   const getModalContent = () => {
-    if (modalType === 'start') {
-      const timeStr = dayjs(workStartTime).format('HH시 mm분');
+    if (modalType === "start") {
+      const timeStr = dayjs(workStartTime).format("HH시 mm분");
       return {
-        title: '출근 처리 완료',
-        message: `${timeStr}에 출근 처리가 되었습니다.`
+        title: "출근 처리 완료",
+        message: `${timeStr}에 출근 처리가 되었습니다.`,
       };
     }
     return {
-      title: '퇴근 완료',
-      message: '오늘도 수고하셨습니다.'
+      title: "퇴근 완료",
+      message: "오늘도 수고하셨습니다.",
     };
   };
 
