@@ -20,8 +20,6 @@ import { clearScene } from "../utils/three/SceneCleanUp";
 import { usePopupStore } from "../store/usePopupStore";
 import { getDailyListFetch, getUserListFetch } from "../utils/api";
 import { userIcon } from "../utils/icon";
-import { useSetRecoilState } from "recoil";
-import { newAlertState } from "../utils/recoil";
 
 const OfficeThree = () => {
   const mainRef = useRef();
@@ -42,8 +40,6 @@ const OfficeThree = () => {
   const [userList, setUserList] = useState([]);
   const [dailyList, setDailyList] = useState([]);
   const [isLoaded, setIsLoaded] = useState(false);
-
-  const setNewAlert = useSetRecoilState(newAlertState);
 
   // CAMERA
   const setupCamera = () => {
@@ -226,7 +222,7 @@ const OfficeThree = () => {
 
     if (name) name = "<br />" + name;
     else name = "";
-    div.children[1].innerHTML = obj.name + name;
+    if (div.children[1]) div.children[1].innerHTML = obj.name + name;
 
     const label = new CSS2DObject(div);
     label.position.set(0, 1, 0);
@@ -238,23 +234,34 @@ const OfficeThree = () => {
     };
   };
 
+  const updateLabel = (obj, name, daily = "퇴근") => {
+    const elem = sitRef.current[obj.name]?.label?.element;
+
+    if (elem) {
+      if (name && elem.children[1]) elem.children[1].innerHTML = name;
+
+      const color = daily === "출근" ? "#0f0" : "#f00";
+      elem.style.color = color;
+      elem.style.borderColor = color;
+    }
+  };
+
   const getAllUser = async () => {
     const res = await getUserListFetch();
-    if (res.status === 200) setUserList(res.data);
-    else setNewAlert(res);
+    if (res) setUserList(res);
   };
 
   const getDailyList = async () => {
     const res = await getDailyListFetch();
-    if (res.status === 200) setDailyList(res.data.data);
-    else setNewAlert(res);
+    if (res) setDailyList(res);
   };
 
   const drawUserIcon = () => {
     userList.map((user) => {
       const sit = sitRef.current[user.ou_seat_cd];
+      const daily = dailyList.find((item) => item.ouds_sabeon === user.ou_sabeon);
       if (sit && sit.obj && !sit.label) {
-        createLabel(sit.obj, user.ou_nm);
+        createLabel(sit.obj, user.ou_nm, daily ? daily.userStatus : null);
       }
     });
   };
@@ -265,8 +272,8 @@ const OfficeThree = () => {
   }, []);
 
   useEffect(() => {
-    if (userList.length > 0 && isLoaded) drawUserIcon();
-  }, [userList, isLoaded]);
+    if (userList.length > 0 && dailyList.length > 0 && isLoaded) drawUserIcon();
+  }, [userList, dailyList, isLoaded]);
 
   useEffect(() => {
     if (mainRef.current) {
@@ -288,7 +295,7 @@ const OfficeThree = () => {
         style={{ display: "none" }}
       >
         {userIcon()}
-        <div className="absolute top-14 left-1/2 -translate-x-1/2 px-2 py-2 text-black bg-white text-nowrap"></div>
+        {/* <div className="absolute top-14 left-1/2 -translate-x-1/2 px-2 py-2 text-black bg-white text-nowrap"></div> */}
       </div>
     </main>
   );
