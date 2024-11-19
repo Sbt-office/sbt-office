@@ -81,10 +81,7 @@ export const setDailyFetch = async (data) => {
 export const getDailyFetch = async (sabeon) => {
   try {
     const res = await axios.get(`${baseURL}/api/office_daily/${sabeon}`);
-    if (res.status === 200) {
-      console.log(res.data.data);
-      if (res.data.status === "200") return res.data;
-    }
+    if (res.status === 200 && res.data.status === "200") return res.data;
   } catch (err) {
     throw new Error(err.message);
   }
@@ -98,6 +95,6 @@ export const getUserInfoFetch = async (sabeon) => {
     const res = await axios.get(`${baseURL}/api/office_user/${sabeon}`);
     return res.data;
   } catch (err) {
-    return handleErr(err);
+    console.log(err);
   }
 };

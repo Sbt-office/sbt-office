@@ -164,7 +164,7 @@ const OfficeThree = () => {
               ...sitRef.current[node.name],
               obj: node,
             };
-            createLabel(node, node.name);
+            // createLabel(node, node.name);
           }
         });
         sceneRef.current.add(gltf.scene);
@@ -214,12 +214,12 @@ const OfficeThree = () => {
     animRef.current = requestAnimationFrame(animate);
   };
 
-  const createLabel = (obj, name, daily = "퇴근") => {
+  const createLabel = (obj, name, daily = "미출근") => {
     const div = labelRef.current.cloneNode(true);
     div.id = "label_" + obj.name;
     div.style.display = "";
 
-    const color = daily === "출근" ? "#0f0" : "#f00";
+    const color = daily === "미출근" ? "#f00" : daily === "출근" ? "#0f0" : "#00f";
     div.style.color = color;
     div.style.borderColor = color;
 
@@ -235,13 +235,13 @@ const OfficeThree = () => {
     };
   };
 
-  const updateLabel = (obj, name, daily = "퇴근") => {
+  const updateLabel = (obj, name, daily = "미출근") => {
     const elem = sitRef.current[obj.name]?.label?.element;
 
     if (elem) {
       if (name && elem.children[1]) elem.children[1].innerHTML = name;
 
-      const color = daily === "출근" ? "#0f0" : "#f00";
+      const color = daily === "미출근" ? "#f00" : daily === "출근" ? "#0f0" : "#00f";
       elem.style.color = color;
       elem.style.borderColor = color;
     }
@@ -261,14 +261,14 @@ const OfficeThree = () => {
     userList.map((user) => {
       const sit = sitRef.current[user.ou_seat_cd];
       const daily = dailyList.find((item) => item.ouds_sabeon === user.ou_sabeon);
-      if (sit && sit.obj && !sit.label) {
-        createLabel(sit.obj, sit.obj.name + "<br />" + user.ou_nm, daily ? daily.userStatus : null);
-      } else if (sit && sit.obj && sit.label) {
-        updateLabel(sit.obj, sit.obj.name + "<br />" + user.ou_nm, daily ? daily.userStatus : null);
+      if (sit && sit.obj) {
+        if (sit.label) updateLabel(sit.obj, sit.obj.name + "<br />" + user.ou_nm, daily ? daily.userStatus : undefined);
+        else createLabel(sit.obj, sit.obj.name + "<br />" + user.ou_nm, daily ? daily.userStatus : undefined);
       }
     });
   };
 
+  // 데이터 변경시 새로고침
   useEffect(() => {
     getAllUser();
     getDailyList();
