@@ -2,8 +2,17 @@ import axios from "axios";
 
 axios.defaults.timeout = 3000;
 
+// VITE_BASE_URL = http://192.168.0.75:3000
 const baseURL = import.meta.env.VITE_BASE_URL;
 
+const handleErr = (err) => {
+  console.error(err);
+  return { message: "Failed Connect API" };
+};
+
+/**
+ * 로그인
+ */
 export const loginCheckFetch = async (credentials) => {
   try {
     const res = await axios.post(`${baseURL}/login`, credentials);
@@ -23,6 +32,9 @@ export const loginCheckFetch = async (credentials) => {
   }
 };
 
+/**
+ * 회원가입
+ */
 export const registerFetch = async (userData) => {
   try {
     const res = await axios.post(`${baseURL}/register`, userData);
@@ -38,6 +50,9 @@ export const registerFetch = async (userData) => {
   }
 };
 
+/**
+ * 회사멤버 전체 리스트
+ */
 export const getUserListFetch = async () => {
   try {
     const res = await axios.get(`${baseURL}/api/office_user_all`);
@@ -86,6 +101,7 @@ export const getDailyFetch = async (sabeon) => {
     throw new Error(err.message);
   }
 };
+
 
 /**
  * 개인 별 인사정보
