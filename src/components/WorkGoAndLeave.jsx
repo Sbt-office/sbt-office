@@ -4,9 +4,15 @@ import { useUserStore } from "@/store/userStore";
 import { useUserQuery } from "@/hooks/useUserQuery";
 import { IoWarningOutline } from "react-icons/io5";
 import { useThrottle } from "../hooks/useThrottle";
+import { useAuthStore } from "../store/authStore";
+import { getWorkStatusStore, setWorkStatusStore } from "../hooks/useWorkStatus";
 
 const WorkGoAndLeave = () => {
-  const { isWorking, setIsWorking, setShowModal } = useWorkStatusStore();
+  const { isWorking } = useWorkStatusStore();
+  const { logout } = useAuthStore();
+
+  const getWorkStatus = getWorkStatusStore();
+  const setWorkStatus = setWorkStatusStore();
 
   const { userInfo, setUserInfo } = useUserStore();
   const { data, isLoading, error } = useUserQuery();
@@ -17,14 +23,16 @@ const WorkGoAndLeave = () => {
     }
   }, [data, setUserInfo]);
 
+  useEffect(() => {
+    if (userInfo) getWorkStatus.mutate(userInfo.ou_sabeon);
+  }, [userInfo]);
+
   const handleWorkStart = useThrottle(() => {
-    setIsWorking(true);
-    setShowModal(true, "start");
+    setWorkStatus.mutate({ sabeon: userInfo.ou_sabeon, status: 1 });
   }, 1000);
 
   const handleWorkEnd = useThrottle(() => {
-    setIsWorking(false);
-    setShowModal(true, "end");
+    setWorkStatus.mutate({ sabeon: userInfo.ou_sabeon, status: 2 });
   }, 1000);
 
   if (isLoading)
@@ -53,10 +61,10 @@ const WorkGoAndLeave = () => {
       <div className="flex items-center w-full gap-3 py-2">
         <button
           onClick={handleWorkStart}
-          disabled={isWorking}
+          disabled={isWorking !== 0}
           className={`flex-1 w-full text-center py-1 rounded-md text-sm 
             ${
-              isWorking
+              isWorking !== 0
                 ? "bg-gray-200 cursor-not-allowed text-black/40"
                 : "bg-sbtLightBlue hover:bg-sbtDarkBlue hover:text-white"
             }`}
@@ -65,15 +73,21 @@ const WorkGoAndLeave = () => {
         </button>
         <button
           onClick={handleWorkEnd}
-          disabled={!isWorking}
+          disabled={isWorking !== 1}
           className={`flex-1 w-full text-center py-1 rounded-md text-sm
             ${
-              !isWorking
+              isWorking !== 1
                 ? "bg-gray-100 text-black/40 cursor-not-allowed"
                 : "bg-red-200 hover:bg-red-400 hover:text-white"
             }`}
         >
           퇴근
+        </button>
+        <button
+          onClick={logout}
+          className="flex-1 w-full text-center py-1 rounded-md text-sm bg-sbtLightBlue hover:bg-sbtDarkBlue hover:text-white"
+        >
+          로그아웃
         </button>
       </div>
     </div>

@@ -6,12 +6,11 @@ import useWorkStatusStore from "@/store/useWorkStatusStore";
 
 const MainLayout = () => {
   const { isWorking, showModal, setShowModal } = useWorkStatusStore();
-
   return (
     <>
       <SideBar />
       <OfficeThree />
-      <WorkStatusNotification isWorking={isWorking} />
+      {isWorking === 1 && <WorkStatusNotification isWorking={isWorking} />}
       {showModal && <WorkEndModal onClose={() => setShowModal(false, null)} />}
     </>
   );

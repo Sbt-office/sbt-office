@@ -18,7 +18,9 @@ import model from "@/assets/model/office.glb";
 
 import { clearScene } from "../utils/three/SceneCleanUp";
 import { usePopupStore } from "../store/usePopupStore";
-import { getAllUserFetch } from "../utils/api";
+import { getDailyListFetch, getUserListFetch } from "../utils/api";
+import { userIcon } from "../utils/icon";
+import useWorkStatusStore from "../store/useWorkStatusStore";
 
 const OfficeThree = () => {
   const mainRef = useRef();
@@ -35,8 +37,11 @@ const OfficeThree = () => {
   const sceneRef = useRef(new THREE.Scene());
 
   const { isPopupOpen } = usePopupStore();
+  const { isWorking } = useWorkStatusStore();
 
   const [userList, setUserList] = useState([]);
+  const [dailyList, setDailyList] = useState([]);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   // CAMERA
   const setupCamera = () => {
@@ -155,30 +160,21 @@ const OfficeThree = () => {
           }
 
           if (node.name.includes("seat-")) {
-            createLabel(node);
+            sitRef.current[node.name] = {
+              ...sitRef.current[node.name],
+              obj: node,
+            };
+            createLabel(node, node.name);
           }
         });
         sceneRef.current.add(gltf.scene);
+        setIsLoaded(true);
       },
       undefined,
       (error) => {
         console.error("An error happened during loading:", error);
       }
     );
-  };
-
-  const createLabel = (obj) => {
-    const div = labelRef.current.cloneNode(true);
-    div.id = "label_" + obj.name;
-    div.style.display = "";
-    const color = Math.random() > 0.5 ? "#f00" : "#0f0";
-    div.style.color = color;
-    div.style.borderColor = color;
-    div.children[1].innerHTML = obj.name;
-    const label = new CSS2DObject(div);
-    label.position.set(0, 1, 0);
-    obj.add(label);
-    sitRef.current[obj.name] = label;
   };
 
   // ANIMATION
@@ -218,14 +214,70 @@ const OfficeThree = () => {
     animRef.current = requestAnimationFrame(animate);
   };
 
-  const getAllUser = async () => {
-    const res = await getAllUserFetch();
-    setUserList(res);
+  const createLabel = (obj, name, daily = "퇴근") => {
+    const div = labelRef.current.cloneNode(true);
+    div.id = "label_" + obj.name;
+    div.style.display = "";
+
+    const color = daily === "출근" ? "#0f0" : "#f00";
+    div.style.color = color;
+    div.style.borderColor = color;
+
+    if (name && div.children[1]) div.children[1].innerHTML = name;
+
+    const label = new CSS2DObject(div);
+    label.position.set(0, 1, 0);
+    obj.add(label);
+
+    sitRef.current[obj.name] = {
+      ...sitRef.current[obj.name],
+      label,
+    };
   };
 
-  /**
-   * CLEAN-UP
-   */
+  const updateLabel = (obj, name, daily = "퇴근") => {
+    const elem = sitRef.current[obj.name]?.label?.element;
+
+    if (elem) {
+      if (name && elem.children[1]) elem.children[1].innerHTML = name;
+
+      const color = daily === "출근" ? "#0f0" : "#f00";
+      elem.style.color = color;
+      elem.style.borderColor = color;
+    }
+  };
+
+  const getAllUser = async () => {
+    const res = await getUserListFetch();
+    if (res) setUserList(res);
+  };
+
+  const getDailyList = async () => {
+    const res = await getDailyListFetch();
+    if (res) setDailyList(res);
+  };
+
+  const drawUserIcon = () => {
+    userList.map((user) => {
+      const sit = sitRef.current[user.ou_seat_cd];
+      const daily = dailyList.find((item) => item.ouds_sabeon === user.ou_sabeon);
+      if (sit && sit.obj && !sit.label) {
+        createLabel(sit.obj, sit.obj.name + "<br />" + user.ou_nm, daily ? daily.userStatus : null);
+      } else if (sit && sit.obj && sit.label) {
+        updateLabel(sit.obj, sit.obj.name + "<br />" + user.ou_nm, daily ? daily.userStatus : null);
+      }
+    });
+  };
+
+  useEffect(() => {
+    getAllUser();
+    getDailyList();
+  }, [isWorking]);
+
+  useEffect(() => {
+    if (userList.length > 0 && dailyList.length > 0 && isLoaded) drawUserIcon();
+  }, [userList, dailyList, isLoaded]);
+
   useEffect(() => {
     if (mainRef.current) {
       createScene();
@@ -245,13 +297,7 @@ const OfficeThree = () => {
         className="absolute top-0 left-0 w-12 h-12 px-2 py-2 rounded-full bg-transparent border-x-2 border-y-2 border-black text-black cursor-pointer"
         style={{ display: "none" }}
       >
-        <svg fill="none" width="100%" height="100%" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
-          <path
-            d="M8 7C9.65685 7 11 5.65685 11 4C11 2.34315 9.65685 1 8 1C6.34315 1 5 2.34315 5 4C5 5.65685 6.34315 7 8 7Z"
-            fill="currentColor"
-          />
-          <path d="M14 12C14 10.3431 12.6569 9 11 9H5C3.34315 9 2 10.3431 2 12V15H14V12Z" fill="currentColor" />
-        </svg>
+        {userIcon()}
         <div className="absolute top-14 left-1/2 -translate-x-1/2 px-2 py-2 text-black bg-white text-nowrap"></div>
       </div>
     </main>
