@@ -2,10 +2,16 @@ import axios from "axios";
 
 axios.defaults.timeout = 3000;
 
+// VITE_BASE_URL = http://192.168.0.75:3000
 const baseURL = import.meta.env.VITE_BASE_URL;
 
+const handleErr = (err) => {
+  console.error(err);
+  return { message: "Failed Connect API" };
+};
+
 /**
- * 로그인 
+ * 로그인
  */
 export const loginCheckFetch = async (credentials) => {
   try {
@@ -47,7 +53,6 @@ export const registerFetch = async (userData) => {
 /**
  * 회사멤버 전체 리스트
  */
-export const getAllUserFetch = async () => {
 export const getUserListFetch = async () => {
   try {
     const res = await axios.get(`${baseURL}/api/office_user_all`);
@@ -100,6 +105,7 @@ export const getDailyFetch = async (sabeon) => {
   }
 };
 
+
 /**
  * 개인 별 인사정보
  */
@@ -111,4 +117,3 @@ export const getUserInfoFetch = async (sabeon) => {
     return handleErr(err);
   }
 };
-

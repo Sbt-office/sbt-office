@@ -1,11 +1,11 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { getAllUserFetch } from "@/utils/api";
+import { getUserListFetch } from "@/utils/api";
 
 export const useInfiniteUserListQuery = (pageSize = 16) => {
   return useInfiniteQuery({
     queryKey: ['infiniteUserInfo'],
     queryFn: async ({ pageParam = 1 }) => {
-      const response = await getAllUserFetch();
+      const response = await getUserListFetch();
       const start = (pageParam - 1) * pageSize;
       const end = start + pageSize;
       const items = response.slice(start, end);
