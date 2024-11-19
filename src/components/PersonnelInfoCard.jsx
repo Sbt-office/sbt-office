@@ -4,7 +4,10 @@ import profile from "@/assets/images/profile.png";
 const InfoRow = ({ label, value }) => {
   return (
     <div className="flex w-48 gap-2">
-      <span className="font-semibold w-14 text-black/70 truncate overflow-hidden text-base">{`${label} :`}</span>
+      <div className="font-semibold w-14 text-black/70 truncate overflow-hidden text-base flex items-center justify-around">
+        <p>{label}</p>
+        <span>:</span>
+      </div>
       <span className="text-gray-800 truncate overflow-hidden w-full" title={value}>
         {value}
       </span>
@@ -13,11 +16,7 @@ const InfoRow = ({ label, value }) => {
 };
 
 const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
-  const { title: name, teamName } = personnelInfo;
-
-  const userName = name.slice(0, 3);
-  const levelSplit = name.slice(3).split(" ").join("");
-  const level = levelSplit === "M" ? "Manager" : levelSplit === "S/M" ? "Senior Manager" : name.slice(3);
+  const { name, teamName, seatNo } = personnelInfo;
 
   return (
     <div className="w-96 bg-white shadow-lg rounded-md overflow-hidden z-10 absolute bottom-4 right-4">
@@ -26,12 +25,12 @@ const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
       </div>
       <div className="p-6">
         <div className="flex items-center space-x-8">
-          <div className="space-y-2">
-            <InfoRow label="성함" value={userName} />
+          <div className="space-y-2 ">
+            <InfoRow label="성함" value={name} />
             <InfoRow label="부서" value={teamName} />
-            <InfoRow label="직급" value={level} />
+            <InfoRow label="직급" value="" />
             <InfoRow label="H.P" value="010-1234-5678" />
-            <InfoRow label="자리" value="Green_01_01" />
+            <InfoRow label="자리" value={seatNo} />
           </div>
           <div className="w-28 h-36 rounded-md bg-sbtLightBlue/70 flex items-center justify-center text-gray-600">
             <img

@@ -10,6 +10,9 @@ const handleErr = (err) => {
   return { message: "Failed Connect API" };
 };
 
+/**
+ * 로그인 
+ */
 export const loginCheckFetch = async (credentials) => {
   try {
     const res = await axios.post(`${baseURL}/login`, credentials);
@@ -29,6 +32,9 @@ export const loginCheckFetch = async (credentials) => {
   }
 };
 
+/**
+ * 회원가입
+ */
 export const registerFetch = async (userData) => {
   try {
     const res = await axios.post(`${baseURL}/register`, userData);
@@ -44,6 +50,9 @@ export const registerFetch = async (userData) => {
   }
 };
 
+/**
+ * 회사멤버 전체 리스트
+ */
 export const getAllUserFetch = async () => {
   try {
     const res = await axios.get(`${baseURL}/api/office_user_all`);
@@ -64,3 +73,4 @@ export const getUserInfoFetch = async (sabeon) => {
     return handleErr(err);
   }
 };
+

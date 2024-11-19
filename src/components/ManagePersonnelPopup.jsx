@@ -1,98 +1,127 @@
-import { useState } from "react";
-import { IoStarOutline, IoStar } from "react-icons/io5";
+import { useState, useEffect } from "react";
+// import { IoStarOutline, IoStar } from "react-icons/io5";
 import {
   MdKeyboardArrowLeft,
   MdKeyboardArrowRight,
   MdOutlineKeyboardDoubleArrowLeft,
   MdOutlineKeyboardDoubleArrowRight,
 } from "react-icons/md";
-import { sidebarItems } from "../data/sidebarItems";
+
 import { Checkbox } from "antd";
+import { useSearch } from "@/hooks/useSearch";
+import { IoMdClose } from "react-icons/io";
+
+import { SearchInput } from "./SearchInput";
+import { useInfiniteUserListQuery } from "@/hooks/useInfiniteUserListQuery";
 
 import profile from "@/assets/images/profile.png";
-import { useSearch } from "@/hooks/useSearch";
-import { SearchInput } from "./SearchInput";
+import { usePopupStore } from "./../store/usePopupStore";
 
 const ManagePersonnelPopup = () => {
   const [currentPage, setCurrentPage] = useState(1);
-  const [favorites, setFavorites] = useState({});
+  // const [favorites, setFavorites] = useState({});
+  const setFavorites = useState({});
+
   const [selectedItems, setSelectedItems] = useState({});
   const [selectedDepartment, setSelectedDepartment] = useState("");
 
-  // 모든 직원 데이터 추출
+  const { togglePopup } = usePopupStore();
+
+  const itemsPerPage = 16;
+
+  const { data: infiniteData, fetchNextPage } = useInfiniteUserListQuery(itemsPerPage);
+
+  // 전체 직원 데이터 가져오기
   const getAllEmployees = () => {
-    const employees = [];
-    const extractEmployees = (items, parentTitle = "") => {
-      items.forEach((item) => {
-        if (item.title && item.id && !item.title.includes("com")) {
-          employees.push({
-            id: item.id,
-            name: item.title,
-            department: parentTitle,
-            phone: "01025491001",
-            email: "korea@sbtglobal.com",
-          });
-        }
-        if (item.subItems) {
-          extractEmployees(item.subItems, item.title);
-        }
-      });
-    };
-    extractEmployees(sidebarItems);
-    return employees;
+    if (!infiniteData?.pages) return [];
+
+    return infiniteData.pages.flatMap((page) =>
+      page.items.map((person) => ({
+        id: person.ou_sabeon,
+        name: person.ou_nm,
+        department: person.ou_team_name || "소속 미지정",
+        phone: "01025491001",
+        email: "korea@sbtglobal.com",
+      }))
+    );
   };
 
-  const employees = getAllEmployees();
-  const {
-    searchTerm,
-    handleSearch,
-    filteredItems: filteredEmployees,
-  } = useSearch({
-    items: employees,
+  // 검색과 필터링은 전체 데이터로 수행
+  const { searchTerm, handleSearch } = useSearch({
+    items: getAllEmployees(),
     searchFields: ["name", "department"],
   });
 
-  // 'com'이 포함된 직원 필터링
-  const filteredEmployeesWithoutCom = filteredEmployees.filter((emp) => !emp.id.includes("com"));
+  // 현재 페이지의 데이터만 가져오기
+  const getCurrentPageData = () => {
+    if (!infiniteData?.pages) return [];
 
-  const itemsPerPage = 16;
-  const pageCount = Math.max(1, Math.ceil(filteredEmployeesWithoutCom.length / itemsPerPage));
+    const allEmployees = getAllEmployees();
+    let filteredEmployees = allEmployees;
 
-  // 현재 페이지에 표시할 직원 목록을 계산
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = Math.min(startIndex + itemsPerPage, filteredEmployeesWithoutCom.length);
+    if (searchTerm) {
+      filteredEmployees = filteredEmployees.filter(
+        (emp) => emp.name.includes(searchTerm) || emp.department.includes(searchTerm)
+      );
+    }
 
-  // 부서 필터링 적용
-  const filteredByDepartment = selectedDepartment
-    ? filteredEmployeesWithoutCom.filter((emp) => emp.department === selectedDepartment)
-    : filteredEmployeesWithoutCom;
+    if (selectedDepartment) {
+      filteredEmployees = filteredEmployees.filter((emp) => emp.department === selectedDepartment);
+    }
 
-  const currentEmployees = filteredByDepartment.slice(startIndex, endIndex);
-
-  const handleFavorite = (id) => {
-    setFavorites((prev) => ({ ...prev, [id]: !prev[id] }));
+    const start = (currentPage - 1) * itemsPerPage;
+    const end = start + itemsPerPage;
+    return filteredEmployees.slice(start, end);
   };
+
+  const currentEmployees = getCurrentPageData();
+
+  const totalEmployees = infiniteData?.pages[0]?.totalItems || 0;
+  const pageCount = Math.ceil(totalEmployees / itemsPerPage);
+
+  const handlePageChange = async (newPage) => {
+    if (newPage < 1 || newPage > pageCount) return;
+
+    // 해당 페이지의 데이터가 없는 경우에만 fetchNextPage 호출
+    if (!infiniteData?.pages[newPage - 1]) {
+      await fetchNextPage({ pageParam: newPage });
+    }
+
+    setCurrentPage(newPage);
+    window.scrollTo(0, 0);
+  };
+
+  // const handleFavorite = (id) => {
+  //   setFavorites((prev) => ({ ...prev, [id]: !prev[id] }));
+  // };
 
   const handleSelect = (id) => {
     setSelectedItems((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const handlePageChange = (newPage) => {
-    if (newPage < 1 || newPage > pageCount) return;
-    setCurrentPage(newPage);
-    window.scrollTo(0, 0); // 페이지 변경 시 스크롤을 최상단으로 이동
-  };
-
   const handleDepartmentFilter = (department) => {
     setSelectedDepartment(department);
-    setCurrentPage(1); // 필터링 시 페이지를 1로 초기화
   };
+
+  useEffect(() => {
+    return () => {
+      setCurrentPage(1);
+      setFavorites({});
+      setSelectedItems({});
+      setSelectedDepartment("");
+    };
+  }, []);
 
   return (
     <div className="h-dvh text-black z-10 bg-white flex flex-col w-[calc(100vw-16rem)]">
       {/* 상단 타이틀 */}
-      <header className="bg-sbtLightBlue/75">
-        <h2 className="text-2xl font-semibold  w-full h-16 flex justify-center items-center">인사정보관리</h2>
+      <header className="bg-sbtLightBlue/75 relative">
+        <h2 className="text-2xl font-semibold w-full h-16 flex justify-center items-center">인사정보관리</h2>
+        <IoMdClose
+          size={30}
+          className="absolute right-5 top-4 cursor-pointer text-sbtDarkBlue hover:text-black"
+          onClick={togglePopup}
+        />
       </header>
       <div className="w-full h-full flex flex-col px-3 py-7">
         {/* 검색바 */}
@@ -105,8 +134,8 @@ const ManagePersonnelPopup = () => {
             className="border rounded p-1"
           >
             <option value="">전체</option>
-            {Array.from(new Set(employees.map((emp) => emp.department)))
-              .filter((department) => !department.includes("세일즈포스"))
+            {Array.from(new Set(getAllEmployees().map((emp) => emp.department)))
+              .filter(Boolean)
               .map((department) => (
                 <option key={department} value={department}>
                   {department}
@@ -119,7 +148,7 @@ const ManagePersonnelPopup = () => {
           {currentEmployees.map((emp) => (
             <div
               key={emp.id}
-              className="flex items-center gap-4 px-4 py-6 border-[0.1rem] border-sbtDarkBlue/50 rounded-lg hover:bg-sbtLightBlue2/40 h-36"
+              className="flex items-center gap-4 px-4 py-4 border-[0.1rem] border-sbtDarkBlue/50 rounded-lg hover:bg-sbtLightBlue2/40 h-36"
             >
               <Checkbox
                 checked={selectedItems[emp.id] || false}
@@ -145,16 +174,16 @@ const ManagePersonnelPopup = () => {
                   <div>{emp.email}</div>
                 </div>
               </div>
-              <button onClick={() => handleFavorite(emp.id)} className="text-xl text-sbtDarkBlue">
+              {/* <button onClick={() => handleFavorite(emp.id)} className="text-xl text-sbtDarkBlue">
                 {favorites[emp.id] ? <IoStar /> : <IoStarOutline />}
-              </button>
+              </button> */}
             </div>
           ))}
         </div>
 
         {/* 페이지네이션 */}
-        {filteredByDepartment.length > itemsPerPage && (
-          <div className="flex justify-center items-center gap-3 mt-10">
+        {pageCount > 1 && (
+          <div className="flex justify-center items-center gap-3 fixed bottom-20 right-0 py-3 w-[calc(100vw-16rem)]">
             {/* 3페이지씩 넘기기 버튼 */}
             <button
               onClick={() => handlePageChange(currentPage - 3)}
@@ -166,7 +195,8 @@ const ManagePersonnelPopup = () => {
                 className={`${currentPage <= 3 ? "text-gray-400" : "hover:text-sbtDarkBlue"}`}
               />
             </button>
-            {/* 이전 페이지 화살표 */}
+
+            {/* 이전 페이지 */}
             <button
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}
@@ -174,25 +204,21 @@ const ManagePersonnelPopup = () => {
             >
               <MdKeyboardArrowLeft
                 size={22}
-                className={` ${currentPage === 1 ? "text-gray-400" : "hover:text-sbtDarkBlue"}`}
+                className={`${currentPage === 1 ? "text-gray-400" : "hover:text-sbtDarkBlue"}`}
               />
             </button>
 
-            {/* 페이지 번호 */}
+            {/* 페이지 번호들 */}
             {[...Array(pageCount)].map((_, i) => {
               const pageNumber = i + 1;
 
               // 32명 미만일 경우 3페이지 이상은 표시하지 않음
-              if (filteredByDepartment.length <= itemsPerPage * 2 && pageNumber > 2) {
+              if (totalEmployees <= itemsPerPage * 2 && pageNumber > 2) {
                 return null;
               }
 
               const windowStart = Math.max(1, currentPage - 1);
-              const windowEnd = Math.min(
-                pageCount,
-                // 32명 미만일 경우 최대 2페이지까지만 표시
-                filteredByDepartment.length <= itemsPerPage * 2 ? 2 : windowStart + 2
-              );
+              const windowEnd = Math.min(pageCount, totalEmployees <= itemsPerPage * 2 ? 2 : windowStart + 2);
 
               if (pageNumber >= windowStart && pageNumber <= windowEnd) {
                 return (
@@ -210,7 +236,7 @@ const ManagePersonnelPopup = () => {
               return null;
             })}
 
-            {/* 다음 페이지 화살표 */}
+            {/* 다음 페이지 */}
             <button
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage === pageCount}
@@ -218,7 +244,7 @@ const ManagePersonnelPopup = () => {
             >
               <MdKeyboardArrowRight
                 size={22}
-                className={` ${currentPage === pageCount ? "text-gray-400" : "hover:text-sbtDarkBlue"}`}
+                className={`${currentPage === pageCount ? "text-gray-400" : "hover:text-sbtDarkBlue"}`}
               />
             </button>
 
@@ -230,7 +256,7 @@ const ManagePersonnelPopup = () => {
             >
               <MdOutlineKeyboardDoubleArrowRight
                 size={22}
-                className={` ${currentPage >= pageCount - 2 ? "text-gray-400" : "hover:text-sbtDarkBlue"}`}
+                className={`${currentPage >= pageCount - 2 ? "text-gray-400" : "hover:text-sbtDarkBlue"}`}
               />
             </button>
           </div>
