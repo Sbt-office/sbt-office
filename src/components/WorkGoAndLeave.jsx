@@ -1,20 +1,20 @@
-import useWorkStatusStore from "../store/useWorkStatusStore";
+import useWorkStatusStore from "@/store/useWorkStatusStore";
 
 const WorkGoAndLeave = () => {
   const { isWorking, setIsWorking, setShowModal } = useWorkStatusStore();
 
   const handleWorkStart = () => {
     setIsWorking(true);
-    setShowModal(true, 'start');
+    setShowModal(true, "start");
   };
 
   const handleWorkEnd = () => {
     setIsWorking(false);
-    setShowModal(true, 'end');
+    setShowModal(true, "end");
   };
 
   return (
-    <div className="w-full px-5 flex flex-col h-32 justify-center">
+    <div className="w-full p-5 flex flex-col h-36 justify-center">
       <div className="flex flex-col justify-center text-sm font-semibold text-black/70">
         <span>안녕하세요.</span>
         <span>전성웅 매니저님</span>
