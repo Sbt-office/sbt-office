@@ -3,6 +3,7 @@ import { useAuthStore } from "@/store/authStore";
 import { loginCheckFetch, registerFetch } from "@/utils/api";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/useToast";
+import { setCookie } from "@/utils/cookie";
 
 export const useLogin = () => {
   const navigate = useNavigate();
@@ -12,8 +13,9 @@ export const useLogin = () => {
   return useMutation({
     mutationFn: loginCheckFetch,
     onSuccess: (data) => {
-      if (data.success) {
+      if (data.user.status === "200") {
         setUser(data);
+        setCookie("sabeon", data.sabeon, 1);
         addToast({ type: "success", message: "로그인에 성공했습니다." });
         navigate("/main");
       } else {
