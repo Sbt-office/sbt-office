@@ -19,8 +19,7 @@ import { usePopupStore } from "./../store/usePopupStore";
 
 const ManagePersonnelPopup = () => {
   const [currentPage, setCurrentPage] = useState(1);
-  // const [favorites, setFavorites] = useState({});
-  const setFavorites = useState({});
+  const [favorites, setFavorites] = useState({});
 
   const [selectedItems, setSelectedItems] = useState({});
   const [selectedDepartment, setSelectedDepartment] = useState("");
@@ -113,7 +112,7 @@ const ManagePersonnelPopup = () => {
   }, []);
 
   return (
-    <div className="h-dvh text-black z-10 bg-white flex flex-col w-[calc(100vw-16rem)]">
+    <div className="h-dvh text-black z-10 bg-white/50 flex flex-col w-[calc(100vw-16rem)]">
       {/* 상단 타이틀 */}
       <header className="bg-sbtLightBlue/75 relative">
         <h2 className="text-2xl font-semibold w-full h-16 flex justify-center items-center">인사정보관리</h2>
@@ -183,7 +182,7 @@ const ManagePersonnelPopup = () => {
 
         {/* 페이지네이션 */}
         {pageCount > 1 && (
-          <div className="flex justify-center items-center gap-3 fixed bottom-20 right-0 py-3 w-[calc(100vw-16rem)]">
+          <div className="flex justify-center items-center gap-3 fixed bottom-20 left-[56.3%] transform -translate-x-1/2 py-3 w-64">
             {/* 3페이지씩 넘기기 버튼 */}
             <button
               onClick={() => handlePageChange(currentPage - 3)}

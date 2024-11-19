@@ -127,7 +127,7 @@ const SideBar = () => {
                               id: person.ou_sabeon,
                               name: person.ou_nm,
                               teamName: person.ou_team_name,
-                              seatNo : person.ou_seat_cd
+                              seatNo: person.ou_seat_cd,
                             });
                           }}
                           className={`${
