@@ -17,6 +17,7 @@ export const loginCheckFetch = async (credentials) => {
       return {
         success: true,
         user: res.data,
+        sabeon: credentials.sabeon,
       };
     }
     throw new Error(res.data.message || "로그인에 실패했습니다.");
@@ -46,6 +47,18 @@ export const registerFetch = async (userData) => {
 export const getAllUserFetch = async () => {
   try {
     const res = await axios.get(`${baseURL}/api/office_user_all`);
+    return res.data;
+  } catch (err) {
+    return handleErr(err);
+  }
+};
+
+/**
+ * 개인 별 인사정보
+ */
+export const getUserInfoFetch = async (sabeon) => {
+  try {
+    const res = await axios.get(`${baseURL}/api/office_user/${sabeon}`);
     return res.data;
   } catch (err) {
     return handleErr(err);
