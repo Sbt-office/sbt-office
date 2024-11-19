@@ -1,25 +1,64 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { sidebarItems } from "../data/sidebarItems";
 
 import { IoIdCardOutline, IoSettingsOutline } from "react-icons/io5";
-import { HiOutlineMenu, HiMenuAlt1, HiMenuAlt2 } from "react-icons/hi";
-import { MdOutlineSpeakerGroup, MdSpeakerGroup } from "react-icons/md";
+import { HiOutlineMenu, HiMenuAlt1 } from "react-icons/hi";
+// import {  HiMenuAlt2 } from "react-icons/hi";
 
 import logo from "@/assets/images/logo.png";
 import PersonnelInfoCard from "./PersonnelInfoCard";
 import ManagePersonnelPopup from "./ManagePersonnelPopup";
-import { usePopupStore } from "../store/usePopupStore";
+import { usePopupStore } from "@/store/usePopupStore";
 import WorkGoAndLeave from "./WorkGoAndLeave";
+import { useAllUserListQuery } from "../hooks/useAllUserListQuery";
 
 const SideBar = () => {
   const [openSection, setOpenSection] = useState(null);
   const [openSubItem, setOpenSubItem] = useState(null);
   const [selectedItem, setSelectedItem] = useState(null);
-  const [openNestedSubItem, setOpenNestedSubItem] = useState(null);
-  const [personnelInfo, setPersonnelInfo] = useState({ id: "", title: "" });
+  const [personnelInfo, setPersonnelInfo] = useState({ id: "", name: "" });
+
+  const { data } = useAllUserListQuery();
 
   const { isPopupOpen, togglePopup } = usePopupStore();
+
+  const organizedData = useMemo(() => {
+    if (!data) return [];
+    // 부서별로 그룹화
+    const departmentGroups = data.reduce((acc, person) => {
+      if (person.ou_team_name) {
+        if (!acc[person.ou_team_name]) {
+          acc[person.ou_team_name] = [];
+        }
+        acc[person.ou_team_name].push(person);
+      }
+      return acc;
+    }, {});
+
+    // 부서가 없는 사람들
+    const noTeamPeople = data.filter((person) => !person.ou_team_name);
+
+    const result = [
+      // 부서별 그룹
+      ...Object.entries(departmentGroups).map(([teamName, members]) => ({
+        title: teamName,
+        subItems: members.map((member) => ({
+          ...member,
+          title: member.ou_nm,
+        })),
+      })),
+      // 부서 없는 사람들을 마지막에 추가
+      {
+        title: "소속 미지정",
+        subItems: noTeamPeople.map((person) => ({
+          ...person,
+          title: person.ou_nm,
+        })),
+      },
+    ];
+
+    return result;
+  }, [data]);
 
   const handleItemClick = (itemPath) => {
     setSelectedItem(itemPath);
@@ -29,7 +68,7 @@ const SideBar = () => {
     if (openSection === index) {
       setOpenSection(null);
       setSelectedItem(null);
-      setPersonnelInfo({ id: "", title: "" });
+      setPersonnelInfo({ id: "", name: "" });
       return;
     }
     setOpenSection(index);
@@ -40,146 +79,15 @@ const SideBar = () => {
     if (openSubItem === index) {
       setOpenSubItem(null);
       setSelectedItem(null);
-      setPersonnelInfo({ id: "", title: "" });
+      setPersonnelInfo({ id: "", name: "" });
       return;
     }
     setOpenSubItem(index);
   };
 
-  const toggleNestedSubItem = (index) => {
-    if (openNestedSubItem === index) {
-      setOpenNestedSubItem(null);
-      setSelectedItem(null);
-      setPersonnelInfo({ id: "", title: "" });
-      return;
-    }
-    setOpenNestedSubItem(index);
-  };
-
   const handleCloseInfoCard = () => {
     setSelectedItem(null);
-    setPersonnelInfo({ id: "", title: "" });
-  };
-
-  // 중첩 서브 아이템 렌더링
-  const renderNestedItems = (nestedItems, index, subIndex, teamName, teamPartName) => {
-    return nestedItems.map((nestedItem, nestedIndex) => (
-      <li
-        key={nestedItem.id}
-        className={`${
-          selectedItem === `${index}-${subIndex}-${nestedIndex}` ? "text-sbtDarkBlue font-semibold" : "text-[#424242]"
-        } cursor-pointer justify-center gap-2 transition duration-150 ease-in-out transform flex flex-col py-1`}
-      >
-        <div
-          onClick={() => {
-            if (nestedItem.subItems) {
-              toggleNestedSubItem(nestedIndex);
-            }
-            handleItemClick(`${index}-${subIndex}-${nestedIndex}`);
-            if (!nestedItem.id.includes("com") && nestedItem.id) {
-              setPersonnelInfo({
-                id: nestedItem.id,
-                title: nestedItem.title,
-                teamName,
-                teamPartName,
-              });
-            }
-          }}
-          className="flex items-center gap-2"
-        >
-          {nestedItem.subItems ? <HiMenuAlt2 size={15} /> : <IoIdCardOutline size={17} />}
-          {nestedItem.title}
-        </div>
-        {nestedItem.subItems && openNestedSubItem === nestedIndex && (
-          <motion.ul
-            initial={{ height: 0 }}
-            animate={{ height: "auto" }}
-            exit={{ height: 0 }}
-            transition={{ duration: 0.08 }}
-            className="font-normal flex flex-col py-1 px-5"
-          >
-            {nestedItem.subItems.map((deepNestedItem, deepNestedIndex) => (
-              <li
-                key={deepNestedItem.id}
-                className={`${
-                  selectedItem === `${index}-${subIndex}-${nestedIndex}-${deepNestedIndex}`
-                    ? "text-sbtDarkBlue font-semibold"
-                    : "text-[#424242]"
-                } cursor-pointer flex py-1 items-center gap-2 transition duration-150 ease-in-out transform`}
-                onClick={() => {
-                  handleItemClick(`${index}-${subIndex}-${nestedIndex}-${deepNestedIndex}`);
-                  if (!deepNestedItem.id.includes("com") && deepNestedItem.id) {
-                    setPersonnelInfo({
-                      id: deepNestedItem.id,
-                      title: deepNestedItem.title,
-                      teamName,
-                      teamPartName,
-                    });
-                  }
-                }}
-              >
-                <IoIdCardOutline size={17} />
-                {deepNestedItem.title}
-              </li>
-            ))}
-          </motion.ul>
-        )}
-      </li>
-    ));
-  };
-
-  // 서브 아이템 렌더링
-  const renderSubItems = (subItems, index) => {
-    return subItems.map((subItem, subIndex) => {
-      const teamName = sidebarItems[index].title;
-      const teamPartName = subItem.subItems && subItem.subItems.length > 1 ? subItem.title : null;
-
-      return (
-        <li key={subIndex} className="list-none flex py-1 flex-col">
-          <div
-            onClick={() => {
-              toggleSubItem(subIndex);
-              handleItemClick(`${index}-${subIndex}`);
-              if (!subItem.id?.includes("com") && subItem.id) {
-                setPersonnelInfo({
-                  id: subItem.id,
-                  title: subItem.title,
-                  teamName,
-                  teamPartName,
-                });
-              } else {
-                setPersonnelInfo({ id: "", title: "" });
-              }
-            }}
-            className={`${
-              selectedItem === `${index}-${subIndex}` ? "text-sbtDarkBlue font-semibold" : "text-[#424242]"
-            } cursor-pointer flex items-center gap-2`}
-          >
-            {subItem.subItems ? (
-              <span className="mr-1">
-                {openSubItem === subIndex ? <MdSpeakerGroup size={20} /> : <MdOutlineSpeakerGroup size={20} />}
-              </span>
-            ) : (
-              <span className="w-6 text-center font-bold">
-                {subItem.title.includes("담당") || subItem.title.includes("팀") ? "-" : <IoIdCardOutline size={17} />}
-              </span>
-            )}
-            {subItem.title}
-          </div>
-          {subItem.subItems && openSubItem === subIndex && (
-            <motion.ul
-              initial={{ height: 0 }}
-              animate={{ height: "auto" }}
-              exit={{ height: 0 }}
-              transition={{ duration: 0.08 }}
-              className="pl-7 mt-2"
-            >
-              {renderNestedItems(subItem.subItems, index, subIndex, teamName, teamPartName)}
-            </motion.ul>
-          )}
-        </li>
-      );
-    });
+    setPersonnelInfo({ id: "", name: "" });
   };
 
   return (
@@ -190,7 +98,7 @@ const SideBar = () => {
             <img src={logo} alt="logo" draggable={false} className="h-8 object-contain" />
           </header>
           <ul className="flex flex-col px-8 py-[5.5rem]">
-            {sidebarItems.map((item, index) => (
+            {organizedData.map((group, index) => (
               <li key={index} className="list-none mb-5">
                 <div
                   onClick={() => toggleSection(index)}
@@ -198,12 +106,10 @@ const SideBar = () => {
                     selectedItem === `${index}` ? "text-sbtDarkBlue font-semibold" : "text-[#424242]"
                   } cursor-pointer flex items-center gap-2 transition duration-150 ease-in-out transform`}
                 >
-                  {item.subItems && (
-                    <span>{openSection === index ? <HiMenuAlt1 size={18} /> : <HiOutlineMenu size={18} />}</span>
-                  )}
-                  {item.title}
+                  <span>{openSection === index ? <HiMenuAlt1 size={18} /> : <HiOutlineMenu size={18} />}</span>
+                  {group.title}
                 </div>
-                {item.subItems && openSection === index && (
+                {openSection === index && (
                   <motion.ul
                     initial={{ height: 0 }}
                     animate={{ height: "auto" }}
@@ -211,12 +117,34 @@ const SideBar = () => {
                     transition={{ duration: 0.08 }}
                     className="pl-5 mt-2 text-[0.9rem]"
                   >
-                    {renderSubItems(item.subItems, index)}
+                    {group.subItems.map((person, subIndex) => (
+                      <li key={person.ou_seq} className="list-none flex py-1">
+                        <div
+                          onClick={() => {
+                            toggleSubItem(subIndex);
+                            handleItemClick(`${index}-${subIndex}`);
+                            setPersonnelInfo({
+                              id: person.ou_sabeon,
+                              name: person.ou_nm,
+                              teamName: person.ou_team_name,
+                              seatNo: person.ou_seat_cd,
+                            });
+                          }}
+                          className={`${
+                            selectedItem === `${index}-${subIndex}`
+                              ? "text-sbtDarkBlue font-semibold"
+                              : "text-[#424242]"
+                          } cursor-pointer flex items-center gap-2`}
+                        >
+                          <IoIdCardOutline size={17} />
+                          {person.ou_nm}
+                        </div>
+                      </li>
+                    ))}
                   </motion.ul>
                 )}
               </li>
             ))}
-            {/* 상단 타이틀 */}
             <div
               className="flex items-center gap-2 mb-6 cursor-pointer"
               onClick={togglePopup}
