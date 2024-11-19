@@ -1,23 +1,54 @@
+import { useEffect } from "react";
 import useWorkStatusStore from "@/store/useWorkStatusStore";
+import { useUserStore } from "@/store/userStore";
+import { useUserQuery } from "@/hooks/useUserQuery";
+import { IoWarningOutline } from "react-icons/io5";
+import { useThrottle } from "../hooks/useThrottle";
 
 const WorkGoAndLeave = () => {
   const { isWorking, setIsWorking, setShowModal } = useWorkStatusStore();
 
-  const handleWorkStart = () => {
+  const { userInfo, setUserInfo } = useUserStore();
+  const { data, isLoading, error } = useUserQuery();
+
+  useEffect(() => {
+    if (data) {
+      setUserInfo(data);
+    }
+  }, [data, setUserInfo]);
+
+  const handleWorkStart = useThrottle(() => {
     setIsWorking(true);
     setShowModal(true, "start");
-  };
+  }, 1000);
 
-  const handleWorkEnd = () => {
+  const handleWorkEnd = useThrottle(() => {
     setIsWorking(false);
     setShowModal(true, "end");
-  };
+  }, 1000);
+
+  if (isLoading)
+    return <div className="text-center p-8 text-sbtDarkBlue text-base font-semibold">사용자 정보 불러오는 중...</div>;
+  if (error)
+    return (
+      <div className="text-red-500 text-sm font-semibold w-full p-6 flex items-center justify-center gap-2 mb-10">
+        <IoWarningOutline size={30} />
+        <span>사용자 정보를 불러오는데 실패했습니다.</span>
+      </div>
+    );
+  if (!userInfo)
+    return (
+      <div className="text-red-500 text-sm font-semibold w-full p-6 flex items-center justify-center gap-2 mb-8">
+        <IoWarningOutline size={25} />
+        <span>사용자 정보가 없습니다.</span>
+      </div>
+    );
 
   return (
     <div className="w-full p-5 flex flex-col h-36 justify-center">
-      <div className="flex flex-col justify-center text-sm font-semibold text-black/70">
+      <div className="flex justify-start items-center px-1 py-2 text-sm font-semibold text-black/70 gap-1">
         <span>안녕하세요.</span>
-        <span>전성웅 매니저님</span>
+        <span>{userInfo.ou_nm}님</span>
       </div>
       <div className="flex items-center w-full gap-3 py-2">
         <button

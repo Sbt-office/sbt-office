@@ -52,3 +52,15 @@ export const getAllUserFetch = async () => {
     return handleErr(err);
   }
 };
+
+/**
+ * 개인 별 인사정보
+ */
+export const getUserInfoFetch = async (sabeon) => {
+  try {
+    const res = await axios.get(`${baseURL}/api/office_user/${sabeon}`);
+    return res.data;
+  } catch (err) {
+    return handleErr(err);
+  }
+};
