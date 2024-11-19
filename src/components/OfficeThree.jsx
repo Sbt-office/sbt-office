@@ -20,6 +20,7 @@ import { clearScene } from "../utils/three/SceneCleanUp";
 import { usePopupStore } from "../store/usePopupStore";
 import { getDailyListFetch, getUserListFetch } from "../utils/api";
 import { userIcon } from "../utils/icon";
+import useWorkStatusStore from "../store/useWorkStatusStore";
 
 const OfficeThree = () => {
   const mainRef = useRef();
@@ -36,11 +37,11 @@ const OfficeThree = () => {
   const sceneRef = useRef(new THREE.Scene());
 
   const { isPopupOpen } = usePopupStore();
+  const { isWorking } = useWorkStatusStore();
 
   const [userList, setUserList] = useState([]);
   const [dailyList, setDailyList] = useState([]);
   const [isLoaded, setIsLoaded] = useState(false);
-  const [isRefresh, setIsRefresh] = useState(false);
 
   // CAMERA
   const setupCamera = () => {
@@ -163,6 +164,7 @@ const OfficeThree = () => {
               ...sitRef.current[node.name],
               obj: node,
             };
+            createLabel(node, node.name);
           }
         });
         sceneRef.current.add(gltf.scene);
@@ -270,7 +272,7 @@ const OfficeThree = () => {
   useEffect(() => {
     getAllUser();
     getDailyList();
-  }, [isRefresh]);
+  }, [isWorking]);
 
   useEffect(() => {
     if (userList.length > 0 && dailyList.length > 0 && isLoaded) drawUserIcon();
@@ -297,12 +299,6 @@ const OfficeThree = () => {
       >
         {userIcon()}
         <div className="absolute top-14 left-1/2 -translate-x-1/2 px-2 py-2 text-black bg-white text-nowrap"></div>
-      </div>
-      <div
-        className="absolute top-4 right-4 bg-white text-black px-2 py-2"
-        onClick={() => setIsRefresh((prev) => !prev)}
-      >
-        테스트
       </div>
     </main>
   );

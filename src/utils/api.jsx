@@ -62,15 +62,29 @@ export const getDailyListFetch = async () => {
 };
 
 // status => 1: 출근 2: 퇴근
-export const setDailyFetch = async (sabeon, status) => {
+export const setDailyFetch = async (data) => {
   try {
-    const params = { sabeon, status };
-    const res = await axios.post(`${baseURL}/api/office_daily_checkIn`, params);
+    const res = await axios.post(`${baseURL}/api/office_daily_checkIn`, data);
     if (res.status === 200) {
-      if (res.data.status === "200") return { ...res.data.data, userStatus: status === 1 };
+      if (res.data.status === "200") {
+        if (res.data.message === "출근정보 존재") {
+        } else return { userStatus: data.status };
+      }
       throw new Error(res.data.message);
     }
     throw new Error(res.message);
+  } catch (err) {
+    throw new Error(err.message);
+  }
+};
+
+export const getDailyFetch = async (sabeon) => {
+  try {
+    const res = await axios.get(`${baseURL}/api/office_daily/${sabeon}`);
+    if (res.status === 200) {
+      console.log(res.data.data);
+      if (res.data.status === "200") return res.data;
+    }
   } catch (err) {
     throw new Error(err.message);
   }
