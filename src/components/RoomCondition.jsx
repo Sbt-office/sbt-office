@@ -1,49 +1,38 @@
 import React from "react";
-import useSocketStore from "../store/socketStore";
 import Socket from "./Socket";
+import LineChart from "./Chart/LineChart";
 
 const RoomCondition = ({ conditionRef }) => {
-  const { co2, temp, humidity, dist } = useSocketStore();
-
-  const convertDistance = (distance) => {
-    if (dist > 1000) return (dist / 1000).toFixed(2) + " m";
-    else if (dist > 10) return (dist / 10).toFixed(2) + " cm";
-    else return dist + " mm";
-  };
-
-  const tableData = [
-    {
-      name: "이산화탄소",
-      value: co2 + " ppm",
-    },
-    {
-      name: "온도",
-      value: temp + " °C",
-    },
-    {
-      name: "습도",
-      value: humidity + " %",
-    },
-    {
-      name: "거리센서",
-      value: convertDistance(dist),
-    },
-  ];
-
   return (
     <div
       ref={conditionRef}
-      className="absolute top-4 left-4 px-2 py-2 bg-white/75 text-black flex flex-col gap-4 rounded-lg overflow-hidden backdrop-blur-sm text-nowrap"
+      className="absolute top-4 left-4 px-2 py-4 z-50 bg-white/75 text-black flex flex-col gap-4 rounded-lg overflow-hidden backdrop-blur-sm text-nowrap"
     >
-      <div className="font-bold">Green_01</div>
+      <div className="font-bold px-2">Green_01</div>
       <table>
         <tbody>
-          {tableData.map((item, idx) => (
+          {/* {tableData.map((item, idx) => (
             <tr key={"tr" + idx}>
               <td className="px-2 py-1">{item.name}</td>
               <td className="px-2 py-1">{item.value}</td>
             </tr>
-          ))}
+          ))} */}
+          <tr>
+            <td className="px-2 py-1">
+              <LineChart type={"온도"} />
+            </td>
+            <td className="px-2 py-1">
+              <LineChart type={"습도"} />
+            </td>
+          </tr>
+          <tr>
+            <td className="px-2 py-1">
+              <LineChart type={"이산화탄소"} />
+            </td>
+            <td className="px-2 py-1">
+              <LineChart type={"거리센서"} />
+            </td>
+          </tr>
         </tbody>
       </table>
       <Socket />

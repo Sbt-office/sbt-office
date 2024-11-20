@@ -25,6 +25,7 @@
     "compression": "^1.7.5",
     "crypto-js": "^4.2.0",
     "dayjs": "^1.11.13",
+    "echarts-for-react": "^3.0.2",
     "express": "^4.21.1",
     "framer-motion": "^11.11.13",
     "js-cookie": "^3.0.5",
