@@ -18,6 +18,7 @@ export const useUpdatePersonnel = () => {
         insa_info: {
           hp: updateData.insa_info.hp,
           level: updateData.insa_info.level,
+          profile_img: updateData.insa_info.profile_img,
         },
       });
     },
