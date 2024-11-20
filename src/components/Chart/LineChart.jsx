@@ -14,24 +14,17 @@ const LineChart = ({ type }) => {
   const [options, setOptions] = useState({});
   const [valueArray, setValueArray] = useState([]);
 
-  //   const convertDistance = (distance) => {
-  //     if (dist > 1000) return (dist / 1000).toFixed(2) + " m";
-  //     else if (dist > 10) return (dist / 10).toFixed(2) + " cm";
-  //     else return dist + " mm";
-  //   };
-
   const drawChart = () => {
     setOptions({
       title: {
         text: type,
       },
+      grid: {
+        containLabel: true,
+        left: 3,
+      },
       tooltip: {
         trigger: "axis",
-        // formatter: function (params) {
-        //   params = params[0];
-        //   var date = new Date(params.name);
-        //   return date.getDate() + "/" + (date.getMonth() + 1) + "/" + date.getFullYear() + " : " + params.value[1];
-        // },
         axisLabel: {
           hideOverlap: true,
         },
@@ -51,11 +44,13 @@ const LineChart = ({ type }) => {
       yAxis: {
         type: "value",
         scale: true,
-        boundaryGap: ["30%", "30%"],
+        boundaryGap: [0, "10%"],
+        min: 0,
+        minInterval: 1,
         splitLine: {
           show: false,
         },
-        axisLine: { onZero: false },
+        axisLine: { onZero: true },
       },
       series: [
         {
@@ -74,6 +69,7 @@ const LineChart = ({ type }) => {
   else if (type === "거리센서") valueRef.current = dist;
 
   const updateValue = () => {
+    if (valueRef.current / 1 === 0) return;
     setValueArray((prevState) => {
       const newState = _.cloneDeep(prevState);
       const now = dayjs().format("YYYY-MM-DD HH:mm:ss");

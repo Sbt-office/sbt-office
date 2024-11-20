@@ -325,7 +325,7 @@ const OfficeThree = () => {
               Green_1 상태
             </div>
           </div>
-          {isCondition && <RoomCondition conditionRef={conditionRef} />}
+          {isCondition && <RoomCondition conditionRef={conditionRef} closeEvent={() => setIsCondition(false)} />}
           <div
             ref={labelRef}
             className="absolute top-0 left-0 w-12 h-12 px-2 py-2 rounded-full bg-white/75 backdrop-blur-sm border-x-2 border-y-2 border-black text-black cursor-pointer"
