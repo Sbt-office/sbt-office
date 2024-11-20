@@ -1,15 +1,19 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLogin } from "@/hooks/useAuth";
-import { Link, Navigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { useAuthStore } from "@/store/authStore";
 import { FaRegUser } from "react-icons/fa";
 import { RiLockUnlockLine, RiEyeLine, RiEyeOffLine } from "react-icons/ri";
 import logo from "@/assets/images/logo.png";
+import { getCookie } from "@/utils/cookie";
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
   const login = useLogin();
+  const navigate = useNavigate();
+  const location = useLocation();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const {
     register,
@@ -22,21 +26,31 @@ const Login = () => {
     },
   });
 
-  if (isAuthenticated) {
-    return <Navigate to="/main" replace />;
-  }
+  useEffect(() => {
+    const img = new Image();
+    img.src = logo;
+    img.onload = () => setIsLoaded(true);
+  }, []);
+
+  useEffect(() => {
+    const sabeonCookie = getCookie("sabeon");
+    if (isAuthenticated && sabeonCookie && location.pathname !== "/signin") {
+      navigate("/main", { replace: true });
+    }
+  }, [isAuthenticated, navigate, location.pathname]);
 
   const onSubmit = (data) => {
     login.mutate(data);
   };
 
+  if (!isLoaded) {
+    return null;
+  }
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="w-dvw h-dvh bg-sbtLightBlue2 text-black ">
-      <div
-        className="shadow-md flex flex-col gap-3 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white/70 p-4 rounded-lg max-w-md 
-      w-96"
-      >
-        <div className="w-full h-full flex justify-center items-center p-5">
+    <form onSubmit={handleSubmit(onSubmit)} className="w-dvw h-dvh bg-sbtLightBlue2 text-black">
+      <div className="shadow-md flex flex-col gap-3 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white/70 p-4 rounded-lg max-w-md w-96">
+        <div className="w-full h-[76px] flex justify-center items-center p-5">
           <img
             src={logo}
             alt="logo"
