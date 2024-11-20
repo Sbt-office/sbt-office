@@ -23,9 +23,10 @@ const SideBar = () => {
   const { isPopupOpen, togglePopup } = usePopupStore();
 
   const organizedData = useMemo(() => {
-    if (!data) return [];
+    if (!data || !Array.isArray(data)) return [];
+
     // 부서별로 그룹화
-    const departmentGroups = data.reduce((acc, person) => {
+    const departmentGroups = Array.from(data).reduce((acc, person) => {
       if (person.ou_team_name) {
         if (!acc[person.ou_team_name]) {
           acc[person.ou_team_name] = [];
@@ -36,7 +37,7 @@ const SideBar = () => {
     }, {});
 
     // 부서가 없는 사람들
-    const noTeamPeople = data.filter((person) => !person.ou_team_name);
+    const noTeamPeople = Array.from(data).filter((person) => !person.ou_team_name);
 
     const result = [
       // 부서별 그룹
@@ -45,6 +46,7 @@ const SideBar = () => {
         subItems: members.map((member) => ({
           ...member,
           title: member.ou_nm,
+          ou_insa_info: member.ou_insa_info ? JSON.parse(member.ou_insa_info) : {},
         })),
       })),
       // 부서 없는 사람들을 마지막에 추가
@@ -53,6 +55,7 @@ const SideBar = () => {
         subItems: noTeamPeople.map((person) => ({
           ...person,
           title: person.ou_nm,
+          ou_insa_info: person.ou_insa_info ? JSON.parse(person.ou_insa_info) : {},
         })),
       },
     ];
@@ -126,8 +129,13 @@ const SideBar = () => {
                             setPersonnelInfo({
                               id: person.ou_sabeon,
                               name: person.ou_nm,
+                              sabeon: person.ou_sabeon,
                               teamName: person.ou_team_name,
                               seatNo: person.ou_seat_cd,
+                              level: person.ou_insa_info?.level || "",
+                              hp: person.ou_insa_info?.hp || "",
+                              image: person.ou_insa_info?.profile_img || "",
+                              insa_info: person.ou_insa_info,
                             });
                           }}
                           className={`${

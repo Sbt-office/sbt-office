@@ -1,7 +1,8 @@
+/* eslint-disable react-hooks/rules-of-hooks */
 import { useMutation } from "@tanstack/react-query";
-import { getDailyFetch, setDailyFetch } from "../utils/api";
-import useWorkStatusStore from "../store/useWorkStatusStore";
-import { useToast } from "../hooks/useToast";
+import { getDailyFetch, setDailyFetch } from "@/utils/api";
+import useWorkStatusStore from "@/store/useWorkStatusStore";
+import { useToast } from "@/hooks/useToast";
 
 export const setWorkStatusStore = () => {
   const { setData, setShowModal } = useWorkStatusStore();

@@ -5,7 +5,9 @@ export const useAllUserListQuery = () => {
   return useQuery({
     queryKey: ["userInfo"],
     queryFn: getUserListFetch,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
     cacheTime: 30 * 60 * 1000,
+    refetchOnMount: false, 
+    refetchOnWindowFocus: false, 
   });
 };
