@@ -119,8 +119,10 @@ export const clearScene = (scene, controls, renderer, animate, objectSelect) => 
   renderer.forceContextLoss();
   renderer = null;
 
-  scene.environment.dispose();
-  scene.environment = null;
+  if (scene.environment) {
+    scene.environment.dispose();
+    scene.environment = null;
+  }
 
   scene.clear();
   scene = null;

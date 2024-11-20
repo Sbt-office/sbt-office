@@ -21,11 +21,12 @@ import { usePopupStore } from "../store/usePopupStore";
 import { getDailyListFetch, getUserListFetch } from "../utils/api";
 import { userIcon } from "../utils/icon";
 import useWorkStatusStore from "../store/useWorkStatusStore";
-import dayjs from "dayjs";
+import RoomCondition from "./RoomCondition";
 
 const OfficeThree = () => {
   const mainRef = useRef();
   const labelRendererRef = useRef();
+  const conditionRef = useRef();
   const labelRef = useRef();
   const modelRef = useRef(null);
   const canvasRef = useRef(null);
@@ -34,7 +35,7 @@ const OfficeThree = () => {
   const controlsRef = useRef(null);
   const selectRef = useRef(null);
   const animRef = useRef(null);
-  const sitRef = useRef({ startDist: 0 });
+  const seatRef = useRef({ startDist: 0 });
   const sceneRef = useRef(new THREE.Scene());
 
   const { isPopupOpen } = usePopupStore();
@@ -43,6 +44,8 @@ const OfficeThree = () => {
   const [userList, setUserList] = useState([]);
   const [dailyList, setDailyList] = useState([]);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isCondition, setIsCondition] = useState(true);
+  const [isDaily, setIsDaily] = useState(true);
 
   // CAMERA
   const setupCamera = () => {
@@ -55,7 +58,7 @@ const OfficeThree = () => {
     cameraRef.current.position.set(-3.684, 13.704, -19.717);
     sceneRef.current.add(cameraRef.current);
 
-    sitRef.current.startDist = cameraRef.current.position.distanceTo(new THREE.Vector3());
+    seatRef.current.startDist = cameraRef.current.position.distanceTo(new THREE.Vector3());
   };
 
   // CONTROL
@@ -161,11 +164,10 @@ const OfficeThree = () => {
           }
 
           if (node.name.includes("seat-")) {
-            sitRef.current[node.name] = {
-              ...sitRef.current[node.name],
+            seatRef.current[node.name] = {
+              ...seatRef.current[node.name],
               obj: node,
             };
-            // createLabel(node, node.name);
           }
         });
         sceneRef.current.add(gltf.scene);
@@ -203,10 +205,10 @@ const OfficeThree = () => {
 
     if (cameraRef.current) {
       const dist = cameraRef.current.position.distanceTo(new THREE.Vector3());
-      const size = sitRef.current.startDist / dist;
+      const size = seatRef.current.startDist / dist;
       const newSize = size > 1 ? 1 : size;
 
-      Object.keys(sitRef.current).map((key) => {
+      Object.keys(seatRef.current).map((key) => {
         const dom = document.getElementById("label_" + key);
         if (dom) dom.style.transform = `${dom.style.transform} scale(${newSize})`;
       });
@@ -216,6 +218,7 @@ const OfficeThree = () => {
   };
 
   const createLabel = (obj, name, daily = "미출근") => {
+    if (!labelRef.current) return;
     const div = labelRef.current.cloneNode(true);
     div.id = "label_" + obj.name;
     div.style.display = "";
@@ -230,14 +233,14 @@ const OfficeThree = () => {
     label.position.set(0, 1, 0);
     obj.add(label);
 
-    sitRef.current[obj.name] = {
-      ...sitRef.current[obj.name],
+    seatRef.current[obj.name] = {
+      ...seatRef.current[obj.name],
       label,
     };
   };
 
   const updateLabel = (obj, name, daily = "미출근") => {
-    const elem = sitRef.current[obj.name]?.label?.element;
+    const elem = seatRef.current[obj.name]?.label?.element;
 
     if (elem) {
       if (name && elem.children[1]) elem.children[1].innerHTML = name;
@@ -260,26 +263,30 @@ const OfficeThree = () => {
 
   const drawUserIcon = () => {
     userList.map((user) => {
-      const sit = sitRef.current[user.ou_seat_cd];
-      const today = dayjs().format("YYYY-MM-DD");
-      const daily = dailyList.find(
-        (item) => item.ouds_sabeon === user.ou_sabeon && today === dayjs(item.ouds_upt_dt).format("YYYY-MM-DD")
-      );
+      const sit = seatRef.current[user.ou_seat_cd];
+      const daily = dailyList.find((item) => item.ouds_sabeon === user.ou_sabeon);
       if (sit && sit.obj) {
-        if (sit.label) updateLabel(sit.obj, sit.obj.name + "<br />" + user.ou_nm, daily ? daily.userStatus : undefined);
-        else createLabel(sit.obj, sit.obj.name + "<br />" + user.ou_nm, daily ? daily.userStatus : undefined);
+        if (sit.label) updateLabel(sit.obj, user.ou_nm, daily ? daily.userStatus : undefined);
+        else createLabel(sit.obj, user.ou_nm, daily ? daily.userStatus : undefined);
       }
     });
   };
 
   // 데이터 변경시 새로고침
   useEffect(() => {
-    getAllUser();
-    getDailyList();
-  }, [isWorking]);
+    if (isDaily) {
+      getAllUser();
+      getDailyList();
+    }
+
+    Object.keys(seatRef.current).map((key) => {
+      const item = seatRef.current[key];
+      if (item.label) item.label.visible = isDaily;
+    });
+  }, [isWorking, isDaily]);
 
   useEffect(() => {
-    if (userList.length > 0 && dailyList.length > 0 && isLoaded) drawUserIcon();
+    if (userList.length > 0 && isLoaded) drawUserIcon();
   }, [userList, dailyList, isLoaded]);
 
   useEffect(() => {
@@ -296,14 +303,39 @@ const OfficeThree = () => {
   return (
     <main ref={mainRef} className={`z-0 bg-[#292929] flex-1 ${isPopupOpen ? "absolute left-64" : "relative"}`}>
       <canvas className="absolute top-0 left-0" ref={canvasRef} />
-      <div
-        ref={labelRef}
-        className="absolute top-0 left-0 w-12 h-12 px-2 py-2 rounded-full bg-transparent border-x-2 border-y-2 border-black text-black cursor-pointer"
-        style={{ display: "none" }}
-      >
-        {userIcon()}
-        <div className="absolute top-14 left-1/2 -translate-x-1/2 px-2 py-2 text-black bg-white text-nowrap"></div>
-      </div>
+      {isLoaded && (
+        <>
+          <div className="absolute bottom-4 right-4 flex gap-4">
+            <div
+              className={[
+                "px-2 py-2 rounded-lg cursor-pointer text-black",
+                isDaily ? "bg-sbtLightBlue/75 font-bold" : "bg-white",
+              ].join(" ")}
+              onClick={() => setIsDaily((prev) => !prev)}
+            >
+              출퇴근 현황
+            </div>
+            <div
+              className={[
+                "px-2 py-2 rounded-lg cursor-pointer text-black",
+                isCondition ? "bg-sbtLightBlue/75 font-bold" : "bg-white",
+              ].join(" ")}
+              onClick={() => setIsCondition((prev) => !prev)}
+            >
+              Green_1 상태
+            </div>
+          </div>
+          {isCondition && <RoomCondition conditionRef={conditionRef} />}
+          <div
+            ref={labelRef}
+            className="absolute top-0 left-0 w-12 h-12 px-2 py-2 rounded-full bg-white/75 backdrop-blur-sm border-x-2 border-y-2 border-black text-black cursor-pointer"
+            style={{ display: "none" }}
+          >
+            {userIcon()}
+            <div className="absolute top-14 left-1/2 -translate-x-1/2 px-1 py-1 text-black bg-white/75 backdrop-blur-sm rounded-md text-nowrap"></div>
+          </div>
+        </>
+      )}
     </main>
   );
 };

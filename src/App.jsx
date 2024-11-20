@@ -10,9 +10,8 @@ import Toast from "./components/Toast";
 import SignIn from "./pages/SignIn";
 import PrivateRoute from "./components/PrivateRoute";
 
-const ErrorFallback = (error) => <div>An error occurred: {error.message}</div>;
-
 const App = () => {
+  const ErrorFallback = (error) => <div>An error occurred: {error.message}</div>;
   return (
     <>
       <div className={style.main}>
