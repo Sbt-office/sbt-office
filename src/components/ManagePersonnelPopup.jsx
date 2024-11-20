@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-// import { IoStarOutline, IoStar } from "react-icons/io5";
 import {
   MdKeyboardArrowLeft,
   MdKeyboardArrowRight,
@@ -19,7 +18,6 @@ import { usePopupStore } from "./../store/usePopupStore";
 
 const ManagePersonnelPopup = () => {
   const [currentPage, setCurrentPage] = useState(1);
-  const [favorites, setFavorites] = useState({});
 
   const [selectedItems, setSelectedItems] = useState({});
   const [selectedDepartment, setSelectedDepartment] = useState("");
@@ -90,10 +88,6 @@ const ManagePersonnelPopup = () => {
     window.scrollTo(0, 0);
   };
 
-  // const handleFavorite = (id) => {
-  //   setFavorites((prev) => ({ ...prev, [id]: !prev[id] }));
-  // };
-
   const handleSelect = (id) => {
     setSelectedItems((prev) => ({ ...prev, [id]: !prev[id] }));
   };
@@ -105,14 +99,13 @@ const ManagePersonnelPopup = () => {
   useEffect(() => {
     return () => {
       setCurrentPage(1);
-      setFavorites({});
       setSelectedItems({});
       setSelectedDepartment("");
     };
   }, []);
 
   return (
-    <div className="h-dvh text-black z-10 bg-white/50 flex flex-col w-[calc(100vw-16rem)]">
+    <div className="h-dvh text-black z-50 bg-white flex flex-col w-[calc(100vw-16rem)]">
       {/* 상단 타이틀 */}
       <header className="bg-sbtLightBlue/75 relative">
         <h2 className="text-2xl font-semibold w-full h-16 flex justify-center items-center">인사정보관리</h2>
@@ -173,9 +166,6 @@ const ManagePersonnelPopup = () => {
                   <div>{emp.email}</div>
                 </div>
               </div>
-              {/* <button onClick={() => handleFavorite(emp.id)} className="text-xl text-sbtDarkBlue">
-                {favorites[emp.id] ? <IoStar /> : <IoStarOutline />}
-              </button> */}
             </div>
           ))}
         </div>

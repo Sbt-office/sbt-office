@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Select, Input } from "antd";
 import profile from "@/assets/images/profile.png";
 import { usePersonnelEditStore } from "@/store/personnelEditStore";
@@ -7,6 +7,7 @@ import { useUpdatePersonnel } from "@/hooks/useUpdatePersonnel";
 import { getCookie } from "@/utils/cookie";
 import { DEPARTMENTS, POSITIONS } from "@/data/companyInfo";
 import useSeatStore from "@/store/seatStore";
+import { useImageCompression } from "@/hooks/useImageCompression";
 
 const InfoRow = ({ label, value, isEditing, onChange, type = "text", options }) => {
   if (!isEditing) {
@@ -41,6 +42,7 @@ const InfoRow = ({ label, value, isEditing, onChange, type = "text", options }) 
 const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
   const [isEditing, setIsEditing] = useState(false);
   const { selectedSeat } = useSeatStore();
+  const fileInputRef = useRef(null);
   const [editData, setEditData] = useState({
     name: personnelInfo.ou_nm,
     teamName: personnelInfo.ou_team_name,
@@ -65,6 +67,22 @@ const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
   const updatePersonnel = useUpdatePersonnel();
   const sabeonFromCookie = getCookie("sabeon");
   const canEdit = sabeonFromCookie === personnelInfo.ou_sabeon;
+  const { compressImage } = useImageCompression();
+
+  const handleImageUpload = async (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      try {
+        const compressedImage = await compressImage(file);
+        setEditData((prev) => ({
+          ...prev,
+          profile_img: compressedImage,
+        }));
+      } catch (error) {
+        alert(error.message);
+      }
+    }
+  };
 
   const handleSave = async () => {
     await updatePersonnel.mutateAsync({
@@ -74,7 +92,7 @@ const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
       insa_info: {
         hp: editData.hp,
         level: editData.level,
-        profile_img: personnelInfo.ou_insa_info?.profile_img || "",
+        profile_img: editData.profile_img,
       },
     });
 
@@ -137,11 +155,20 @@ const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
               onChange={(val) => setEditData({ ...editData, seatNo: val })}
             />
           </div>
-          <div className="w-28 h-36 rounded-md bg-sbtLightBlue/70 flex items-center justify-center text-gray-600">
+          <div
+            className={`w-28 h-36 rounded-md bg-sbtLightBlue/70 flex items-center justify-center text-gray-600 ${
+              isEditing ? "cursor-pointer hover:bg-sbtLightBlue/90" : ""
+            }`}
+            onClick={() => isEditing && fileInputRef.current?.click()}
+            role={isEditing ? "button" : ""}
+            tabIndex={isEditing ? 0 : -1}
+            aria-label={isEditing ? "프로필 이미지 업로드" : "프로필 이미지"}
+          >
+            <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageUpload} />
             <img
-              src={personnelInfo.ou_insa_info?.profile_img || profile}
+              src={isEditing ? editData.profile_img || profile : personnelInfo.ou_insa_info?.profile_img || profile}
               alt="profile"
-              className="w-20 h-20 object-contain"
+              className="w-full h-full object-fill rounded-md"
               draggable={false}
               aria-label="profile"
             />
