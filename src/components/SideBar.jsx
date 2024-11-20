@@ -16,7 +16,7 @@ const SideBar = () => {
   const [openSection, setOpenSection] = useState(null);
   const [openSubItem, setOpenSubItem] = useState(null);
   const [selectedItem, setSelectedItem] = useState(null);
-  const [personnelInfo, setPersonnelInfo] = useState({ id: "", name: "" });
+  const [personnelInfo, setPersonnelInfo] = useState(null);
 
   const { data } = useAllUserListQuery();
 
@@ -71,7 +71,7 @@ const SideBar = () => {
     if (openSection === index) {
       setOpenSection(null);
       setSelectedItem(null);
-      setPersonnelInfo({ id: "", name: "" });
+      setPersonnelInfo(null);
       return;
     }
     setOpenSection(index);
@@ -82,7 +82,7 @@ const SideBar = () => {
     if (openSubItem === index) {
       setOpenSubItem(null);
       setSelectedItem(null);
-      setPersonnelInfo({ id: "", name: "" });
+      setPersonnelInfo(null);
       return;
     }
     setOpenSubItem(index);
@@ -90,7 +90,7 @@ const SideBar = () => {
 
   const handleCloseInfoCard = () => {
     setSelectedItem(null);
-    setPersonnelInfo({ id: "", name: "" });
+    setPersonnelInfo(null);
   };
 
   return (
@@ -126,17 +126,7 @@ const SideBar = () => {
                           onClick={() => {
                             toggleSubItem(subIndex);
                             handleItemClick(`${index}-${subIndex}`);
-                            setPersonnelInfo({
-                              id: person.ou_sabeon,
-                              name: person.ou_nm,
-                              sabeon: person.ou_sabeon,
-                              teamName: person.ou_team_name,
-                              seatNo: person.ou_seat_cd,
-                              level: person.ou_insa_info?.level || "",
-                              hp: person.ou_insa_info?.hp || "",
-                              image: person.ou_insa_info?.profile_img || "",
-                              insa_info: person.ou_insa_info,
-                            });
+                            setPersonnelInfo(person);
                           }}
                           className={`${
                             selectedItem === `${index}-${subIndex}`
@@ -165,9 +155,7 @@ const SideBar = () => {
               <span className={`text-base ${isPopupOpen ? "text-sbtDarkBlue font-semibold" : ""}`}>인사정보관리</span>
             </div>
           </ul>
-          {personnelInfo.id && personnelInfo.id !== "" && (
-            <PersonnelInfoCard personnelInfo={personnelInfo} onClose={handleCloseInfoCard} />
-          )}
+          {personnelInfo && <PersonnelInfoCard personnelInfo={personnelInfo} onClose={handleCloseInfoCard} />}
         </div>
         <WorkGoAndLeave />
       </aside>

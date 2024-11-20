@@ -5,24 +5,8 @@ import profile from "@/assets/images/profile.png";
 import { usePersonnelEditStore } from "@/store/personnelEditStore";
 import { useUpdatePersonnel } from "@/hooks/useUpdatePersonnel";
 import { getCookie } from "@/utils/cookie";
-
-const DEPARTMENTS = [
-  { value: "DX사업부문", label: "DX사업부문" },
-  { value: "세일즈포스", label: "세일즈포스" },
-  { value: "경영관리본부", label: "경영관리본부" },
-];
-
-const POSITIONS = [
-  { value: "연구원", label: "연구원" },
-  { value: "선임연구원", label: "선임연구원" },
-  { value: "Manager", label: "Manager" },
-  { value: "Senior Manager", label: "Senior Manager" },
-  { value: "이사", label: "이사" },
-  { value: "상무", label: "상무" },
-  { value: "전무", label: "전무" },
-  { value: "부사장", label: "부사장" },
-  { value: "사장", label: "사장" },
-];
+import { DEPARTMENTS, POSITIONS } from "@/data/companyInfo";
+import useSeatStore from "@/store/seatStore";
 
 const InfoRow = ({ label, value, isEditing, onChange, type = "text", options }) => {
   if (!isEditing) {
@@ -56,41 +40,45 @@ const InfoRow = ({ label, value, isEditing, onChange, type = "text", options }) 
 
 const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
   const [isEditing, setIsEditing] = useState(false);
+  const { selectedSeat } = useSeatStore();
   const [editData, setEditData] = useState({
-    name: personnelInfo.name,
-    teamName: personnelInfo.teamName,
-    level: personnelInfo.level,
-    hp: personnelInfo.hp,
-    seatNo: personnelInfo.seatNo,
+    name: personnelInfo.ou_nm,
+    teamName: personnelInfo.ou_team_name,
+    level: personnelInfo.ou_insa_info?.level || "",
+    hp: personnelInfo.ou_insa_info?.hp || "",
+    seatNo: selectedSeat || personnelInfo.ou_seat_cd,
+    profile_img: personnelInfo.ou_insa_info?.profile_img || "",
   });
 
   useEffect(() => {
     setEditData({
-      name: personnelInfo.name,
-      teamName: personnelInfo.teamName,
-      level: personnelInfo.level,
-      hp: personnelInfo.hp,
-      seatNo: personnelInfo.seatNo,
+      name: personnelInfo.ou_nm,
+      teamName: personnelInfo.ou_team_name,
+      level: personnelInfo.ou_insa_info?.level || "",
+      hp: personnelInfo.ou_insa_info?.hp || "",
+      seatNo: selectedSeat || personnelInfo.ou_seat_cd,
+      profile_img: personnelInfo.ou_insa_info?.profile_img || "",
     });
-  }, [personnelInfo]);
+  }, [personnelInfo, selectedSeat]);
 
   const { setSeatNo } = usePersonnelEditStore();
   const updatePersonnel = useUpdatePersonnel();
   const sabeonFromCookie = getCookie("sabeon");
-  const canEdit = sabeonFromCookie === personnelInfo.sabeon;
+  const canEdit = sabeonFromCookie === personnelInfo.ou_sabeon;
 
   const handleSave = async () => {
     await updatePersonnel.mutateAsync({
       username: editData.name,
-      seat_cd: editData.seatNo,
+      seat_cd: selectedSeat || editData.seatNo,
       team_name: editData.teamName,
       insa_info: {
         hp: editData.hp,
         level: editData.level,
+        profile_img: personnelInfo.ou_insa_info?.profile_img || "",
       },
     });
 
-    setSeatNo(editData.seatNo);
+    setSeatNo(selectedSeat || editData.seatNo);
     setIsEditing(false);
     onClose();
   };
@@ -98,11 +86,12 @@ const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
   const displayData = isEditing
     ? editData
     : {
-        name: personnelInfo.name,
-        teamName: personnelInfo.teamName,
-        level: personnelInfo.level,
-        hp: personnelInfo.hp,
-        seatNo: personnelInfo.seatNo,
+        name: personnelInfo.ou_nm,
+        teamName: personnelInfo.ou_team_name,
+        level: personnelInfo.ou_insa_info?.level || "",
+        hp: personnelInfo.ou_insa_info?.hp || "",
+        seatNo: selectedSeat || personnelInfo.ou_seat_cd,
+        profile_img: personnelInfo.ou_insa_info?.profile_img || "",
       };
 
   return (
@@ -150,7 +139,7 @@ const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
           </div>
           <div className="w-28 h-36 rounded-md bg-sbtLightBlue/70 flex items-center justify-center text-gray-600">
             <img
-              src={personnelInfo.image ? personnelInfo.image : profile}
+              src={personnelInfo.ou_insa_info?.profile_img || profile}
               alt="profile"
               className="w-20 h-20 object-contain"
               draggable={false}
