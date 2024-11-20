@@ -5,11 +5,6 @@ axios.defaults.timeout = 3000;
 // VITE_BASE_URL = http://192.168.0.75:3000
 const baseURL = import.meta.env.VITE_BASE_URL;
 
-const handleErr = (err) => {
-  console.error(err);
-  return { message: "Failed Connect API" };
-};
-
 /**
  * 로그인
  */
@@ -63,6 +58,9 @@ export const getUserListFetch = async () => {
   }
 };
 
+/**
+ * 출퇴근 리스트
+ */
 export const getDailyListFetch = async () => {
   try {
     const res = await axios.get(`${baseURL}/api/office_daily_list`);
@@ -76,7 +74,10 @@ export const getDailyListFetch = async () => {
   }
 };
 
-// status => 1: 출근 2: 퇴근
+/**
+ * 개인별 출퇴근 체크
+ * status => 1: 출근 2: 퇴근
+ */
 export const setDailyFetch = async (data) => {
   try {
     const res = await axios.post(`${baseURL}/api/office_daily_checkIn`, data);
@@ -93,6 +94,9 @@ export const setDailyFetch = async (data) => {
   }
 };
 
+/**
+ * 개인별 출퇴근 상태
+ */
 export const getDailyFetch = async (sabeon) => {
   try {
     const res = await axios.get(`${baseURL}/api/office_daily/${sabeon}`);
@@ -101,7 +105,6 @@ export const getDailyFetch = async (sabeon) => {
     throw new Error(err.message);
   }
 };
-
 
 /**
  * 개인 별 인사정보
@@ -112,5 +115,21 @@ export const getUserInfoFetch = async (sabeon) => {
     return res.data;
   } catch (err) {
     console.log(err);
+  }
+};
+
+/**
+ * 인사정보 수정
+ */
+export const updateUserInfoFetch = async (updateData) => {
+  try {
+    const res = await axios.post(`${baseURL}/api/office_user_save`, updateData);
+    if (res.status !== 200) {
+      throw new Error(res.data.message || "예상치 못한 오류가 발생했습니다");
+    }
+    return res.data;
+  } catch (err) {
+    console.error("사용자 정보 업데이트 중 오류 발생:", err.message);
+    throw new Error(err.message);
   }
 };
