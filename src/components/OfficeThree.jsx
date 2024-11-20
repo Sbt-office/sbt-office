@@ -22,6 +22,7 @@ import { getDailyListFetch, getUserListFetch } from "../utils/api";
 import { userIcon } from "../utils/icon";
 import useWorkStatusStore from "../store/useWorkStatusStore";
 import RoomCondition from "./RoomCondition";
+import seatListStore from "../store/seatListStore";
 
 const OfficeThree = () => {
   const mainRef = useRef();
@@ -40,6 +41,7 @@ const OfficeThree = () => {
 
   const { isPopupOpen } = usePopupStore();
   const { isWorking } = useWorkStatusStore();
+  const { setSeatData } = seatListStore();
 
   const [userList, setUserList] = useState([]);
   const [dailyList, setDailyList] = useState([]);
@@ -158,18 +160,21 @@ const OfficeThree = () => {
         gltf.scene.scale.set(1, 1, 1);
         gltf.scene.position.set(0, 0, 0);
 
+        const seatList = [];
         gltf.scene.traverse((node) => {
           if (node.name.includes("ceiling")) {
             node.visible = false;
           }
 
           if (node.name.includes("seat-")) {
+            seatList.push(node.name);
             seatRef.current[node.name] = {
               ...seatRef.current[node.name],
               obj: node,
             };
           }
         });
+        setSeatData(seatList);
         sceneRef.current.add(gltf.scene);
         setIsLoaded(true);
       },
