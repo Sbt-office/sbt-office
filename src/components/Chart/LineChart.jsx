@@ -25,12 +25,6 @@ const LineChart = ({ type }) => {
       },
       tooltip: {
         trigger: "axis",
-        axisLabel: {
-          hideOverlap: true,
-        },
-        axisPointer: {
-          animation: false,
-        },
       },
       xAxis: {
         type: "time",
