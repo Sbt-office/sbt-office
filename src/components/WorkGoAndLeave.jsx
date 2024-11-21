@@ -66,7 +66,7 @@ const WorkGoAndLeave = () => {
       <div className="flex flex-col justify-center items-start px-1 py-1 text-base font-semibold text-black/70 gap-1">
         <span className="text-black text-sm">안녕하세요. SBT Global입니다.</span>
         {userInfo.ou_nm && (
-          <span className="text-sbt">
+          <span className="text-[0.95rem]">
             {userInfo.ou_nm} {parsedUserInfo?.level}님
           </span>
         )}
