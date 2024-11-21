@@ -1,15 +1,19 @@
 /* eslint-disable react/prop-types */
 import { useState, useEffect, useRef } from "react";
 import { Select, Input } from "antd";
+
 import profile from "@/assets/images/profile.png";
-import { usePersonnelEditStore } from "@/store/personnelEditStore";
-import { useUpdatePersonnel } from "@/hooks/useUpdatePersonnel";
-import { getCookie } from "@/utils/cookie";
-import { DEPARTMENTS, POSITIONS } from "@/data/companyInfo";
+
 import useSeatStore from "@/store/seatStore";
+import { usePersonnelEditStore } from "@/store/personnelEditStore";
+
+import { getCookie } from "@/utils/cookie";
+import { useUpdatePersonnel } from "@/hooks/useUpdatePersonnel";
 import { useImageCompression } from "@/hooks/useImageCompression";
 
-const InfoRow = ({ label, value, isEditing, onChange, type = "text", options }) => {
+import { DEPARTMENTS, POSITIONS } from "@/data/companyInfo";
+
+const InfoRow = ({ label, value, isEditing, onChange, type = "text", options, onClick }) => {
   if (!isEditing) {
     return (
       <div className="flex w-48 gap-2">
@@ -32,6 +36,14 @@ const InfoRow = ({ label, value, isEditing, onChange, type = "text", options }) 
       </div>
       {type === "select" ? (
         <Select className="w-full" value={value} onChange={(val) => onChange(val)} options={options} />
+      ) : label === "자리" ? (
+        <span
+          className="text-gray-800 truncate overflow-hidden w-full cursor-pointer rounded-md ring-1 ring-sbtLightBlue px-2 py-1 
+          hover:bg-sbtDarkBlue hover:text-white"
+          onClick={onClick}
+        >
+          {value}
+        </span>
       ) : (
         <Input className="w-full" value={value} onChange={(e) => onChange(e.target.value)} />
       )}
@@ -40,9 +52,10 @@ const InfoRow = ({ label, value, isEditing, onChange, type = "text", options }) 
 };
 
 const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
-  const [isEditing, setIsEditing] = useState(false);
-  const { selectedSeat } = useSeatStore();
   const fileInputRef = useRef(null);
+  const { selectedSeat, setIsSeatEdit } = useSeatStore();
+
+  const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({
     name: personnelInfo.ou_nm,
     teamName: personnelInfo.ou_team_name,
@@ -63,11 +76,19 @@ const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
     });
   }, [personnelInfo, selectedSeat]);
 
+  useEffect(() => {
+    return () => {
+      setIsSeatEdit(false);
+    };
+  }, [setIsSeatEdit]);
+
   const { setSeatNo } = usePersonnelEditStore();
+  const { compressImage } = useImageCompression();
+
   const updatePersonnel = useUpdatePersonnel();
   const sabeonFromCookie = getCookie("sabeon");
+
   const canEdit = sabeonFromCookie === personnelInfo.ou_sabeon;
-  const { compressImage } = useImageCompression();
 
   const handleImageUpload = async (event) => {
     const file = event.target.files[0];
@@ -98,7 +119,19 @@ const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
 
     setSeatNo(selectedSeat || editData.seatNo);
     setIsEditing(false);
+    setIsSeatEdit(false);
     onClose();
+  };
+
+  const handleClose = () => {
+    setIsSeatEdit(false);
+    onClose();
+  };
+
+  const handleSeatClick = () => {
+    if (isEditing) {
+      setIsSeatEdit(true);
+    }
   };
 
   const displayData = isEditing
@@ -153,6 +186,7 @@ const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
               value={displayData.seatNo}
               isEditing={isEditing}
               onChange={(val) => setEditData({ ...editData, seatNo: val })}
+              onClick={handleSeatClick}
             />
           </div>
           <div
@@ -168,7 +202,9 @@ const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
             <img
               src={isEditing ? editData.profile_img || profile : personnelInfo.ou_insa_info?.profile_img || profile}
               alt="profile"
-              className="w-full h-full object-fill rounded-md"
+              className={`${isEditing ? "cursor-pointer hover:opacity-80" : ""} ${
+                editData.profile_img ? "w-full h-full object-fill" : "w-20 h-24"
+              } rounded-md`}
               draggable={false}
               aria-label="profile"
             />
@@ -178,7 +214,7 @@ const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
       <div className="flex justify-between p-4 bg-white">
         <button
           className="border border-sbtDarkBlue px-4 py-2 rounded hover:bg-sbtLightBlue/60 transition-colors"
-          onClick={onClose}
+          onClick={handleClose}
         >
           닫기
         </button>

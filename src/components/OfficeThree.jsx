@@ -23,6 +23,7 @@ import { userIcon } from "../utils/icon";
 import useWorkStatusStore from "../store/useWorkStatusStore";
 import RoomCondition from "./RoomCondition";
 import seatListStore from "../store/seatListStore";
+import useSeatStore from "@/store/seatStore";
 
 const OfficeThree = () => {
   const mainRef = useRef();
@@ -39,15 +40,19 @@ const OfficeThree = () => {
   const seatRef = useRef({ startDist: 0 });
   const sceneRef = useRef(new THREE.Scene());
 
-  const { isPopupOpen } = usePopupStore();
-  const { isWorking } = useWorkStatusStore();
-  const { setSeatData } = seatListStore();
-
   const [userList, setUserList] = useState([]);
   const [dailyList, setDailyList] = useState([]);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isCondition, setIsCondition] = useState(true);
   const [isDaily, setIsDaily] = useState(true);
+
+  /**
+   * Store
+   */
+  const { setSeatData } = seatListStore();
+  const { isPopupOpen } = usePopupStore();
+  const { isWorking } = useWorkStatusStore();
+  const { selectedSeat, isSeatEdit, setIsSeatEdit, setSelectedSeat } = useSeatStore();
 
   // CAMERA
   const setupCamera = () => {
