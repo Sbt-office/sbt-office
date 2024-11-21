@@ -99,9 +99,7 @@ const SideBar = () => {
   useEffect(() => {
     if (personnelInfo) {
       // 해당 사용자가 속한 부서의 인덱스를 찾습니다
-      const sectionIndex = organizedData.findIndex(
-        (group) => group.title === personnelInfo.ou_team_name
-      );
+      const sectionIndex = organizedData.findIndex((group) => group.title === personnelInfo.ou_team_name);
 
       if (sectionIndex !== -1) {
         // 해당 부서 내에서 사용자의 인덱스를 찾습니다

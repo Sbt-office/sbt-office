@@ -1,7 +1,8 @@
-import React, { useEffect, useRef, useState } from "react";
+/* eslint-disable react/prop-types */
+import { useEffect, useRef, useState } from "react";
 import EChartsReact from "echarts-for-react";
-import _ from "lodash";
-import useSocketStore from "../../store/socketStore";
+import { cloneDeep } from "es-toolkit/object";
+import useSocketStore from "@/store/socketStore";
 import dayjs from "dayjs";
 
 const LineChart = ({ title, type }) => {
@@ -66,7 +67,7 @@ const LineChart = ({ title, type }) => {
     setIsNodata(false);
 
     setValueArray((prevState) => {
-      const newState = _.cloneDeep(prevState);
+      const newState = cloneDeep(prevState);
       newState.push({
         name: valueRef.current.time,
         value: [valueRef.current.time, valueRef.current.value],
