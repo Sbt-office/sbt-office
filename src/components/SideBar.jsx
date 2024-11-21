@@ -2,17 +2,18 @@ import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Input, Button } from "antd";
 
-import { IoIdCardOutline, IoSettingsOutline } from "react-icons/io5";
+import logo from "@/assets/images/logo.png";
 import { HiOutlineMenu, HiMenuAlt1 } from "react-icons/hi";
+import { IoIdCardOutline, IoSettingsOutline } from "react-icons/io5";
 // import {  HiMenuAlt2 } from "react-icons/hi";
 
-import logo from "@/assets/images/logo.png";
+import WorkGoAndLeave from "./WorkGoAndLeave";
 import PersonnelInfoCard from "./PersonnelInfoCard";
 import ManagePersonnelPopup from "./ManagePersonnelPopup";
-import { usePopupStore } from "@/store/usePopupStore";
-import WorkGoAndLeave from "./WorkGoAndLeave";
-import { useAllUserListQuery } from "../hooks/useAllUserListQuery";
+import { useAllUserListQuery } from "@/hooks/useAllUserListQuery";
+
 import useSeatStore from "@/store/seatStore";
+import { usePopupStore } from "@/store/usePopupStore";
 import usePersonnelInfoStore from "@/store/personnelInfoStore";
 
 const SideBar = () => {
@@ -24,9 +25,7 @@ const SideBar = () => {
   const { data } = useAllUserListQuery();
 
   const { isSeatEdit, setIsSeatEdit, setSelectedSeat } = useSeatStore(); // -----------------------------------삭제될 친구
-
   const { isPopupOpen, togglePopup } = usePopupStore();
-
   const { personnelInfo, setPersonnelInfo, clearPersonnelInfo } = usePersonnelInfoStore();
 
   // -----------------------------------삭제될 친구
