@@ -5,10 +5,9 @@ import useSocketStore from "../../store/socketStore";
 import dayjs from "dayjs";
 
 const LineChart = ({ type }) => {
-  const { co2, temp, humidity, dist, isConnected } = useSocketStore();
+  const { getData } = useSocketStore();
 
   const chartInitRef = useRef();
-  const itvRef = useRef();
   const valueRef = useRef(0);
 
   const [options, setOptions] = useState({});
@@ -58,13 +57,13 @@ const LineChart = ({ type }) => {
     });
   };
 
-  if (type === "이산화탄소") valueRef.current = co2;
-  else if (type === "온도") valueRef.current = temp;
-  else if (type === "습도") valueRef.current = humidity;
-  else if (type === "거리센서") valueRef.current = dist;
+  if (type === "이산화탄소") valueRef.current = getData("co2");
+  else if (type === "온도") valueRef.current = getData("temp");
+  else if (type === "습도") valueRef.current = getData("humidity");
+  else if (type === "거리센서") valueRef.current = getData("dist");
 
   const updateValue = () => {
-    if (valueRef.current / 1 === 0) {
+    if (valueRef.current.value / 1 === 0) {
       setIsNodata(true);
       return;
     }
@@ -75,8 +74,8 @@ const LineChart = ({ type }) => {
       const newState = _.cloneDeep(prevState);
       const now = dayjs().format("YYYY-MM-DD HH:mm:ss");
       newState.push({
-        name: now,
-        value: [now, valueRef.current],
+        name: valueRef.current.time,
+        value: [now, valueRef.current.value],
       });
       if (newState.length > 100) newState.shift();
       return newState;
@@ -84,16 +83,8 @@ const LineChart = ({ type }) => {
   };
 
   useEffect(() => {
-    clearInterval(itvRef.current);
-    if (isConnected) {
-      updateValue();
-      itvRef.current = setInterval(updateValue, 1000);
-    }
-
-    return () => {
-      clearInterval(itvRef.current);
-    };
-  }, [isConnected]);
+    updateValue();
+  }, [valueRef.current]);
 
   useEffect(() => {
     drawChart();
