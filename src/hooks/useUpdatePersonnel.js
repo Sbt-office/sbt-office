@@ -10,10 +10,12 @@ export const useUpdatePersonnel = () => {
   return useMutation({
     mutationFn: (updateData) => {
       const sabeon = Cookies.get("sabeon");
+
       return updateUserInfoFetch({
         sabeon,
         username: updateData.username,
         seat_cd: updateData.seat_cd,
+        team_cd: updateData.team_cd,
         team_name: updateData.team_name,
         insa_info: {
           hp: updateData.insa_info.hp,

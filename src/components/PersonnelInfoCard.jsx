@@ -10,6 +10,7 @@ import { usePersonnelEditStore } from "@/store/personnelEditStore";
 import { getCookie } from "@/utils/cookie";
 import { useUpdatePersonnel } from "@/hooks/useUpdatePersonnel";
 import { useImageCompression } from "@/hooks/useImageCompression";
+import { useToast } from "@/hooks/useToast";
 
 import { DEPARTMENTS, POSITIONS } from "@/data/companyInfo";
 
@@ -54,6 +55,7 @@ const InfoRow = ({ label, value, isEditing, onChange, type = "text", options, on
 const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
   const fileInputRef = useRef(null);
   const { selectedSeat, setSelectedSeat, setIsSeatEdit } = useSeatStore();
+  const { addToast } = useToast();
 
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({
@@ -62,6 +64,7 @@ const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
     level: personnelInfo.ou_insa_info?.level || "",
     hp: personnelInfo.ou_insa_info?.hp || "",
     seatNo: selectedSeat || personnelInfo.ou_seat_cd,
+    team_cd: personnelInfo.ou_team_cd || "ST001",
     profile_img: personnelInfo.ou_insa_info?.profile_img || "",
   });
 
@@ -72,6 +75,7 @@ const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
       level: personnelInfo.ou_insa_info?.level || "",
       hp: personnelInfo.ou_insa_info?.hp || "",
       seatNo: selectedSeat || personnelInfo.ou_seat_cd,
+      team_cd: personnelInfo.ou_team_cd || "",
       profile_img: personnelInfo.ou_insa_info?.profile_img || "",
     });
 
@@ -82,6 +86,7 @@ const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
         level: "",
         hp: "",
         seatNo: "",
+        team_cd: "",
         profile_img: "",
       });
     };
@@ -116,7 +121,10 @@ const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
           profile_img: compressedImage,
         }));
       } catch (error) {
-        alert(error.message);
+        addToast({ type: "error", message: error.message });
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
       }
     }
   };
@@ -126,6 +134,7 @@ const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
       await mutateAsync({
         username: editData.name,
         seat_cd: selectedSeat || editData.seatNo,
+        team_cd: editData.team_cd,
         team_name: editData.teamName,
         insa_info: {
           hp: editData.hp,
@@ -170,6 +179,7 @@ const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
         level: personnelInfo.ou_insa_info?.level || "",
         hp: personnelInfo.ou_insa_info?.hp || "",
         seatNo: selectedSeat || personnelInfo.ou_seat_cd,
+        team_cd: personnelInfo.ou_team_cd || "ST001",
         profile_img: personnelInfo.ou_insa_info?.profile_img || "",
       };
 
