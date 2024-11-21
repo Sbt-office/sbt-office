@@ -53,21 +53,23 @@ const WorkGoAndLeave = () => {
         <span>사용자 정보를 불러오는데 실패했습니다.</span>
       </div>
     );
-  if (!userInfo)
+  if (!userInfo.ou_nm)
     return (
       <div className="text-red-500 text-sm font-semibold w-full p-6 flex items-center justify-center gap-2 mb-8">
-        <IoWarningOutline size={25} />
+        <IoWarningOutline size={22} />
         <span>사용자 정보가 없습니다.</span>
       </div>
     );
-
+  console.log("parsedUserInfo", parsedUserInfo);
   return (
     <div className="w-full p-4 flex flex-col h-44 justify-center">
       <div className="flex flex-col justify-center items-start px-1 py-1 text-base font-semibold text-black/70 gap-1">
         <span className="text-black text-sm">안녕하세요. SBT Global입니다.</span>
-        <span className="text-sbt">
-          {userInfo.ou_nm} {parsedUserInfo?.level}님
-        </span>
+        {userInfo.ou_nm && (
+          <span className="text-sbt">
+            {userInfo.ou_nm} {parsedUserInfo?.level}님
+          </span>
+        )}
       </div>
       <div className="flex items-center w-full gap-2 py-2">
         <button
