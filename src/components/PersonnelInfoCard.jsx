@@ -1,11 +1,13 @@
 /* eslint-disable react/prop-types */
 import { useState, useEffect, useRef } from "react";
 import { Select, Input, Button } from "antd";
+import ClipLoader from "react-spinners/ClipLoader";
 
 import profile from "@/assets/images/profile.png";
 
 import useSeatStore from "@/store/seatStore";
 import { usePersonnelEditStore } from "@/store/personnelEditStore";
+import usePersonnelInfoStore from "@/store/personnelInfoStore";
 
 import { getCookie } from "@/utils/cookie";
 import { useUpdatePersonnel } from "@/hooks/useUpdatePersonnel";
@@ -15,6 +17,27 @@ import { useToast } from "@/hooks/useToast";
 import { DEPARTMENTS, POSITIONS } from "@/data/companyInfo";
 
 const InfoRow = ({ label, value, isEditing, onChange, type = "text", options, onClick }) => {
+  const [isValidPhone, setIsValidPhone] = useState(true);
+
+  const formatPhoneNumber = (input) => {
+    const numbers = input.replace(/[^\d]/g, "");
+    if (numbers.length <= 3) return numbers;
+    if (numbers.length <= 7) return `${numbers.slice(0, 3)}-${numbers.slice(3)}`;
+    return `${numbers.slice(0, 3)}-${numbers.slice(3, 7)}-${numbers.slice(7, 11)}`;
+  };
+
+  const validatePhoneNumber = (phone) => {
+    const regex = /^010-\d{4}-\d{4}$/;
+    return regex.test(phone);
+  };
+
+  const handlePhoneChange = (e) => {
+    const formattedNumber = formatPhoneNumber(e.target.value);
+    const isValid = validatePhoneNumber(formattedNumber);
+    setIsValidPhone(isValid);
+    onChange(formattedNumber, isValid);
+  };
+
   if (!isEditing) {
     return (
       <div className="flex w-48 gap-2">
@@ -45,6 +68,15 @@ const InfoRow = ({ label, value, isEditing, onChange, type = "text", options, on
         >
           {value}
         </span>
+      ) : label === "H.P" ? (
+        <Input
+          className={`w-full ${!isValidPhone && value ? "border-red-500" : ""}`}
+          value={value}
+          onChange={handlePhoneChange}
+          maxLength={13}
+          placeholder={!isValidPhone && value ? "형식이 맞지 않습니다" : "숫자만 입력하세요"}
+          status={!isValidPhone && value ? "error" : ""}
+        />
       ) : (
         <Input className="w-full" value={value} onChange={(e) => onChange(e.target.value)} />
       )}
@@ -58,6 +90,7 @@ const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
   const { addToast } = useToast();
 
   const [isEditing, setIsEditing] = useState(false);
+  const [isValidPhone, setIsValidPhone] = useState(true);
   const [editData, setEditData] = useState({
     name: personnelInfo.ou_nm,
     teamName: personnelInfo.ou_team_name,
@@ -111,6 +144,8 @@ const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
 
   const canEdit = sabeonFromCookie === personnelInfo.ou_sabeon;
 
+  const { setPersonnelInfo } = usePersonnelInfoStore();
+
   const handleImageUpload = async (event) => {
     const file = event.target.files[0];
     if (file) {
@@ -130,6 +165,11 @@ const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
   };
 
   const handleSave = async () => {
+    if (!isValidPhone) {
+      addToast({ type: "error", message: "올바른 전화번호 형식을 입력해주세요." });
+      return;
+    }
+
     try {
       await mutateAsync({
         username: editData.name,
@@ -147,9 +187,44 @@ const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
       setSelectedSeat(selectedSeat || editData.seatNo);
       setIsEditing(false);
       setIsSeatEdit(false);
+
+      if (sabeonFromCookie === personnelInfo.ou_sabeon) {
+        const updatedPersonnelInfo = {
+          ...personnelInfo,
+          ou_nm: editData.name,
+          ou_team_name: editData.teamName,
+          ou_team_cd: editData.team_cd,
+          ou_seat_cd: selectedSeat || editData.seatNo,
+          ou_insa_info: {
+            hp: editData.hp,
+            level: editData.level,
+            profile_img: editData.profile_img,
+          },
+        };
+        setPersonnelInfo(updatedPersonnelInfo);
+
+        setTimeout(() => {
+          const userWithParsedInfo = {
+            ...personnelInfo,
+            ou_nm: editData.name,
+            ou_team_name: editData.teamName,
+            ou_team_cd: editData.team_cd,
+            ou_seat_cd: selectedSeat || editData.seatNo,
+            ou_insa_info: {
+              hp: editData.hp,
+              level: editData.level,
+              profile_img: editData.profile_img,
+            },
+            ou_sabeon: sabeonFromCookie,
+          };
+          setPersonnelInfo(userWithParsedInfo);
+        }, 100);
+      }
+
       onClose();
     } catch (error) {
       console.error("Failed to save:", error);
+      addToast({ type: "error", message: "저장에 실패했습니다." });
     }
   };
 
@@ -183,6 +258,14 @@ const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
         profile_img: personnelInfo.ou_insa_info?.profile_img || "",
       };
 
+  if (isLoading) {
+    return (
+      <div className="w-96 h-96 bg-white/70 backdrop-blur-sm shadow-lg rounded-md overflow-hidden z-10 absolute bottom-4 right-4 flex items-center justify-center">
+        <ClipLoader color="#4F46E5" loading={true} size={50} aria-label="Loading Spinner" />
+      </div>
+    );
+  }
+
   return (
     <div className="w-96 bg-white shadow-lg rounded-md overflow-hidden z-10 absolute bottom-4 right-4">
       <div className="bg-sbtLightBlue text-black p-4">
@@ -212,7 +295,10 @@ const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
               label="H.P"
               value={displayData.hp}
               isEditing={isEditing}
-              onChange={(val) => setEditData({ ...editData, hp: val })}
+              onChange={(val, isValid) => {
+                setEditData({ ...editData, hp: val });
+                setIsValidPhone(isValid);
+              }}
             />
             <InfoRow
               label="자리"

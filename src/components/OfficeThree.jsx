@@ -235,7 +235,7 @@ const OfficeThree = () => {
 
     animRef.current = requestAnimationFrame(animate);
   };
-  
+
   const handleLabelClick = (seatName, isEmptySeat) => {
     if (isEmptySeat) {
       setSelectedSeat(seatName);
@@ -244,7 +244,7 @@ const OfficeThree = () => {
       if (selectedUser) {
         const userWithParsedInfo = {
           ...selectedUser,
-          ou_insa_info: selectedUser.ou_insa_info ? JSON.parse(selectedUser.ou_insa_info) : {}
+          ou_insa_info: selectedUser.ou_insa_info ? JSON.parse(selectedUser.ou_insa_info) : {},
         };
         setPersonnelInfo(userWithParsedInfo);
       }
@@ -373,8 +373,6 @@ const OfficeThree = () => {
       clearScene(sceneRef.current, controlsRef.current, rendererRef.current, animRef.current, selectRef.current);
     };
   }, [mainRef]);
-
-  // useEffect(() => {}, [isEdit]);
 
   return (
     <main
