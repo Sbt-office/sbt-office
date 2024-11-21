@@ -1,6 +1,5 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Input, Button } from "antd";
 
 import logo from "@/assets/images/logo.png";
 import { HiOutlineMenu, HiMenuAlt1 } from "react-icons/hi";
@@ -12,7 +11,6 @@ import PersonnelInfoCard from "./PersonnelInfoCard";
 import ManagePersonnelPopup from "./ManagePersonnelPopup";
 import { useAllUserListQuery } from "@/hooks/useAllUserListQuery";
 
-import useSeatStore from "@/store/seatStore";
 import { usePopupStore } from "@/store/usePopupStore";
 import usePersonnelInfoStore from "@/store/personnelInfoStore";
 
@@ -20,21 +18,11 @@ const SideBar = () => {
   const [openSection, setOpenSection] = useState(null);
   const [openSubItem, setOpenSubItem] = useState(null);
   const [selectedItem, setSelectedItem] = useState(null);
-  const [tempSeatInput, setTempSeatInput] = useState("");
 
   const { data } = useAllUserListQuery();
 
-  const { isSeatEdit, setIsSeatEdit, setSelectedSeat } = useSeatStore(); // -----------------------------------삭제될 친구
   const { isPopupOpen, togglePopup } = usePopupStore();
   const { personnelInfo, setPersonnelInfo, clearPersonnelInfo } = usePersonnelInfoStore();
-
-  // -----------------------------------삭제될 친구
-  const handleSeatConfirm = () => {
-    setSelectedSeat(tempSeatInput);
-    setTempSeatInput("");
-    setIsSeatEdit(false);
-  };
-  // -----------------------------------삭제될 친구
 
   const organizedData = useMemo(() => {
     if (!data || !Array.isArray(data)) return [];
@@ -107,6 +95,29 @@ const SideBar = () => {
     clearPersonnelInfo();
   };
 
+  // personnelInfo가 변경될 때 해당 사용자의 부서를 자동으로 열어주는 effect
+  useEffect(() => {
+    if (personnelInfo) {
+      // 해당 사용자가 속한 부서의 인덱스를 찾습니다
+      const sectionIndex = organizedData.findIndex(
+        (group) => group.title === personnelInfo.ou_team_name
+      );
+
+      if (sectionIndex !== -1) {
+        // 해당 부서 내에서 사용자의 인덱스를 찾습니다
+        const subItemIndex = organizedData[sectionIndex].subItems.findIndex(
+          (person) => person.ou_sabeon === personnelInfo.ou_sabeon
+        );
+
+        if (subItemIndex !== -1) {
+          setOpenSection(sectionIndex);
+          setOpenSubItem(subItemIndex);
+          setSelectedItem(`${sectionIndex}-${subItemIndex}`);
+        }
+      }
+    }
+  }, [personnelInfo, organizedData]);
+
   return (
     <div className="flex items-center h-dvh">
       <aside className="text-[#424242] h-full w-64 overflow-y-auto flex flex-col justify-between">
@@ -114,22 +125,6 @@ const SideBar = () => {
           <header className="w-64 h-16 flex items-center px-14 fixed bg-sbtLightBlue/75 backdrop-blur-sm z-10">
             <img src={logo} alt="logo" draggable={false} className="h-8 object-contain" />
           </header>
-          {/* 자리 변경 팝업 ------------------ 테스트 개발 상태임 ------------> 삭제 처리 될것 */}
-          {isSeatEdit && (
-            <div className="fixed top-10 left-4 z-20 bg-black text-white p-4 rounded-lg shadow-lg border border-gray-200">
-              <div className="flex flex-col gap-2">
-                <Input
-                  placeholder="자리 번호 입력"
-                  value={tempSeatInput}
-                  onChange={(e) => setTempSeatInput(e.target.value)}
-                />
-                <Button type="primary" onClick={handleSeatConfirm} className="bg-sbtDarkBlue">
-                  확인
-                </Button>
-              </div>
-            </div>
-          )}
-          {/* 자리 변경 팝업 ------------------ 테스트 개발 상태임 ------------> 삭제 처리 될것 */}
           <ul className="flex flex-col px-8 py-[5.5rem]">
             {organizedData.map((group, index) => (
               <li key={index} className="list-none mb-5">
