@@ -240,7 +240,7 @@ const OfficeThree = () => {
     if (isEmptySeat) {
       setSelectedSeat(seatName);
     } else {
-      const selectedUser = userList.find((user) => user.ou_seat_cd === seatName);
+      const selectedUser = Array.isArray(userList) && userList.find((user) => user.ou_seat_cd === seatName);
       if (selectedUser) {
         const userWithParsedInfo = {
           ...selectedUser,
@@ -257,7 +257,12 @@ const OfficeThree = () => {
     div.style.display = "";
     div.addEventListener("click", () => handleLabelClick(obj.name, daily === "미정"));
 
-    const color = daily === "미정" ? "#aaa" : daily === "미출근" ? "#f00" : daily === "출근" ? "#0f0" : "#00f";
+    // daily 값이 유효한지 확인
+    const validStatus = ["미정", "미출근", "출근", "퇴근"].includes(daily) ? daily : "미출근";
+    const color = validStatus === "미정" ? "#aaa" : 
+                  validStatus === "미출근" ? "#f00" : 
+                  validStatus === "출근" ? "#0f0" : "#00f";
+                  
     div.style.color = color;
     div.style.borderColor = color;
 
@@ -265,13 +270,13 @@ const OfficeThree = () => {
 
     const label = new CSS2DObject(div);
     label.position.set(0, 1, 0);
-    label.visible = daily !== "미정";
+    label.visible = validStatus !== "미정";
     obj.add(label);
 
     seatRef.current[obj.name] = {
       ...seatRef.current[obj.name],
       label,
-      isEmpty: daily === "미정",
+      isEmpty: validStatus === "미정",
     };
   };
 
@@ -281,7 +286,12 @@ const OfficeThree = () => {
     if (elem) {
       if (name && elem.children[1]) elem.children[1].innerHTML = name;
 
-      const color = daily === "미정" ? "#aaa" : daily === "미출근" ? "#f00" : daily === "출근" ? "#0f0" : "#00f";
+      // daily 값이 유효한지 확인
+      const validStatus = ["미정", "미출근", "출근", "퇴근"].includes(daily) ? daily : "미출근";
+      const color = validStatus === "미정" ? "#aaa" : 
+                   validStatus === "미출근" ? "#f00" : 
+                   validStatus === "출근" ? "#0f0" : "#00f";
+
       elem.style.color = color;
       elem.style.borderColor = color;
     }
@@ -293,29 +303,48 @@ const OfficeThree = () => {
   };
 
   const getAllUser = async () => {
-    const res = await getUserListFetch();
-    if (res) setUserList(res);
+    try {
+      const res = await getUserListFetch();
+      if (res) setUserList(res);
+    } catch (error) {
+      console.error('사용자 목록을 가져오는데 실패했습니다:', error);
+      setUserList([]);
+    }
   };
 
   const getDailyList = async () => {
-    const res = await getDailyListFetch();
-    if (res) setDailyList(res);
+    try {
+      const res = await getDailyListFetch();
+      if (res) setDailyList(res);
+    } catch (error) {
+      console.error('일일 출근 현황을 가져오는데 실패했습니다:', error);
+      setDailyList([]); 
+    }
   };
 
   const drawUserIcon = () => {
-    Object.keys(seatRef.current).map((key) => {
+    if (!Array.isArray(userList) || !Array.isArray(dailyList)) return;
+
+    Object.keys(seatRef.current).forEach((key) => {
       const sit = seatRef.current[key];
-      const user = userList.find((item) => item.ou_seat_cd === key);
+      if (!sit || !sit.obj) return;
+
+      const user = userList.find((item) => item?.ou_seat_cd === key);
+      
       if (user) {
-        const daily = dailyList.find((item) => item.ouds_sabeon === user.ou_sabeon);
-        if (sit && sit.obj) {
-          if (sit.label) updateLabel(sit.obj, user.ou_nm, daily ? daily.userStatus : undefined);
-          else createLabel(sit.obj, user.ou_nm, daily ? daily.userStatus : undefined);
+        const daily = dailyList.find((item) => item?.ouds_sabeon === user.ou_sabeon);
+        const userStatus = daily?.userStatus || "미출근";
+
+        if (sit.label) {
+          updateLabel(sit.obj, user.ou_nm, userStatus);
+        } else {
+          createLabel(sit.obj, user.ou_nm, userStatus);
         }
       } else {
-        if (sit && sit.obj) {
-          if (sit.label) updateLabel(sit.obj, sit.obj.name, "미정");
-          else createLabel(sit.obj, sit.obj.name, "미정");
+        if (sit.label) {
+          updateLabel(sit.obj, sit.obj.name, "미정");
+        } else {
+          createLabel(sit.obj, sit.obj.name, "미정");
         }
       }
     });
@@ -337,11 +366,14 @@ const OfficeThree = () => {
   };
 
   const updateSeat = async () => {
-    if (isDaily || !isSeatEdit) {
-      await getAllUser();
-      await getDailyList();
+    try {
+      if (isDaily || !isSeatEdit) {
+        await Promise.all([getAllUser(), getDailyList()]);
+      }
+      editSeat();
+    } catch (error) {
+      console.error('좌석 정보 업데이트 중 오류 발생:', error);
     }
-    editSeat();
   };
 
   // 데이터 변경시 새로고침
