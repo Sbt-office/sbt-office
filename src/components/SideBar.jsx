@@ -23,10 +23,10 @@ const SideBar = () => {
 
   const { data } = useAllUserListQuery();
 
-  const { selectedSeat, isSeatEdit, setIsSeatEdit, setSelectedSeat } = useSeatStore();  // -----------------------------------삭제될 친구
+  const { isSeatEdit, setIsSeatEdit, setSelectedSeat } = useSeatStore(); // -----------------------------------삭제될 친구
 
   const { isPopupOpen, togglePopup } = usePopupStore();
-  
+
   // -----------------------------------삭제될 친구
   const handleSeatConfirm = () => {
     setSelectedSeat(tempSeatInput);
