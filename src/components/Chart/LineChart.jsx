@@ -8,7 +8,7 @@ const LineChart = ({ type }) => {
   const { getData } = useSocketStore();
 
   const chartInitRef = useRef();
-  const valueRef = useRef(0);
+  const valueRef = useRef({});
 
   const [options, setOptions] = useState({});
   const [valueArray, setValueArray] = useState([]);
