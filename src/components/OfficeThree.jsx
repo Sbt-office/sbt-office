@@ -23,6 +23,7 @@ import { userIcon } from "../utils/icon";
 import useWorkStatusStore from "../store/useWorkStatusStore";
 import RoomCondition from "./RoomCondition";
 import seatListStore from "../store/seatListStore";
+import useSeatStore from "../store/seatStore";
 
 const OfficeThree = () => {
   const mainRef = useRef();
@@ -42,6 +43,7 @@ const OfficeThree = () => {
   const { isPopupOpen } = usePopupStore();
   const { isWorking } = useWorkStatusStore();
   const { setSeatData } = seatListStore();
+  const { isEdit } = useSeatStore();
 
   const [userList, setUserList] = useState([]);
   const [dailyList, setDailyList] = useState([]);
@@ -93,7 +95,11 @@ const OfficeThree = () => {
     labelRendererRef.current.domElement.style.position = "absolute";
     labelRendererRef.current.domElement.style.top = 0;
     labelRendererRef.current.domElement.style.left = 0;
-    canvasRef.current.before(labelRendererRef.current.domElement);
+    labelRendererRef.current.domElement.style.width = 0;
+    labelRendererRef.current.domElement.style.height = 0;
+    labelRendererRef.current.domElement.style.overflow = "visible";
+    labelRendererRef.current.domElement.style.zIndex = 0;
+    canvasRef.current.after(labelRendererRef.current.domElement);
   };
 
   // SCENE CREATE
@@ -137,6 +143,8 @@ const OfficeThree = () => {
 
       if (labelRendererRef.current) {
         labelRendererRef.current.setSize(mainRef.current.offsetWidth, mainRef.current.offsetHeight);
+        labelRendererRef.current.domElement.style.width = 0;
+        labelRendererRef.current.domElement.style.height = 0;
       }
     }
   };
@@ -228,7 +236,7 @@ const OfficeThree = () => {
     div.id = "label_" + obj.name;
     div.style.display = "";
 
-    const color = daily === "미출근" ? "#f00" : daily === "출근" ? "#0f0" : "#00f";
+    const color = daily === "미정" ? "#aaa" : daily === "미출근" ? "#f00" : daily === "출근" ? "#0f0" : "#00f";
     div.style.color = color;
     div.style.borderColor = color;
 
@@ -238,9 +246,12 @@ const OfficeThree = () => {
     label.position.set(0, 1, 0);
     obj.add(label);
 
+    const isEmpty = daily === "미정";
+
     seatRef.current[obj.name] = {
       ...seatRef.current[obj.name],
       label,
+      isEmpty,
     };
   };
 
@@ -275,6 +286,11 @@ const OfficeThree = () => {
         else createLabel(sit.obj, user.ou_nm, daily ? daily.userStatus : undefined);
       }
     });
+
+    Object.keys(seatRef.current).map((key) => {
+      const item = seatRef.current[key];
+      if (item && item.obj && !item.label) createLabel(item.obj, item.obj.name, "미정");
+    });
   };
 
   // 데이터 변경시 새로고침
@@ -286,9 +302,9 @@ const OfficeThree = () => {
 
     Object.keys(seatRef.current).map((key) => {
       const item = seatRef.current[key];
-      if (item.label) item.label.visible = isDaily;
+      if (item.label && !item.isEmpty) item.label.visible = isDaily;
     });
-  }, [isWorking, isDaily]);
+  }, [isWorking, isDaily, isEdit]);
 
   useEffect(() => {
     if (userList.length > 0 && isLoaded) drawUserIcon();
@@ -305,8 +321,13 @@ const OfficeThree = () => {
     };
   }, [mainRef]);
 
+  useEffect(() => {}, [isEdit]);
+
   return (
-    <main ref={mainRef} className={`z-0 bg-[#292929] flex-1 ${isPopupOpen ? "absolute left-64" : "relative"}`}>
+    <main
+      ref={mainRef}
+      className={`z-0 bg-[#292929] flex-1 overflow-hidden ${isPopupOpen ? "absolute left-64" : "relative"}`}
+    >
       <canvas className="absolute top-0 left-0" ref={canvasRef} />
       {isLoaded && (
         <>

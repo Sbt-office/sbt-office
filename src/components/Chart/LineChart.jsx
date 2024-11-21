@@ -5,7 +5,7 @@ import useSocketStore from "../../store/socketStore";
 import dayjs from "dayjs";
 
 const LineChart = ({ type }) => {
-  const { co2, temp, humidity, dist } = useSocketStore();
+  const { co2, temp, humidity, dist, isConnected } = useSocketStore();
 
   const chartInitRef = useRef();
   const itvRef = useRef();
@@ -13,6 +13,7 @@ const LineChart = ({ type }) => {
 
   const [options, setOptions] = useState({});
   const [valueArray, setValueArray] = useState([]);
+  const [isNodata, setIsNodata] = useState(false);
 
   const drawChart = () => {
     setOptions({
@@ -63,7 +64,13 @@ const LineChart = ({ type }) => {
   else if (type === "거리센서") valueRef.current = dist;
 
   const updateValue = () => {
-    if (valueRef.current / 1 === 0) return;
+    if (valueRef.current / 1 === 0) {
+      setIsNodata(true);
+      return;
+    }
+
+    setIsNodata(false);
+
     setValueArray((prevState) => {
       const newState = _.cloneDeep(prevState);
       const now = dayjs().format("YYYY-MM-DD HH:mm:ss");
@@ -77,21 +84,29 @@ const LineChart = ({ type }) => {
   };
 
   useEffect(() => {
-    updateValue();
-    itvRef.current = setInterval(updateValue, 1000);
+    clearInterval(itvRef.current);
+    if (isConnected) {
+      updateValue();
+      itvRef.current = setInterval(updateValue, 1000);
+    }
 
     return () => {
       clearInterval(itvRef.current);
     };
-  }, []);
+  }, [isConnected]);
 
   useEffect(() => {
     drawChart();
   }, [valueArray]);
 
   return (
-    <div className="px-4 py-4 w-96 bg-white rounded-lg">
+    <div className="relative px-4 py-4 w-96 bg-white rounded-lg">
       <EChartsReact ref={chartInitRef} option={options} notMerge={true} />
+      {isNodata && (
+        <div className="absolute top-0 left-0 w-full h-full flex items-center">
+          <div className="flex-1 text-center font-bold text-4xl">No Data</div>
+        </div>
+      )}
     </div>
   );
 };

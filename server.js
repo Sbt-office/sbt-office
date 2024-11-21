@@ -152,6 +152,7 @@ await consumer.subscribe({ topics: [topicCO2, topicTemp, topicDist] });
 await consumer.run({
   eachMessage: async ({ topic, partition, message }) => {
     const value = message.value.toString();
+    console.log(value);
     if (topic === topicCO2) {
       kafkaData.co2 = value.split(": ")[1];
     } else if (topic === topicTemp) {
