@@ -125,11 +125,9 @@ export const updateUserInfoFetch = async (updateData) => {
   try {
     const res = await axios.post(`${baseURL}/api/office_user_save`, {
       ...updateData,
-      insa_info: typeof updateData.insa_info === 'string' 
-        ? JSON.parse(updateData.insa_info) 
-        : updateData.insa_info
+      insa_info: typeof updateData.insa_info === "string" ? JSON.parse(updateData.insa_info) : updateData.insa_info,
     });
-    
+
     if (res.status !== 200) {
       throw new Error(res.data.message || "예상치 못한 오류가 발생했습니다");
     }
