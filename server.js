@@ -113,7 +113,7 @@ io.on("connection", (socket) => {
 
 // kafka
 const kafka = new Kafka({
-  clientId: "SBT-Office2",
+  clientId: "SBT-Office",
   brokers: ["192.168.0.75:9092"],
   connectionTimeout: 10000,
   retry: {
@@ -122,7 +122,7 @@ const kafka = new Kafka({
   },
 });
 
-const consumer = kafka.consumer({ groupId: "SBT_Office_group2" });
+const consumer = kafka.consumer({ groupId: "SBT_Office_group" });
 
 const topicCO2 = "raspberry60-MHZ19B";
 const topicTemp = "raspberry42-DHT22";
@@ -135,6 +135,7 @@ await consumer.subscribe({ topics: [topicCO2, topicTemp, topicDist] });
 await consumer.run({
   eachMessage: async ({ topic, partition, message }) => {
     const value = message.value.toString();
+    console.log(value);
     if (topic === topicCO2) {
       kafkaData.co2 = value.split(": ")[1];
     } else if (topic === topicTemp) {

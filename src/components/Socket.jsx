@@ -5,12 +5,28 @@ import useSocketStore from "../store/socketStore";
 const Socket = () => {
   const socketRef = useRef();
 
-  const { setData } = useSocketStore();
+  const { setData, setIsConnected } = useSocketStore();
 
   useEffect(() => {
+    const socketConnection = async () => {
+      socketRef.current = await io.connect(window.location.origin);
+      socketRef.current.on("kafka", (data) => {
+        setData(data);
+      });
+
+      socketRef.current.on("connect", () => {
+        console.log("connect");
+        setIsConnected(true);
+      });
+
+      socketRef.current.on("disconnect", () => {
+        console.log("disconnect");
+        setIsConnected(false);
+      });
+    };
+
     if (!socketRef.current) {
-      socketRef.current = io.connect(window.location.origin);
-      socketRef.current.on("kafka", setData);
+      socketConnection();
     }
 
     return () => {
