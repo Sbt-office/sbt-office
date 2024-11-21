@@ -243,7 +243,6 @@ const OfficeThree = () => {
   const createLabel = (obj, name, daily = "미출근") => {
     if (!labelRef.current) return;
     const div = labelRef.current.cloneNode(true);
-    div.id = "label_" + obj.name;
     div.style.display = "";
     div.addEventListener("click", () => handleLabelClick(obj.name, daily === "미정"));
 
@@ -293,15 +292,6 @@ const OfficeThree = () => {
   };
 
   const drawUserIcon = () => {
-    // userList.map((user) => {
-    //   const sit = seatRef.current[user.ou_seat_cd];
-    //   const daily = dailyList.find((item) => item.ouds_sabeon === user.ou_sabeon);
-    //   if (sit && sit.obj) {
-    //     if (sit.label) updateLabel(sit.obj, user.ou_nm, daily ? daily.userStatus : undefined);
-    //     else createLabel(sit.obj, user.ou_nm, daily ? daily.userStatus : undefined);
-    //   }
-    // });
-
     Object.keys(seatRef.current).map((key) => {
       const sit = seatRef.current[key];
       const user = userList.find((item) => item.ou_seat_cd === key);
@@ -320,13 +310,7 @@ const OfficeThree = () => {
     });
   };
 
-  // 데이터 변경시 새로고침
-  useEffect(() => {
-    if (isDaily || !isSeatEdit) {
-      getAllUser();
-      getDailyList();
-    }
-
+  const editSeat = () => {
     Object.keys(seatRef.current).map((key) => {
       const item = seatRef.current[key];
       if (item.label) {
@@ -339,6 +323,19 @@ const OfficeThree = () => {
         }
       }
     });
+  };
+
+  const updateSeat = async () => {
+    if (isDaily || !isSeatEdit) {
+      await getAllUser();
+      await getDailyList();
+    }
+    editSeat();
+  };
+
+  // 데이터 변경시 새로고침
+  useEffect(() => {
+    updateSeat();
   }, [isWorking, isDaily, isSeatEdit]);
 
   useEffect(() => {
