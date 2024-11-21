@@ -67,10 +67,9 @@ const LineChart = ({ title, type }) => {
 
     setValueArray((prevState) => {
       const newState = _.cloneDeep(prevState);
-      const now = dayjs().format("YYYY-MM-DD HH:mm:ss");
       newState.push({
         name: valueRef.current.time,
-        value: [now, valueRef.current.value],
+        value: [valueRef.current.time, valueRef.current.value],
       });
       if (newState.length > 100) newState.shift();
       return newState;
@@ -78,7 +77,7 @@ const LineChart = ({ title, type }) => {
   };
 
   useEffect(() => {
-    updateValue();
+    if (valueRef.current) updateValue();
   }, [valueRef.current]);
 
   useEffect(() => {
