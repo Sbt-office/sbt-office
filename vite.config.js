@@ -20,7 +20,7 @@ export default defineConfig({
     emptyOutDir: true,
   },
   optimizeDeps: {
-    include: ["lodash-es"],
+    include: ["es-toolkit"],
   },
   resolve: {
     alias: [{ find: "@", replacement: resolve(__dirname, "src") }],

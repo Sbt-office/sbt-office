@@ -259,10 +259,9 @@ const OfficeThree = () => {
 
     // daily 값이 유효한지 확인
     const validStatus = ["미정", "미출근", "출근", "퇴근"].includes(daily) ? daily : "미출근";
-    const color = validStatus === "미정" ? "#aaa" : 
-                  validStatus === "미출근" ? "#f00" : 
-                  validStatus === "출근" ? "#0f0" : "#00f";
-                  
+    const color =
+      validStatus === "미정" ? "#aaa" : validStatus === "미출근" ? "#f00" : validStatus === "출근" ? "#0f0" : "#00f";
+
     div.style.color = color;
     div.style.borderColor = color;
 
@@ -288,9 +287,8 @@ const OfficeThree = () => {
 
       // daily 값이 유효한지 확인
       const validStatus = ["미정", "미출근", "출근", "퇴근"].includes(daily) ? daily : "미출근";
-      const color = validStatus === "미정" ? "#aaa" : 
-                   validStatus === "미출근" ? "#f00" : 
-                   validStatus === "출근" ? "#0f0" : "#00f";
+      const color =
+        validStatus === "미정" ? "#aaa" : validStatus === "미출근" ? "#f00" : validStatus === "출근" ? "#0f0" : "#00f";
 
       elem.style.color = color;
       elem.style.borderColor = color;
@@ -307,7 +305,7 @@ const OfficeThree = () => {
       const res = await getUserListFetch();
       if (res) setUserList(res);
     } catch (error) {
-      console.error('사용자 목록을 가져오는데 실패했습니다:', error);
+      console.error("사용자 목록을 가져오는데 실패했습니다:", error);
       setUserList([]);
     }
   };
@@ -317,8 +315,8 @@ const OfficeThree = () => {
       const res = await getDailyListFetch();
       if (res) setDailyList(res);
     } catch (error) {
-      console.error('일일 출근 현황을 가져오는데 실패했습니다:', error);
-      setDailyList([]); 
+      console.error("일일 출근 현황을 가져오는데 실패했습니다:", error);
+      setDailyList([]);
     }
   };
 
@@ -330,7 +328,7 @@ const OfficeThree = () => {
       if (!sit || !sit.obj) return;
 
       const user = userList.find((item) => item?.ou_seat_cd === key);
-      
+
       if (user) {
         const daily = dailyList.find((item) => item?.ouds_sabeon === user.ou_sabeon);
         const userStatus = daily?.userStatus || "미출근";
@@ -372,7 +370,7 @@ const OfficeThree = () => {
       }
       editSeat();
     } catch (error) {
-      console.error('좌석 정보 업데이트 중 오류 발생:', error);
+      console.error("좌석 정보 업데이트 중 오류 발생:", error);
     }
   };
 
