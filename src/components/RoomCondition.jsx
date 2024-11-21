@@ -14,18 +14,18 @@ const RoomCondition = ({ conditionRef, closeEvent }) => {
         <tbody>
           <tr>
             <td className="px-2 py-2">
-              <LineChart type={"온도"} />
+              <LineChart title={"온도"} type="temp" />
             </td>
             <td className="px-2 py-2">
-              <LineChart type={"습도"} />
+              <LineChart title={"습도"} type="humidity" />
             </td>
           </tr>
           <tr>
             <td className="px-2 py-2">
-              <LineChart type={"이산화탄소"} />
+              <LineChart title={"이산화탄소"} type="co2" />
             </td>
             <td className="px-2 py-2">
-              <LineChart type={"거리센서"} />
+              <LineChart title={"거리센서"} type="dist" />
             </td>
           </tr>
         </tbody>

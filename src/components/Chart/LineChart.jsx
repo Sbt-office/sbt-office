@@ -4,11 +4,11 @@ import _ from "lodash";
 import useSocketStore from "../../store/socketStore";
 import dayjs from "dayjs";
 
-const LineChart = ({ type }) => {
+const LineChart = ({ title, type }) => {
   const { getData } = useSocketStore();
 
   const chartInitRef = useRef();
-  const valueRef = useRef({});
+  const valueRef = useRef(getData(type));
 
   const [options, setOptions] = useState({});
   const [valueArray, setValueArray] = useState([]);
@@ -17,7 +17,7 @@ const LineChart = ({ type }) => {
   const drawChart = () => {
     setOptions({
       title: {
-        text: type,
+        text: title,
       },
       grid: {
         containLabel: true,
@@ -48,7 +48,7 @@ const LineChart = ({ type }) => {
       },
       series: [
         {
-          name: type,
+          name: title,
           type: "line",
           showSymbol: false,
           data: valueArray,
@@ -56,11 +56,6 @@ const LineChart = ({ type }) => {
       ],
     });
   };
-
-  if (type === "이산화탄소") valueRef.current = getData("co2");
-  else if (type === "온도") valueRef.current = getData("temp");
-  else if (type === "습도") valueRef.current = getData("humidity");
-  else if (type === "거리센서") valueRef.current = getData("dist");
 
   const updateValue = () => {
     if (valueRef.current.value / 1 === 0) {
