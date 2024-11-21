@@ -24,6 +24,8 @@ import useWorkStatusStore from "../store/useWorkStatusStore";
 import RoomCondition from "./RoomCondition";
 import seatListStore from "../store/seatListStore";
 import useSeatStore from "@/store/seatStore";
+import usePersonnelInfoStore from "@/store/personnelInfoStore";
+import PersonnelInfoCard from "./PersonnelInfoCard";
 
 const OfficeThree = () => {
   const mainRef = useRef();
@@ -52,7 +54,8 @@ const OfficeThree = () => {
   const { setSeatData } = seatListStore();
   const { isPopupOpen } = usePopupStore();
   const { isWorking } = useWorkStatusStore();
-  const { selectedSeat, isSeatEdit, setIsSeatEdit, setSelectedSeat } = useSeatStore();
+  const { selectedSeat, isSeatEdit, setSelectedSeat } = useSeatStore();
+  const { personnelInfo, setPersonnelInfo, clearPersonnelInfo } = usePersonnelInfoStore();
 
   // CAMERA
   const setupCamera = () => {
@@ -232,11 +235,19 @@ const OfficeThree = () => {
 
     animRef.current = requestAnimationFrame(animate);
   };
-
+  
   const handleLabelClick = (seatName, isEmptySeat) => {
     if (isEmptySeat) {
       setSelectedSeat(seatName);
     } else {
+      const selectedUser = userList.find((user) => user.ou_seat_cd === seatName);
+      if (selectedUser) {
+        const userWithParsedInfo = {
+          ...selectedUser,
+          ou_insa_info: selectedUser.ou_insa_info ? JSON.parse(selectedUser.ou_insa_info) : {}
+        };
+        setPersonnelInfo(userWithParsedInfo);
+      }
     }
   };
 
@@ -404,6 +415,7 @@ const OfficeThree = () => {
           </div>
         </>
       )}
+      {personnelInfo && <PersonnelInfoCard personnelInfo={personnelInfo} onClose={clearPersonnelInfo} />}
     </main>
   );
 };

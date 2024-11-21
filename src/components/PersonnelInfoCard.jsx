@@ -189,14 +189,9 @@ const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
         <h2 className="text-2xl font-bold text-center">인사 정보</h2>
       </div>
       <div className="p-6">
-        <div className="flex items-center space-x-8">
+        <div className="flex items-center space-x-6">
           <div className="space-y-2">
-            <InfoRow
-              label="성함"
-              value={displayData.name}
-              isEditing={isEditing}
-              onChange={(val) => setEditData({ ...editData, name: val })}
-            />
+            <InfoRow label="성함" value={displayData.name} />
             <InfoRow
               label="부서"
               value={displayData.teamName}
@@ -228,7 +223,7 @@ const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
             />
           </div>
           <div
-            className={`w-28 h-36 rounded-md bg-sbtLightBlue/70 flex items-center justify-center text-gray-600 ${
+            className={`w-32 h-36 rounded-md bg-sbtLightBlue/70 flex items-center justify-center text-gray-600 ${
               isEditing ? "cursor-pointer hover:bg-sbtLightBlue/90" : ""
             }`}
             onClick={() => isEditing && fileInputRef.current?.click()}

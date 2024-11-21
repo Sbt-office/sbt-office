@@ -13,12 +13,12 @@ import { usePopupStore } from "@/store/usePopupStore";
 import WorkGoAndLeave from "./WorkGoAndLeave";
 import { useAllUserListQuery } from "../hooks/useAllUserListQuery";
 import useSeatStore from "@/store/seatStore";
+import usePersonnelInfoStore from "@/store/personnelInfoStore";
 
 const SideBar = () => {
   const [openSection, setOpenSection] = useState(null);
   const [openSubItem, setOpenSubItem] = useState(null);
   const [selectedItem, setSelectedItem] = useState(null);
-  const [personnelInfo, setPersonnelInfo] = useState(null);
   const [tempSeatInput, setTempSeatInput] = useState("");
 
   const { data } = useAllUserListQuery();
@@ -26,6 +26,8 @@ const SideBar = () => {
   const { isSeatEdit, setIsSeatEdit, setSelectedSeat } = useSeatStore(); // -----------------------------------삭제될 친구
 
   const { isPopupOpen, togglePopup } = usePopupStore();
+
+  const { personnelInfo, setPersonnelInfo, clearPersonnelInfo } = usePersonnelInfoStore();
 
   // -----------------------------------삭제될 친구
   const handleSeatConfirm = () => {
@@ -103,7 +105,7 @@ const SideBar = () => {
 
   const handleCloseInfoCard = () => {
     setSelectedItem(null);
-    setPersonnelInfo(null);
+    clearPersonnelInfo();
   };
 
   return (
