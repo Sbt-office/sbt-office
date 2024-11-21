@@ -47,6 +47,7 @@ const OfficeThree = () => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [isCondition, setIsCondition] = useState(true);
   const [isDaily, setIsDaily] = useState(true);
+  const [selectSeatName, setSelectSeatName] = useState(null);
 
   /**
    * Store
@@ -255,7 +256,9 @@ const OfficeThree = () => {
     if (!labelRef.current) return;
     const div = labelRef.current.cloneNode(true);
     div.style.display = "";
-    div.addEventListener("click", () => handleLabelClick(obj.name, daily === "미정"));
+    div.addEventListener("click", () => {
+      setSelectSeatName(obj.name);
+    });
 
     // daily 값이 유효한지 확인
     const validStatus = ["미정", "미출근", "출근", "퇴근"].includes(daily) ? daily : "미출근";
@@ -379,6 +382,7 @@ const OfficeThree = () => {
     updateSeat();
   }, [isWorking, isDaily, isSeatEdit]);
 
+  // 좌석변경 - 빈 좌석 선택시 하이라이트
   useEffect(() => {
     if (selectedSeat) {
       Object.keys(seatRef.current).map((key) => {
@@ -388,6 +392,17 @@ const OfficeThree = () => {
       });
     }
   }, [selectedSeat]);
+
+  useEffect(() => {
+    if (!personnelInfo) setSelectSeatName(null);
+  }, [personnelInfo]);
+
+  useEffect(() => {
+    if (selectSeatName) {
+      const isEmpty = !userList.find((user) => user.ou_seat_cd === selectSeatName);
+      handleLabelClick(selectSeatName, isEmpty);
+    }
+  }, [selectSeatName]);
 
   useEffect(() => {
     if (isLoaded) drawUserIcon();

@@ -4,13 +4,13 @@ import { useEffect, useRef, useState } from "react";
 import EChartsReact from "echarts-for-react";
 import { cloneDeep } from "es-toolkit/object";
 import useSocketStore from "@/store/socketStore";
-import dayjs from "dayjs";
 
 const LineChart = ({ title, type }) => {
   const { getData } = useSocketStore();
 
   const chartInitRef = useRef();
-  const valueRef = useRef(getData(type));
+  const valueRef = useRef({});
+  valueRef.current = getData(type);
 
   const [options, setOptions] = useState({});
   const [valueArray, setValueArray] = useState([]);
@@ -24,6 +24,7 @@ const LineChart = ({ title, type }) => {
       grid: {
         containLabel: true,
         left: 3,
+        bottom: 10,
       },
       tooltip: {
         trigger: "axis",
@@ -69,10 +70,9 @@ const LineChart = ({ title, type }) => {
 
     setValueArray((prevState) => {
       const newState = cloneDeep(prevState);
-      const now = dayjs().format("YYYY-MM-DD HH:mm:ss");
       newState.push({
         name: valueRef.current.time,
-        value: [now, valueRef.current.value],
+        value: [valueRef.current.time, valueRef.current.value],
       });
       if (newState.length > 100) newState.shift();
       return newState;
@@ -80,7 +80,7 @@ const LineChart = ({ title, type }) => {
   };
 
   useEffect(() => {
-    updateValue();
+    if (valueRef.current) updateValue();
   }, [valueRef.current]);
 
   useEffect(() => {
