@@ -113,7 +113,7 @@ io.on("connection", (socket) => {
 
 // kafka
 const kafka = new Kafka({
-  clientId: "SBT-Office",
+  clientId: "SBT-Office2",
   brokers: ["192.168.0.75:9092"],
   connectionTimeout: 10000,
   retry: {
@@ -122,7 +122,7 @@ const kafka = new Kafka({
   },
 });
 
-const consumer = kafka.consumer({ groupId: "SBT_Office_group" });
+const consumer = kafka.consumer({ groupId: "SBT_Office_group2" });
 
 const topicCO2 = "raspberry60-MHZ19B";
 const topicTemp = "raspberry42-DHT22";
