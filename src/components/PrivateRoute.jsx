@@ -11,18 +11,21 @@ const PrivateRoute = ({ children }) => {
   const logout = useAuthStore((state) => state.logout);
   
   useEffect(() => {
+    const publicPaths = ["/", "/signin"];
     const sabeonCookie = getCookie("sabeon");
+    
+    // 쿠키가 없는데 인증된 상태라면 로그아웃
     if (!sabeonCookie && isAuthenticated) {
-      logout(); 
+      logout();
     }
-  }, [location.pathname, logout, isAuthenticated]);
 
-  useEffect(() => {
-    const sabeonCookie = getCookie("sabeon");
-    if (!isAuthenticated || !sabeonCookie) {
-      navigate("/", { replace: true });
+    // 현재 경로가 public이 아닌데 인증이 안되어있거나 쿠키가 없다면
+    if (!publicPaths.includes(location.pathname)) {
+      if (!isAuthenticated || !sabeonCookie) {
+        navigate("/", { replace: true });
+      }
     }
-  }, [isAuthenticated, navigate]);
+  }, [location.pathname, logout, isAuthenticated, navigate]);
 
   return isAuthenticated && getCookie("sabeon") ? children : null;
 };
