@@ -2,18 +2,14 @@ import { BrowserRouter } from "react-router-dom";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import "./main.css";
-import { HydrationBoundary, QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const queryClient = new QueryClient();
-const dehydratedState = window.__REACT_QUERY_STATE__;
 
-ReactDOM.hydrateRoot(
-  document.getElementById("root"),
+ReactDOM.createRoot(document.getElementById("root")).render(
   <QueryClientProvider client={queryClient}>
-    <HydrationBoundary state={dehydratedState}>
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
-    </HydrationBoundary>
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
   </QueryClientProvider>
 );
