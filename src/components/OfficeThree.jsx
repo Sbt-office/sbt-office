@@ -233,11 +233,19 @@ const OfficeThree = () => {
     animRef.current = requestAnimationFrame(animate);
   };
 
+  const handleLabelClick = (seatName, isEmptySeat) => {
+    if (isEmptySeat) {
+      setSelectedSeat(seatName);
+    } else {
+    }
+  };
+
   const createLabel = (obj, name, daily = "미출근") => {
     if (!labelRef.current) return;
     const div = labelRef.current.cloneNode(true);
     div.id = "label_" + obj.name;
     div.style.display = "";
+    div.addEventListener("click", () => handleLabelClick(obj.name, daily === "미정"));
 
     const color = daily === "미정" ? "#aaa" : daily === "미출근" ? "#f00" : daily === "출근" ? "#0f0" : "#00f";
     div.style.color = color;
@@ -247,14 +255,13 @@ const OfficeThree = () => {
 
     const label = new CSS2DObject(div);
     label.position.set(0, 1, 0);
+    label.visible = daily !== "미정";
     obj.add(label);
-
-    const isEmpty = daily === "미정";
 
     seatRef.current[obj.name] = {
       ...seatRef.current[obj.name],
       label,
-      isEmpty,
+      isEmpty: daily === "미정",
     };
   };
 
@@ -264,10 +271,15 @@ const OfficeThree = () => {
     if (elem) {
       if (name && elem.children[1]) elem.children[1].innerHTML = name;
 
-      const color = daily === "미출근" ? "#f00" : daily === "출근" ? "#0f0" : "#00f";
+      const color = daily === "미정" ? "#aaa" : daily === "미출근" ? "#f00" : daily === "출근" ? "#0f0" : "#00f";
       elem.style.color = color;
       elem.style.borderColor = color;
     }
+
+    seatRef.current[obj.name] = {
+      ...seatRef.current[obj.name],
+      isEmpty: daily === "미정",
+    };
   };
 
   const getAllUser = async () => {
@@ -281,36 +293,66 @@ const OfficeThree = () => {
   };
 
   const drawUserIcon = () => {
-    userList.map((user) => {
-      const sit = seatRef.current[user.ou_seat_cd];
-      const daily = dailyList.find((item) => item.ouds_sabeon === user.ou_sabeon);
-      if (sit && sit.obj) {
-        if (sit.label) updateLabel(sit.obj, user.ou_nm, daily ? daily.userStatus : undefined);
-        else createLabel(sit.obj, user.ou_nm, daily ? daily.userStatus : undefined);
-      }
-    });
+    // userList.map((user) => {
+    //   const sit = seatRef.current[user.ou_seat_cd];
+    //   const daily = dailyList.find((item) => item.ouds_sabeon === user.ou_sabeon);
+    //   if (sit && sit.obj) {
+    //     if (sit.label) updateLabel(sit.obj, user.ou_nm, daily ? daily.userStatus : undefined);
+    //     else createLabel(sit.obj, user.ou_nm, daily ? daily.userStatus : undefined);
+    //   }
+    // });
 
     Object.keys(seatRef.current).map((key) => {
-      const item = seatRef.current[key];
-      if (item && item.obj && !item.label) createLabel(item.obj, item.obj.name, "미정");
+      const sit = seatRef.current[key];
+      const user = userList.find((item) => item.ou_seat_cd === key);
+      if (user) {
+        const daily = dailyList.find((item) => item.ouds_sabeon === user.ou_sabeon);
+        if (sit && sit.obj) {
+          if (sit.label) updateLabel(sit.obj, user.ou_nm, daily ? daily.userStatus : undefined);
+          else createLabel(sit.obj, user.ou_nm, daily ? daily.userStatus : undefined);
+        }
+      } else {
+        if (sit && sit.obj) {
+          if (sit.label) updateLabel(sit.obj, sit.obj.name, "미정");
+          else createLabel(sit.obj, sit.obj.name, "미정");
+        }
+      }
     });
   };
 
   // 데이터 변경시 새로고침
   useEffect(() => {
-    if (isDaily) {
+    if (isDaily || !isSeatEdit) {
       getAllUser();
       getDailyList();
     }
 
     Object.keys(seatRef.current).map((key) => {
       const item = seatRef.current[key];
-      if (item.label && !item.isEmpty) item.label.visible = isDaily;
+      if (item.label) {
+        if (isSeatEdit) {
+          if (item.isEmpty) item.label.visible = true;
+          else item.label.visible = false;
+        } else {
+          if (item.isEmpty) item.label.visible = false;
+          else item.label.visible = isDaily;
+        }
+      }
     });
-  }, [isWorking, isDaily]);
+  }, [isWorking, isDaily, isSeatEdit]);
 
   useEffect(() => {
-    if (userList.length > 0 && isLoaded) drawUserIcon();
+    if (selectedSeat) {
+      Object.keys(seatRef.current).map((key) => {
+        const item = seatRef.current[key];
+        if (item && item.label && item.isEmpty)
+          item.label.element.style.borderColor = key === selectedSeat ? "#f00" : "#aaa";
+      });
+    }
+  }, [selectedSeat]);
+
+  useEffect(() => {
+    if (isLoaded) drawUserIcon();
   }, [userList, dailyList, isLoaded]);
 
   useEffect(() => {
