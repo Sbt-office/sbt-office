@@ -27,7 +27,7 @@ var vite_config_default = defineConfig({
   },
   server: {
     host: "localhost",
-    port: 3e3,
+    port: 3000,
     historyApiFallback: true,
     // 모든 요청을 index.html로 리다이렉트 (배포 시 필요)
     middleware: (app) => {
