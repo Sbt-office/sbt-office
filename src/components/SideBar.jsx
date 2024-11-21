@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
+import { Input, Button } from "antd";
 
 import { IoIdCardOutline, IoSettingsOutline } from "react-icons/io5";
 import { HiOutlineMenu, HiMenuAlt1 } from "react-icons/hi";
@@ -11,16 +12,28 @@ import ManagePersonnelPopup from "./ManagePersonnelPopup";
 import { usePopupStore } from "@/store/usePopupStore";
 import WorkGoAndLeave from "./WorkGoAndLeave";
 import { useAllUserListQuery } from "../hooks/useAllUserListQuery";
+import useSeatStore from "@/store/seatStore";
 
 const SideBar = () => {
   const [openSection, setOpenSection] = useState(null);
   const [openSubItem, setOpenSubItem] = useState(null);
   const [selectedItem, setSelectedItem] = useState(null);
   const [personnelInfo, setPersonnelInfo] = useState(null);
+  const [tempSeatInput, setTempSeatInput] = useState("");
 
   const { data } = useAllUserListQuery();
 
+  const { selectedSeat, isSeatEdit, setIsSeatEdit, setSelectedSeat } = useSeatStore();  // -----------------------------------삭제될 친구
+
   const { isPopupOpen, togglePopup } = usePopupStore();
+  
+  // -----------------------------------삭제될 친구
+  const handleSeatConfirm = () => {
+    setSelectedSeat(tempSeatInput);
+    setTempSeatInput("");
+    setIsSeatEdit(false);
+  };
+  // -----------------------------------삭제될 친구
 
   const organizedData = useMemo(() => {
     if (!data || !Array.isArray(data)) return [];
@@ -100,6 +113,22 @@ const SideBar = () => {
           <header className="w-64 h-16 flex items-center px-14 fixed bg-sbtLightBlue/75 backdrop-blur-sm z-10">
             <img src={logo} alt="logo" draggable={false} className="h-8 object-contain" />
           </header>
+          {/* 자리 변경 팝업 ------------------ 테스트 개발 상태임 ------------> 삭제 처리 될것 */}
+          {isSeatEdit && (
+            <div className="fixed top-10 left-4 z-20 bg-black text-white p-4 rounded-lg shadow-lg border border-gray-200">
+              <div className="flex flex-col gap-2">
+                <Input
+                  placeholder="자리 번호 입력"
+                  value={tempSeatInput}
+                  onChange={(e) => setTempSeatInput(e.target.value)}
+                />
+                <Button type="primary" onClick={handleSeatConfirm} className="bg-sbtDarkBlue">
+                  확인
+                </Button>
+              </div>
+            </div>
+          )}
+          {/* 자리 변경 팝업 ------------------ 테스트 개발 상태임 ------------> 삭제 처리 될것 */}
           <ul className="flex flex-col px-8 py-[5.5rem]">
             {organizedData.map((group, index) => (
               <li key={index} className="list-none mb-5">

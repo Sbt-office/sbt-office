@@ -1,10 +1,10 @@
 import { create } from "zustand";
 
 const useSeatStore = create((set) => ({
-  isEdit: false,
+  isSeatEdit: false,
   selectedSeat: null,
   setSelectedSeat: (seatCd) => set({ selectedSeat: seatCd }),
-  setIsEdit: (boolean) => set({ isEdit: boolean }),
+  setIsSeatEdit: (boolean) => set({ isSeatEdit: boolean }),
 }));
 
 export default useSeatStore;
