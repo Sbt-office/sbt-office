@@ -3,13 +3,13 @@ import { useEffect, useRef, useState } from "react";
 import EChartsReact from "echarts-for-react";
 import { cloneDeep } from "es-toolkit/object";
 import useSocketStore from "@/store/socketStore";
-import dayjs from "dayjs";
 
 const LineChart = ({ title, type }) => {
   const { getData } = useSocketStore();
 
   const chartInitRef = useRef();
-  const valueRef = useRef(getData(type));
+  const valueRef = useRef({});
+  valueRef.current = getData(type);
 
   const [options, setOptions] = useState({});
   const [valueArray, setValueArray] = useState([]);
@@ -23,6 +23,7 @@ const LineChart = ({ title, type }) => {
       grid: {
         containLabel: true,
         left: 3,
+        bottom: 10,
       },
       tooltip: {
         trigger: "axis",
