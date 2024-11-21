@@ -1,6 +1,6 @@
 /* eslint-disable react/prop-types */
 import { useState, useEffect, useRef } from "react";
-import { Select, Input } from "antd";
+import { Select, Input, Button } from "antd";
 
 import profile from "@/assets/images/profile.png";
 
@@ -38,7 +38,7 @@ const InfoRow = ({ label, value, isEditing, onChange, type = "text", options, on
         <Select className="w-full" value={value} onChange={(val) => onChange(val)} options={options} />
       ) : label === "자리" ? (
         <span
-          className="text-gray-800 truncate overflow-hidden w-full cursor-pointer rounded-md ring-1 ring-sbtLightBlue px-2 py-1 
+          className="text-gray-800 truncate overflow-hidden w-full cursor-pointer rounded-md ring-1 ring-sbtLightBlue px-3 py-1 
           hover:bg-sbtDarkBlue hover:text-white"
           onClick={onClick}
         >
@@ -53,7 +53,7 @@ const InfoRow = ({ label, value, isEditing, onChange, type = "text", options, on
 
 const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
   const fileInputRef = useRef(null);
-  const { selectedSeat, setIsSeatEdit } = useSeatStore();
+  const { selectedSeat, setSelectedSeat, setIsSeatEdit } = useSeatStore();
 
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({
@@ -74,18 +74,34 @@ const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
       seatNo: selectedSeat || personnelInfo.ou_seat_cd,
       profile_img: personnelInfo.ou_insa_info?.profile_img || "",
     });
+
+    return () => {
+      setEditData({
+        name: "",
+        teamName: "",
+        level: "",
+        hp: "",
+        seatNo: "",
+        profile_img: "",
+      });
+    };
   }, [personnelInfo, selectedSeat]);
 
   useEffect(() => {
     return () => {
       setIsSeatEdit(false);
+      setSelectedSeat(null);
+      setIsEditing(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     };
-  }, [setIsSeatEdit]);
+  }, [setIsSeatEdit, setSelectedSeat]);
 
   const { setSeatNo } = usePersonnelEditStore();
   const { compressImage } = useImageCompression();
 
-  const updatePersonnel = useUpdatePersonnel();
+  const { mutateAsync, isLoading } = useUpdatePersonnel();
   const sabeonFromCookie = getCookie("sabeon");
 
   const canEdit = sabeonFromCookie === personnelInfo.ou_sabeon;
@@ -106,24 +122,30 @@ const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
   };
 
   const handleSave = async () => {
-    await updatePersonnel.mutateAsync({
-      username: editData.name,
-      seat_cd: selectedSeat || editData.seatNo,
-      team_name: editData.teamName,
-      insa_info: {
-        hp: editData.hp,
-        level: editData.level,
-        profile_img: editData.profile_img,
-      },
-    });
+    try {
+      await mutateAsync({
+        username: editData.name,
+        seat_cd: selectedSeat || editData.seatNo,
+        team_name: editData.teamName,
+        insa_info: {
+          hp: editData.hp,
+          level: editData.level,
+          profile_img: editData.profile_img,
+        },
+      });
 
-    setSeatNo(selectedSeat || editData.seatNo);
-    setIsEditing(false);
-    setIsSeatEdit(false);
-    onClose();
+      setSeatNo(selectedSeat || editData.seatNo);
+      setSelectedSeat(selectedSeat || editData.seatNo);
+      setIsEditing(false);
+      setIsSeatEdit(false);
+      onClose();
+    } catch (error) {
+      console.error("Failed to save:", error);
+    }
   };
 
   const handleClose = () => {
+    setSelectedSeat(personnelInfo.ou_seat_cd);
     setIsSeatEdit(false);
     onClose();
   };
@@ -132,6 +154,12 @@ const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
     if (isEditing) {
       setIsSeatEdit(true);
     }
+  };
+
+  const handleIsCancelSave = () => {
+    setSelectedSeat(personnelInfo.ou_seat_cd);
+    setIsEditing(false);
+    setIsSeatEdit(false);
   };
 
   const displayData = isEditing
@@ -211,28 +239,45 @@ const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
           </div>
         </div>
       </div>
-      <div className="flex justify-between p-4 bg-white">
-        <button
-          className="border border-sbtDarkBlue px-4 py-2 rounded hover:bg-sbtLightBlue/60 transition-colors"
+      <div className="flex justify-between px-6 py-4">
+        <Button
+          color="primary"
+          variant="outlined"
+          className="rounded transition-colors text-sbtDarkBlue"
           onClick={handleClose}
+          disabled={isLoading}
         >
           닫기
-        </button>
+        </Button>
         {canEdit &&
           (isEditing ? (
-            <button
-              className="border border-sbtDarkBlue px-4 py-2 rounded hover:bg-sbtLightBlue/60 transition-colors"
-              onClick={handleSave}
-            >
-              저장
-            </button>
+            <div className="flex gap-3">
+              <Button
+                color="primary"
+                variant="outlined"
+                loading={isLoading}
+                className="rounded transition-colors text-sbtDarkBlue"
+                onClick={handleIsCancelSave}
+              >
+                취소
+              </Button>
+              <Button
+                type="primary"
+                loading={isLoading}
+                className="rounded transition-colors text-white bg-sbtDarkBlue"
+                onClick={handleSave}
+              >
+                저장
+              </Button>
+            </div>
           ) : (
-            <button
-              className="border border-sbtDarkBlue px-4 py-2 rounded hover:bg-sbtLightBlue/60 transition-colors"
+            <Button
+              type="primary"
+              className="rounded transition-colors text-white bg-sbtDarkBlue"
               onClick={() => setIsEditing(true)}
             >
               수정
-            </button>
+            </Button>
           ))}
       </div>
     </div>
