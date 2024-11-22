@@ -41,7 +41,7 @@ const GaugeChart = ({ title, type, min = 0, max = 100, range = [], unit }) => {
           splitNumber: 10,
           pointer: {
             itemStyle: {
-              color: "auto",
+              color: "#444",
             },
           },
           axisTick: {
@@ -68,7 +68,7 @@ const GaugeChart = ({ title, type, min = 0, max = 100, range = [], unit }) => {
           detail: {
             valueAnimation: true,
             formatter: "{value} " + unit,
-            color: "inherit",
+            color: "#444",
             fontSize: 20,
           },
           data: [
