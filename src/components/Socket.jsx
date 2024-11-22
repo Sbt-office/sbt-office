@@ -6,47 +6,49 @@ import { HubConnectionBuilder } from "@microsoft/signalr";
 
 const Socket = () => {
   const socketRef = useRef();
+  const socketRef2 = useRef();
 
-  const { setCo2, setTemp, setHumidity, setDist, setIsConnected } = useSocketStore();
+  const { setCo2, setTemp, setHumidity, setDist } = useSocketStore();
   const TopicCo2 = import.meta.env.VITE_TOPIC_CO2;
   const TopicTemp = import.meta.env.VITE_TOPIC_TEMP;
   const TopicDist = import.meta.env.VITE_TOPIC_DIST;
 
   // useEffect(() => {
   //   const socketConnection = async () => {
-  //     socketRef.current = await io.connect("http://192.168.0.75:3000", { transports: ["websocket", "polling"] });
-  //     socketRef.current.on("kafkaMessage", (data) => {
-  //       console.log(data);
+  //     socketRef2.current = await io.connect("http://192.168.0.51:3001");
 
-  //       const now = dayjs().format("YYYY-MM-DD HH:mm:ss:SS");
-  //       if (data[TopicCo2]) {
-  //         setCo2({ time: now, value: data[TopicCo2].split(": ")[1] });
-  //       } else if (data[TopicTemp]) {
-  //         const split = data[TopicTemp].split(", ");
-  //         setTemp({ time: now, value: split[0].split(": ")[1] });
-  //         setHumidity({ time: now, value: split[1].split(": ")[1] });
-  //       } else if (data[TopicDist]) {
-  //         setDist({ time: now, value: data[TopicDist].split(": ")[1] });
-  //       }
+  //     socketRef2.current.on(TopicCo2, (data) => {
+  //       const now = dayjs().format("YYYY-MM-DD HH:mm:ss");
+  //       setCo2({ time: now, value: data.split(": ")[1] });
+  //     });
+  //     socketRef2.current.on(TopicTemp, (data) => {
+  //       const split = data.split(", ");
+  //       const now = dayjs().format("YYYY-MM-DD HH:mm:ss");
+  //       setTemp({ time: now, value: split[0].split(": ")[1] });
+  //       setHumidity({ time: now, value: split[1].split(": ")[1] });
+  //     });
+  //     socketRef2.current.on(TopicDist, (data) => {
+  //       const now = dayjs().format("YYYY-MM-DD HH:mm:ss");
+  //       setDist({ time: now, value: data.split(": ")[1] });
   //     });
 
-  //     socketRef.current.on("connect", () => {
+  //     socketRef2.current.on("connect", () => {
   //       console.log("connect");
   //     });
 
-  //     socketRef.current.on("disconnect", () => {
+  //     socketRef2.current.on("disconnect", () => {
   //       console.log("disconnect");
   //     });
   //   };
 
-  //   if (!socketRef.current) {
-  //     // socketConnection();
+  //   if (!socketRef2.current) {
+  //     socketConnection();
   //   }
 
   //   return () => {
-  //     if (socketRef.current) {
-  //       socketRef.current.disconnect();
-  //       socketRef.current = null;
+  //     if (socketRef2.current) {
+  //       socketRef2.current.disconnect();
+  //       socketRef2.current = null;
   //     }
   //   };
   // }, []);
@@ -54,7 +56,7 @@ const Socket = () => {
   useEffect(() => {
     const signalRConnect = () => {
       socketRef.current = new HubConnectionBuilder()
-        .withUrl("http://192.168.0.72:5222/iot", {
+        .withUrl("http://192.168.0.72:5000/iot", {
           timeout: 5000,
           transport: 1,
         })
