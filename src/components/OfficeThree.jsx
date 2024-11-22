@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 
 // 3D IMPORT
 import * as THREE from "three";
+import { Easing, Tween } from "@tweenjs/tween.js";
 import {
   CSS2DObject,
   CSS2DRenderer,
@@ -36,14 +37,15 @@ const FLOAT_SPEED = 0.005;
 const FLOAT_HEIGHT = 0.08;
 
 const OfficeThree = () => {
-  const { data:userList } = useAllUserListQuery();
+  const { data: userList } = useAllUserListQuery();
 
   const mainRef = useRef();
   const labelRendererRef = useRef();
   const conditionRef = useRef();
   const css3dRendererRef = useRef();
   const conditionPannelRef = useRef();
-  const css3dObjectRef = useRef();
+  const css3dObjectRef = useRef({});
+  const tweenRef = useRef([]);
   const labelRef = useRef();
   const modelRef = useRef(null);
   const canvasRef = useRef(null);
@@ -131,6 +133,25 @@ const OfficeThree = () => {
     // css3dRendererRef.current.domElement.style.overflow = "visible";
     // css3dRendererRef.current.domElement.style.zIndex = 0;
     canvasRef.current.before(css3dRendererRef.current.domElement);
+  };
+
+  const moveCamera = (pos, tar) => {
+    const newPos = pos.clone();
+    const newTar = tar.clone();
+    const t1 = new Tween(cameraRef.current.position);
+    t1.to(newPos, 1000);
+    t1.easing(Easing.Cubic.InOut);
+    t1.onStart(() => (controlsRef.current.enabled = false));
+    t1.onComplete(() => {
+      controlsRef.current.enabled = true;
+      tweenRef.current = [];
+    });
+    t1.start();
+    const t2 = new Tween(controlsRef.current.target).to(newTar, 900);
+    t2.easing(Easing.Cubic.Out);
+    t2.start();
+
+    tweenRef.current.push(...[t1, t2]);
   };
 
   // SCENE CREATE
@@ -273,6 +294,16 @@ const OfficeThree = () => {
         onWindowResize();
     }
 
+    // css3dObject resize
+    if (css3dObjectRef.current && css3dObjectRef.current.mesh) {
+      if (conditionRef.current.offsetWidth !== css3dObjectRef.current.mesh.scale.x) {
+        css3dObjectRef.current.mesh.scale.x = conditionRef.current.offsetWidth;
+      }
+      if (conditionRef.current.offsetHeight !== css3dObjectRef.current.mesh.scale.y) {
+        css3dObjectRef.current.mesh.scale.y = conditionRef.current.offsetHeight;
+      }
+    }
+
     if (cameraRef.current) {
       const dist = cameraRef.current.position.distanceTo(new THREE.Vector3());
       const size = seatRef.current.startDist / dist;
@@ -282,6 +313,10 @@ const OfficeThree = () => {
         const dom = document.getElementById("label_" + key);
         if (dom) dom.style.transform = `${dom.style.transform} scale(${newSize})`;
       });
+    }
+
+    if (tweenRef.current.length > 0) {
+      tweenRef.current.map((tween) => tween.update());
     }
 
     animRef.current = requestAnimationFrame(animate);
@@ -317,8 +352,9 @@ const OfficeThree = () => {
       transparent: true,
     });
 
-    const geom = new THREE.BoxGeometry(conditionRef.current.offsetWidth, conditionRef.current.offsetHeight, 1);
+    const geom = new THREE.BoxGeometry(1, 1, 1);
     const mesh = new THREE.Mesh(geom, mat);
+    mesh.scale.set(conditionRef.current.offsetWidth, conditionRef.current.offsetHeight, 1);
     obj.add(mesh);
 
     obj.position.copy(conditionPannelRef.current.position);
@@ -326,7 +362,7 @@ const OfficeThree = () => {
     obj.scale.set(0.005, 0.005, 0.005);
 
     sceneRef.current.add(obj);
-    css3dObjectRef.current = obj;
+    css3dObjectRef.current = { obj, mesh };
   };
 
   const createLabel = (obj, name, daily = "미출근") => {
@@ -545,7 +581,14 @@ const OfficeThree = () => {
   }, [conditionRef, conditionPannelRef, isLoaded]);
 
   useEffect(() => {
-    if (css3dObjectRef.current) css3dObjectRef.current.visible = isCondition;
+    if (css3dObjectRef.current && css3dObjectRef.current.obj) {
+      css3dObjectRef.current.obj.visible = isCondition;
+      if (isCondition) {
+        const target = conditionPannelRef.current.position.clone();
+        const position = new THREE.Vector3(target.x + 5, target.y + 5, target.z + 5);
+        moveCamera(position, target);
+      }
+    }
   }, [isCondition]);
 
   return (
