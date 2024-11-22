@@ -19,7 +19,7 @@ import userGlb from "@/assets/model/user.glb";
 
 import { clearScene } from "../utils/three/SceneCleanUp";
 import { usePopupStore } from "../store/usePopupStore";
-import { getDailyListFetch, getUserListFetch } from "../utils/api";
+import { getDailyListFetch } from "../utils/api";
 import { userIcon } from "../utils/icon";
 import useWorkStatusStore from "../store/useWorkStatusStore";
 import RoomCondition from "./RoomCondition";
@@ -28,11 +28,14 @@ import useSeatStore from "@/store/seatStore";
 import usePersonnelInfoStore from "@/store/personnelInfoStore";
 import PersonnelInfoCard from "./PersonnelInfoCard";
 import { getCookie } from "../utils/cookie";
+import { useAllUserListQuery } from "../hooks/useAllUserListQuery";
 
 const FLOAT_SPEED = 0.005;
 const FLOAT_HEIGHT = 0.08;
 
 const OfficeThree = () => {
+  const { data:userList } = useAllUserListQuery();
+
   const mainRef = useRef();
   const labelRendererRef = useRef();
   const conditionRef = useRef();
@@ -47,7 +50,6 @@ const OfficeThree = () => {
   const seatRef = useRef({ startDist: 0 });
   const sceneRef = useRef(new THREE.Scene());
 
-  const [userList, setUserList] = useState([]);
   const [dailyList, setDailyList] = useState([]);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isCondition, setIsCondition] = useState(true);
@@ -320,15 +322,15 @@ const OfficeThree = () => {
     };
   };
 
-  const getAllUser = async () => {
-    try {
-      const res = await getUserListFetch();
-      if (res) setUserList(res);
-    } catch (error) {
-      console.error("사용자 목록을 가져오는데 실패했습니다:", error);
-      setUserList([]);
-    }
-  };
+  // const getAllUser = async () => {
+  //   try {
+  //     const res = await getUserListFetch();
+  //     if (res) setUserList(res);
+  //   } catch (error) {
+  //     console.error("사용자 목록을 가져오는데 실패했습니다:", error);
+  //     setUserList([]);
+  //   }
+  // };
 
   const getDailyList = async () => {
     try {
@@ -425,7 +427,7 @@ const OfficeThree = () => {
   const updateSeat = async () => {
     try {
       if (isDaily || !isSeatEdit) {
-        await Promise.all([getAllUser(), getDailyList()]);
+        await getDailyList();
       }
       editSeat();
     } catch (error) {
