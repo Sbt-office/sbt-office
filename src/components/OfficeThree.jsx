@@ -15,6 +15,7 @@ import {
 // 3D MODEL
 import hdr from "@/assets/three.hdr";
 import model from "@/assets/model/office.glb";
+import userGlb from "@/assets/model/user.glb";
 
 import { clearScene } from "../utils/three/SceneCleanUp";
 import { usePopupStore } from "../store/usePopupStore";
@@ -26,6 +27,10 @@ import seatListStore from "../store/seatListStore";
 import useSeatStore from "@/store/seatStore";
 import usePersonnelInfoStore from "@/store/personnelInfoStore";
 import PersonnelInfoCard from "./PersonnelInfoCard";
+import { getCookie } from "../utils/cookie";
+
+const FLOAT_SPEED = 0.005;
+const FLOAT_HEIGHT = 0.08;
 
 const OfficeThree = () => {
   const mainRef = useRef();
@@ -48,7 +53,6 @@ const OfficeThree = () => {
   const [isCondition, setIsCondition] = useState(true);
   const [isDaily, setIsDaily] = useState(true);
   const [selectSeatName, setSelectSeatName] = useState(null);
-
   /**
    * Store
    */
@@ -206,6 +210,19 @@ const OfficeThree = () => {
       controlsRef.current.update();
     }
 
+    // 아바타와 라벨 부유 애니메이션
+    sceneRef.current.traverse((object) => {
+      if (object.name === "userAvatar") {
+        const time = Date.now() * FLOAT_SPEED;
+        const newY = 1.7 + Math.sin(time) * FLOAT_HEIGHT;
+
+        // 아바타 위치 업데이트
+        object.position.y = newY;
+
+        object.position.y = 1.7 + Math.sin(time) * FLOAT_HEIGHT;
+      }
+    });
+
     if (rendererRef.current && cameraRef.current) {
       rendererRef.current.render(sceneRef.current, cameraRef.current);
 
@@ -326,6 +343,8 @@ const OfficeThree = () => {
   const drawUserIcon = () => {
     if (!Array.isArray(userList) || !Array.isArray(dailyList)) return;
 
+    const currentUserSabeon = getCookie("sabeon");
+
     Object.keys(seatRef.current).forEach((key) => {
       const sit = seatRef.current[key];
       if (!sit || !sit.obj) return;
@@ -335,6 +354,43 @@ const OfficeThree = () => {
       if (user) {
         const daily = dailyList.find((item) => item?.ouds_sabeon === user.ou_sabeon);
         const userStatus = daily?.userStatus || "미출근";
+
+        // 현재 로그인한 사용자의 자리인 경우 아바타 모델 로드
+        if (user.ou_sabeon === currentUserSabeon) {
+          const loader = new GLTFLoader();
+          const dracoLoader = new DRACOLoader();
+          dracoLoader.setDecoderPath("https://www.gstatic.com/draco/versioned/decoders/1.5.6/");
+          loader.setDRACOLoader(dracoLoader);
+
+          loader.load(
+            userGlb,
+            (gltf) => {
+              const avatar = gltf.scene;
+              avatar.scale.set(0.15, 0.15, 0.15);
+              avatar.position.set(0, 1.7, 0);
+              avatar.rotation.y = Math.PI / 2;
+
+              const existingAvatar = sit.obj.getObjectByName("userAvatar");
+              if (existingAvatar) {
+                sit.obj.remove(existingAvatar);
+              }
+
+              avatar.name = "userAvatar";
+              avatar.traverse((node) => {
+                if (node.isMesh) {
+                  node.castShadow = true;
+                  node.receiveShadow = true;
+                }
+              });
+
+              sit.obj.add(avatar);
+            },
+            undefined,
+            (error) => {
+              console.error("An error happened while loading the avatar:", error);
+            }
+          );
+        }
 
         if (sit.label) {
           updateLabel(sit.obj, user.ou_nm, userStatus);

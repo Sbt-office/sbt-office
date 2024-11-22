@@ -15,7 +15,7 @@ export const useLogin = () => {
     onSuccess: (data) => {
       if (data.user.status === "200") {
         setUser(data);
-        setCookie("sabeon", data.sabeon, 1);
+        setCookie("sabeon", data.sabeon);
         addToast({ type: "success", message: "로그인에 성공했습니다." });
         navigate("/main");
       } else {

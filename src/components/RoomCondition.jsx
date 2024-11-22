@@ -1,4 +1,4 @@
-import React from "react";
+/* eslint-disable react/prop-types */
 import Socket from "./Socket";
 import LineChart from "./Chart/LineChart";
 import { CloseButton } from "../utils/icon";

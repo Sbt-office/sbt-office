@@ -1,7 +1,7 @@
 /* eslint-disable react/prop-types */
 import { useNavigate, useLocation } from "react-router-dom";
-import { useAuthStore } from "../store/authStore";
-import { getCookie } from "../utils/cookie";
+import { useAuthStore } from "@/store/authStore";
+import { getCookie } from "@/utils/cookie";
 import { useEffect } from "react";
 
 const PrivateRoute = ({ children }) => {
@@ -9,11 +9,11 @@ const PrivateRoute = ({ children }) => {
   const navigate = useNavigate();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const logout = useAuthStore((state) => state.logout);
-  
+
   useEffect(() => {
     const publicPaths = ["/", "/signin"];
     const sabeonCookie = getCookie("sabeon");
-    
+
     // 쿠키가 없는데 인증된 상태라면 로그아웃
     if (!sabeonCookie && isAuthenticated) {
       logout();
