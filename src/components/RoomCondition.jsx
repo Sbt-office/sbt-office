@@ -34,7 +34,7 @@ const RoomCondition = ({ conditionRef, closeEvent }) => {
   const tempColor = ["#00BFFF", "#7CFC00", "#FFD700", "#FF4500"];
   const humidityMessage = ["너무 건조합니다.", "매우 쾌적한 사무실 입니다.", "너무 습합니다."];
   const humidityColor = ["#FF4500", "#7CFC00", "#FF4500"];
-  const distMessage = ["문 열림 (안쪽)", "문 열림 (바깥)", "문 닫힘", "문 열림"];
+  const distMessage = ["문 열림 (안쪽)", "문 열림 (바깥)", "문 닫힘", "알 수 없음"];
 
   const temp = getData("temp").value;
   const tempIdx = temp < 17 ? 0 : temp < 22 ? 2 : temp < 26 ? 1 : 3;
@@ -46,7 +46,7 @@ const RoomCondition = ({ conditionRef, closeEvent }) => {
 
   const checkDist = () => {
     if (dist >= 19 && dist <= 21) return 0;
-    else if (dist >= 46 && dist <= 48) return 1;
+    else if (dist >= 23 && dist <= 48) return 1;
     else if (dist >= 310 && dist <= 315) return 2;
     else return 3;
   };
