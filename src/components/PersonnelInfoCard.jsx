@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react/prop-types */
 import { useState, useEffect, useRef } from "react";
 import { Select, Input, Button } from "antd";
@@ -13,6 +14,7 @@ import { getCookie } from "@/utils/cookie";
 import { useUpdatePersonnel } from "@/hooks/useUpdatePersonnel";
 import { useImageCompression } from "@/hooks/useImageCompression";
 import { useToast } from "@/hooks/useToast";
+import { useAllUserListQuery } from "@/hooks/useAllUserListQuery";
 
 import { DEPARTMENTS, POSITIONS } from "@/data/companyInfo";
 
@@ -92,6 +94,7 @@ const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isValidPhone, setIsValidPhone] = useState(true);
   const [editData, setEditData] = useState({
+    sabeon: personnelInfo.ou_sabeon,
     name: personnelInfo.ou_nm,
     teamName: personnelInfo.ou_team_name,
     level: personnelInfo.ou_insa_info?.level || "",
@@ -141,11 +144,13 @@ const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
 
   const { mutateAsync, isLoading } = useUpdatePersonnel();
   const sabeonFromCookie = getCookie("sabeon");
+  const isAdminFromCookie = getCookie("isAdmin");
 
-  // const canEdit = sabeonFromCookie === personnelInfo.ou_sabeon;
-  const canEdit = true;
+  const canEdit = isAdminFromCookie || sabeonFromCookie === personnelInfo.ou_sabeon;
 
   const { setPersonnelInfo } = usePersonnelInfoStore();
+
+  const { refetch: refetchUserList } = useAllUserListQuery();
 
   const handleImageUpload = async (event) => {
     const file = event.target.files[0];
@@ -173,6 +178,7 @@ const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
 
     try {
       await mutateAsync({
+        sabeon: isAdminFromCookie ? personnelInfo.ou_sabeon : sabeonFromCookie,
         username: editData.name,
         seat_cd: selectedSeat || editData.seatNo,
         team_cd: editData.team_cd,
@@ -181,8 +187,11 @@ const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
           hp: editData.hp,
           level: editData.level,
           profile_img: editData.profile_img,
+          isAdmin: personnelInfo.ou_insa_info?.isAdmin || false,
         },
       });
+
+      await refetchUserList();
 
       setSeatNo(selectedSeat || editData.seatNo);
       setSelectedSeat(selectedSeat || editData.seatNo);
@@ -216,7 +225,7 @@ const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
               level: editData.level,
               profile_img: editData.profile_img,
             },
-            ou_sabeon: sabeonFromCookie,
+            ou_sabeon: isAdminFromCookie ? personnelInfo.ou_sabeon : sabeonFromCookie,
           };
           setPersonnelInfo(userWithParsedInfo);
         }, 100);
