@@ -7,14 +7,14 @@ import ClipLoader from "react-spinners/ClipLoader";
 import profile from "@/assets/images/profile.png";
 
 import useSeatStore from "@/store/seatStore";
-import { usePersonnelEditStore } from "@/store/personnelEditStore";
+import useAdminStore from "@/store/adminStore";
 import usePersonnelInfoStore from "@/store/personnelInfoStore";
+import { usePersonnelEditStore } from "@/store/personnelEditStore";
 
-import { getCookie } from "@/utils/cookie";
-import { useUpdatePersonnel } from "@/hooks/useUpdatePersonnel";
-import { useImageCompression } from "@/hooks/useImageCompression";
 import { useToast } from "@/hooks/useToast";
+import { useUpdatePersonnel } from "@/hooks/useUpdatePersonnel";
 import { useAllUserListQuery } from "@/hooks/useAllUserListQuery";
+import { useImageCompression } from "@/hooks/useImageCompression";
 
 import { DEPARTMENTS, POSITIONS } from "@/data/companyInfo";
 
@@ -143,10 +143,9 @@ const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
   const { compressImage } = useImageCompression();
 
   const { mutateAsync, isLoading } = useUpdatePersonnel();
-  const sabeonFromCookie = getCookie("sabeon");
-  const isAdminFromCookie = getCookie("isAdmin");
+  const { sabeon, isAdmin } = useAdminStore();
 
-  const canEdit = isAdminFromCookie || sabeonFromCookie === personnelInfo.ou_sabeon;
+  const canEdit = isAdmin==="Y" || sabeon === personnelInfo.ou_sabeon;
 
   const { setPersonnelInfo } = usePersonnelInfoStore();
 
@@ -178,7 +177,7 @@ const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
 
     try {
       await mutateAsync({
-        sabeon: isAdminFromCookie ? personnelInfo.ou_sabeon : sabeonFromCookie,
+        sabeon: isAdmin==="Y" ? personnelInfo.ou_sabeon : sabeon,
         username: editData.name,
         seat_cd: selectedSeat || editData.seatNo,
         team_cd: editData.team_cd,
@@ -198,7 +197,7 @@ const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
       setIsEditing(false);
       setIsSeatEdit(false);
 
-      if (sabeonFromCookie === personnelInfo.ou_sabeon) {
+      if (sabeon === personnelInfo.ou_sabeon) {
         const updatedPersonnelInfo = {
           ...personnelInfo,
           ou_nm: editData.name,
@@ -225,7 +224,7 @@ const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
               level: editData.level,
               profile_img: editData.profile_img,
             },
-            ou_sabeon: isAdminFromCookie ? personnelInfo.ou_sabeon : sabeonFromCookie,
+            ou_sabeon: isAdmin==="Y" ? personnelInfo.ou_sabeon : sabeon,
           };
           setPersonnelInfo(userWithParsedInfo);
         }, 100);

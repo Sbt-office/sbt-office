@@ -1,15 +1,25 @@
 import { useQuery } from "@tanstack/react-query";
 import { getUserInfoFetch } from "@/utils/api";
-import Cookies from "js-cookie";
 
-export const useUserQuery = () => {
-  const sabeon = Cookies.get("sabeon");
-
+export const useUserQuery = (userSabeon) => {
+  const localStorageUser = JSON.parse(localStorage.getItem('auth-storage'))?.state?.user;
+  const sabeon = localStorageUser?.sabeon;
+  const targetSabeon = userSabeon || sabeon;
+  
   return useQuery({
-    queryKey: ["userInfo", sabeon],
-    queryFn: () => getUserInfoFetch(sabeon),
-    enabled: !!sabeon,
-    staleTime: 5 * 60 * 1000,
+    queryKey: ["userInfo", targetSabeon],
+    queryFn: () => {
+      if (!targetSabeon) {
+        throw new Error("사번이 유효하지 않습니다.");
+      }
+      return getUserInfoFetch(targetSabeon);
+    },
+    enabled: Boolean(targetSabeon),
+    staleTime: 5 * 60 * 1000, 
     cacheTime: 30 * 60 * 1000,
+    retry: 2,
+    onError: (error) => {
+      console.error("사용자 정보를 가져오는데 실패했습니다:", error);
+    }
   });
 };

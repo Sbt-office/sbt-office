@@ -1,17 +1,16 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { updateUserInfoFetch } from "@/utils/api";
 import { useToast } from "./useToast";
-import { getCookie } from "@/utils/cookie";
+import useAdminStore from "@/store/adminStore";
 
 export const useUpdatePersonnel = () => {
   const queryClient = useQueryClient();
   const { addToast } = useToast();
+  const { sabeon: storedSabeon, isAdmin } = useAdminStore();
 
   return useMutation({
     mutationFn: (updateData) => {
-      const isAdminFromCookie = getCookie("isAdmin");
-      const sabeonFromCookie = getCookie("sabeon");
-      const sabeon = isAdminFromCookie ? updateData.sabeon : sabeonFromCookie;
+      const sabeon = isAdmin === "Y" ? updateData.sabeon : storedSabeon;
 
       return updateUserInfoFetch({
         sabeon,
@@ -23,7 +22,7 @@ export const useUpdatePersonnel = () => {
           hp: updateData.insa_info.hp,
           level: updateData.insa_info.level,
           profile_img: updateData.insa_info.profile_img,
-          isAdmin: updateData.insa_info.isAdmin,
+          isAdmin: updateData.ou_admin_yn,
         },
       });
     },

@@ -30,7 +30,6 @@ import seatListStore from "../store/seatListStore";
 import useSeatStore from "@/store/seatStore";
 import usePersonnelInfoStore from "@/store/personnelInfoStore";
 import PersonnelInfoCard from "./PersonnelInfoCard";
-import { getCookie } from "../utils/cookie";
 import { useAllUserListQuery } from "../hooks/useAllUserListQuery";
 
 const FLOAT_SPEED = 0.005;
@@ -449,16 +448,17 @@ const OfficeThree = () => {
         const daily = dailyList.find((item) => item?.ouds_sabeon === user.ou_sabeon);
         const userStatus = daily?.userStatus || "미출근";
 
-        const currentUserSabeon = getCookie("sabeon");
+        const sabeon = JSON.parse(localStorage.getItem('auth-storage'))?.state?.user.sabeon;
+
         if (sit.label) {
           updateLabel(sit.obj, user.ou_nm, userStatus);
           // 현재 로그인한 사용자의 자리인 경우 아바타 모델 로드
-          if (user.ou_sabeon === currentUserSabeon) moveModel(sit.obj);
+          if (user.ou_sabeon === sabeon) moveModel(sit.obj);
         } else {
           createLabel(sit.obj, user.ou_nm, userStatus);
 
           // 현재 로그인한 사용자의 자리인 경우 아바타 모델 로드
-          if (user.ou_sabeon === currentUserSabeon) addModel(sit.obj);
+          if (user.ou_sabeon === sabeon) addModel(sit.obj);
         }
       } else {
         if (sit.label) {
