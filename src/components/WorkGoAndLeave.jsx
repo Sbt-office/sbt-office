@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useEffect } from "react";
 import useWorkStatusStore from "@/store/useWorkStatusStore";
 import { useUserStore } from "@/store/userStore";
@@ -6,7 +7,7 @@ import { IoWarningOutline } from "react-icons/io5";
 import { useThrottle } from "../hooks/useThrottle";
 import { useAuthStore } from "../store/authStore";
 import { getWorkStatusStore, setWorkStatusStore } from "../hooks/useWorkStatus";
-import { setCookie } from "@/utils/cookie";
+import useAdminStore from "@/store/adminStore";
 
 const WorkGoAndLeave = () => {
   const { isWorking } = useWorkStatusStore();
@@ -16,28 +17,37 @@ const WorkGoAndLeave = () => {
   const setWorkStatus = setWorkStatusStore();
 
   const { userInfo, setUserInfo } = useUserStore();
-  const { data, isLoading, error } = useUserQuery();
+  const { sabeon, setIsAdmin, setSabeon } = useAdminStore();
+  const { data, isLoading, error, refetch } = useUserQuery();
 
   useEffect(() => {
-    if (data) {
-      setUserInfo(data);
-      const parsedInsaInfo =
-        typeof data.ou_insa_info === "string" ? JSON.parse(data.ou_insa_info) : data.ou_insa_info || {};
-
-      setCookie("isAdmin", parsedInsaInfo.isAdmin ?? false);
+    if (!data) {
+      refetch();
     }
-  }, [data, setUserInfo]);
+  }, [data, refetch]);
 
   useEffect(() => {
-    if (userInfo) getWorkStatus.mutate(userInfo.ou_sabeon);
+    try {
+      if (data) {
+        setUserInfo(data);
+        setIsAdmin(data.ou_admin_yn);
+        setSabeon(data.ou_sabeon);
+      }
+    } catch (err) {
+      console.error("사용자 정보 설정 중 오류 발생:", err);
+    }
+  }, [data, setUserInfo, setIsAdmin, setSabeon]);
+
+  useEffect(() => {
+    if (userInfo) getWorkStatus.mutate(sabeon);
   }, [userInfo]);
 
   const handleWorkStart = useThrottle(() => {
-    setWorkStatus.mutate({ sabeon: userInfo.ou_sabeon, status: 1 });
+    setWorkStatus.mutate({ sabeon, status: 1 });
   }, 1000);
 
   const handleWorkEnd = useThrottle(() => {
-    setWorkStatus.mutate({ sabeon: userInfo.ou_sabeon, status: 2 });
+    setWorkStatus.mutate({ sabeon, status: 2 });
   }, 1000);
 
   const parsedUserInfo = userInfo?.ou_insa_info ? JSON.parse(userInfo.ou_insa_info) : {};

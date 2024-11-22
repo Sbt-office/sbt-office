@@ -15,6 +15,7 @@ const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+
   const {
     register,
     handleSubmit,
@@ -33,8 +34,8 @@ const Login = () => {
   }, []);
 
   useEffect(() => {
-    const sabeonCookie = getCookie("sabeon");
-    if (isAuthenticated && sabeonCookie && location.pathname !== "/signin") {
+    const isLoginCookie = getCookie("isLogin");
+    if (isAuthenticated && isLoginCookie && location.pathname !== "/signin") {
       navigate("/main", { replace: true });
     }
   }, [isAuthenticated, navigate, location.pathname]);

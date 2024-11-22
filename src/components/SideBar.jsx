@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { motion } from "framer-motion";
 import usePersonnelInfoStore from "@/store/personnelInfoStore";
+import useAdminStore from "@/store/adminStore";
 
 import logo from "@/assets/images/logo.png";
 import { HiOutlineMenu, HiMenuAlt1 } from "react-icons/hi";
@@ -15,6 +16,7 @@ import { usePopupStore } from "@/store/usePopupStore";
 
 const SideBar = () => {
   const { personnelInfo, setPersonnelInfo, clearPersonnelInfo } = usePersonnelInfoStore();
+  const { isAdmin } = useAdminStore();
 
   const [openSection, setOpenSection] = useState(null);
   const [openSubItem, setOpenSubItem] = useState(null);
@@ -166,23 +168,25 @@ const SideBar = () => {
                 )}
               </li>
             ))}
-            <div
-              className="flex items-center gap-2 mb-6 cursor-pointer"
-              onClick={togglePopup}
-              role="button"
-              tabIndex={0}
-              aria-label="인사정보관리 열기/닫기"
-              onKeyDown={(e) => e.key === "Enter" && togglePopup()}
-            >
-              <IoSettingsOutline size={18} className={`text-base ${isPopupOpen ? "text-sbtDarkBlue" : ""}`} />
-              <span className={`text-base ${isPopupOpen ? "text-sbtDarkBlue font-semibold" : ""}`}>인사정보관리</span>
-            </div>
+            {isAdmin === "Y" && (
+              <div
+                className="flex items-center gap-2 mb-6 cursor-pointer"
+                onClick={togglePopup}
+                role="button"
+                tabIndex={0}
+                aria-label="인사정보관리 열기/닫기"
+                onKeyDown={(e) => e.key === "Enter" && togglePopup()}
+              >
+                <IoSettingsOutline size={18} className={`text-base ${isPopupOpen ? "text-sbtDarkBlue" : ""}`} />
+                <span className={`text-base ${isPopupOpen ? "text-sbtDarkBlue font-semibold" : ""}`}>인사정보관리</span>
+              </div>
+            )}
           </ul>
           {personnelInfo && <PersonnelInfoCard personnelInfo={personnelInfo} onClose={handleCloseInfoCard} />}
         </div>
         <WorkGoAndLeave />
       </aside>
-      {isPopupOpen && <ManagePersonnelPopup onClose={togglePopup} />}
+      {isPopupOpen && isAdmin === "Y" && <ManagePersonnelPopup onClose={togglePopup} />}
     </div>
   );
 };
