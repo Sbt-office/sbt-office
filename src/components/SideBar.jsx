@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { motion } from "framer-motion";
+import usePersonnelInfoStore from "@/store/personnelInfoStore";
 
 import logo from "@/assets/images/logo.png";
 import { HiOutlineMenu, HiMenuAlt1 } from "react-icons/hi";
@@ -10,11 +11,11 @@ import WorkGoAndLeave from "./WorkGoAndLeave";
 import PersonnelInfoCard from "./PersonnelInfoCard";
 import ManagePersonnelPopup from "./ManagePersonnelPopup";
 import { useAllUserListQuery } from "@/hooks/useAllUserListQuery";
-
 import { usePopupStore } from "@/store/usePopupStore";
-import usePersonnelInfoStore from "@/store/personnelInfoStore";
 
 const SideBar = () => {
+  const { personnelInfo, setPersonnelInfo, clearPersonnelInfo } = usePersonnelInfoStore();
+
   const [openSection, setOpenSection] = useState(null);
   const [openSubItem, setOpenSubItem] = useState(null);
   const [selectedItem, setSelectedItem] = useState(null);
@@ -22,7 +23,6 @@ const SideBar = () => {
   const { data } = useAllUserListQuery();
 
   const { isPopupOpen, togglePopup } = usePopupStore();
-  const { personnelInfo, setPersonnelInfo, clearPersonnelInfo } = usePersonnelInfoStore();
 
   const organizedData = useMemo(() => {
     if (!data || !Array.isArray(data)) return [];

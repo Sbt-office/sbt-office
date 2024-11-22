@@ -6,6 +6,7 @@ import { IoWarningOutline } from "react-icons/io5";
 import { useThrottle } from "../hooks/useThrottle";
 import { useAuthStore } from "../store/authStore";
 import { getWorkStatusStore, setWorkStatusStore } from "../hooks/useWorkStatus";
+import { setCookie } from "@/utils/cookie";
 
 const WorkGoAndLeave = () => {
   const { isWorking } = useWorkStatusStore();
@@ -20,6 +21,10 @@ const WorkGoAndLeave = () => {
   useEffect(() => {
     if (data) {
       setUserInfo(data);
+      const parsedInsaInfo =
+        typeof data.ou_insa_info === "string" ? JSON.parse(data.ou_insa_info) : data.ou_insa_info || {};
+
+      setCookie("isAdmin", parsedInsaInfo.isAdmin ?? false);
     }
   }, [data, setUserInfo]);
 
