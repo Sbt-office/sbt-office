@@ -19,7 +19,7 @@ const WorkGoAndLeave = () => {
   const { userInfo, setUserInfo } = useUserStore();
   const { sabeon, setIsAdmin, setSabeon } = useAdminStore();
   const { data, isLoading, error, refetch } = useUserQuery();
-
+  
   useEffect(() => {
     if (!data) {
       refetch();

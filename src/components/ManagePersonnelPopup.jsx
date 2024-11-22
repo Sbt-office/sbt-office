@@ -28,18 +28,32 @@ const ManagePersonnelPopup = () => {
 
   const { data: infiniteData, fetchNextPage } = useInfiniteUserListQuery(itemsPerPage);
 
+  console.log("infiniteData", infiniteData);
+
   // 전체 직원 데이터 가져오기
   const getAllEmployees = () => {
     if (!infiniteData?.pages) return [];
 
     return infiniteData.pages.flatMap((page) =>
-      page.items.map((person) => ({
-        id: person.ou_sabeon,
-        name: person.ou_nm,
-        department: person.ou_team_name || "소속 미지정",
-        phone: "01025491001",
-        email: "korea@sbtglobal.com",
-      }))
+      page.items.map((person) => {
+        let insaInfo = person.ou_insa_info;
+        if (typeof insaInfo === "string") {
+          try {
+            insaInfo = JSON.parse(insaInfo);
+          } catch (e) {
+            insaInfo = {};
+          }
+        }
+
+        return {
+          id: person.ou_sabeon,
+          name: person.ou_nm,
+          department: person.ou_team_name || "소속 미지정",
+          phone: insaInfo?.hp || "연락처 미등록",
+          level: insaInfo?.level || "직급 미지정",
+          profile: insaInfo?.profile_img || profile,
+        };
+      })
     );
   };
 
@@ -147,11 +161,11 @@ const ManagePersonnelPopup = () => {
                 onChange={() => handleSelect(emp.id)}
                 className="w-5 h-5 [&_.ant-checkbox-checked_.ant-checkbox-inner]:bg-sbtDarkBlue [&_.ant-checkbox-checked_.ant-checkbox-inner]:border-sbtDarkBlue [&_.ant-checkbox-inner]:border-sbtDarkBlue hover:[&_.ant-checkbox-inner]:border-sbtDarkBlue"
               />
-              <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
+              <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden">
                 <img
-                  src={profile}
+                  src={emp.profile}
                   alt="profile"
-                  className="w-5 h-5 object-contain"
+                  className={emp.profile === profile ? "w-7 h-6 object-contain" : "w-full h-full object-cover"}
                   draggable={false}
                   aria-label="profile"
                 />
@@ -163,7 +177,7 @@ const ManagePersonnelPopup = () => {
                 </div>
                 <div className="text-sm text-gray-500">
                   <div>{emp.phone}</div>
-                  <div>{emp.email}</div>
+                  <div>{emp.level}</div>
                 </div>
               </div>
             </div>
