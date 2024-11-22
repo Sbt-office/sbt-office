@@ -6,6 +6,8 @@ import * as THREE from "three";
 import {
   CSS2DObject,
   CSS2DRenderer,
+  CSS3DObject,
+  CSS3DRenderer,
   DRACOLoader,
   GLTFLoader,
   OrbitControls,
@@ -36,6 +38,9 @@ const OfficeThree = () => {
   const mainRef = useRef();
   const labelRendererRef = useRef();
   const conditionRef = useRef();
+  const css3dRendererRef = useRef();
+  const conditionPannelRef = useRef();
+  const css3dObjectRef = useRef();
   const labelRef = useRef();
   const modelRef = useRef(null);
   const canvasRef = useRef(null);
@@ -113,6 +118,19 @@ const OfficeThree = () => {
     canvasRef.current.after(labelRendererRef.current.domElement);
   };
 
+  const setupCss3dRenderer = () => {
+    css3dRendererRef.current = new CSS3DRenderer();
+    css3dRendererRef.current.setSize(mainRef.current.offsetWidth, mainRef.current.offsetHeight);
+    css3dRendererRef.current.domElement.style.position = "absolute";
+    css3dRendererRef.current.domElement.style.top = 0;
+    css3dRendererRef.current.domElement.style.left = 0;
+    // css3dRendererRef.current.domElement.style.width = 0;
+    // css3dRendererRef.current.domElement.style.height = 0;
+    // css3dRendererRef.current.domElement.style.overflow = "visible";
+    // css3dRendererRef.current.domElement.style.zIndex = 0;
+    canvasRef.current.before(css3dRendererRef.current.domElement);
+  };
+
   // SCENE CREATE
   const createScene = () => {
     const canvas = canvasRef.current;
@@ -131,6 +149,7 @@ const OfficeThree = () => {
     setupControls();
     setupLights();
     setupLabelRenderer();
+    setupCss3dRenderer();
 
     animRef.current = requestAnimationFrame(animate);
   };
@@ -156,6 +175,12 @@ const OfficeThree = () => {
         labelRendererRef.current.setSize(mainRef.current.offsetWidth, mainRef.current.offsetHeight);
         labelRendererRef.current.domElement.style.width = 0;
         labelRendererRef.current.domElement.style.height = 0;
+      }
+
+      if (css3dRendererRef.current) {
+        css3dRendererRef.current.setSize(mainRef.current.offsetWidth, mainRef.current.offsetHeight);
+        // css3dRendererRef.current.domElement.style.width = 0;
+        // css3dRendererRef.current.domElement.style.height = 0;
       }
     }
   };
@@ -185,6 +210,10 @@ const OfficeThree = () => {
             node.visible = false;
           }
 
+          if (node.name.includes("ConditionPannel")) {
+            conditionPannelRef.current = node;
+          }
+
           if (node.name.includes("seat-")) {
             seatList.push(node.name);
             seatRef.current[node.name] = {
@@ -211,23 +240,25 @@ const OfficeThree = () => {
     }
 
     // 아바타와 라벨 부유 애니메이션
-    sceneRef.current.traverse((object) => {
-      if (object.name === "userAvatar") {
-        const time = Date.now() * FLOAT_SPEED;
-        const newY = 1.7 + Math.sin(time) * FLOAT_HEIGHT;
+    if (seatRef.current.userAvatar) {
+      const time = Date.now() * FLOAT_SPEED;
+      const newY = 2.5 + Math.sin(time) * FLOAT_HEIGHT;
 
-        // 아바타 위치 업데이트
-        object.position.y = newY;
+      // 아바타 위치 업데이트
+      seatRef.current.userAvatar.position.y = newY;
 
-        object.position.y = 1.7 + Math.sin(time) * FLOAT_HEIGHT;
-      }
-    });
+      seatRef.current.userAvatar.position.y = 2.5 + Math.sin(time) * FLOAT_HEIGHT;
+    }
 
     if (rendererRef.current && cameraRef.current) {
       rendererRef.current.render(sceneRef.current, cameraRef.current);
 
       if (labelRendererRef.current) {
         labelRendererRef.current.render(sceneRef.current, cameraRef.current);
+      }
+
+      if (css3dRendererRef.current) {
+        css3dRendererRef.current.render(sceneRef.current, cameraRef.current);
       }
     }
 
@@ -267,6 +298,33 @@ const OfficeThree = () => {
         setPersonnelInfo(userWithParsedInfo);
       }
     }
+  };
+
+  const createCss3DObject = () => {
+    const obj = new THREE.Object3D();
+
+    conditionRef.current.style.opacity = 0.999;
+    const css3dObject = new CSS3DObject(conditionRef.current);
+    obj.css3dObject = css3dObject;
+    obj.add(css3dObject);
+
+    const mat = new THREE.MeshPhongMaterial({
+      opacity: 0.1,
+      color: new THREE.Color("#000"),
+      blending: THREE.NoBlending,
+      transparent: true,
+    });
+
+    const geom = new THREE.BoxGeometry(conditionRef.current.offsetWidth, conditionRef.current.offsetHeight, 1);
+    const mesh = new THREE.Mesh(geom, mat);
+    obj.add(mesh);
+
+    obj.position.copy(conditionPannelRef.current.position);
+    obj.rotation.copy(conditionPannelRef.current.rotation);
+    obj.scale.set(0.005, 0.005, 0.005);
+
+    sceneRef.current.add(obj);
+    css3dObjectRef.current = obj;
   };
 
   const createLabel = (obj, name, daily = "미출근") => {
@@ -343,8 +401,6 @@ const OfficeThree = () => {
   const drawUserIcon = () => {
     if (!Array.isArray(userList) || !Array.isArray(dailyList)) return;
 
-    const currentUserSabeon = getCookie("sabeon");
-
     Object.keys(seatRef.current).forEach((key) => {
       const sit = seatRef.current[key];
       if (!sit || !sit.obj) return;
@@ -355,47 +411,16 @@ const OfficeThree = () => {
         const daily = dailyList.find((item) => item?.ouds_sabeon === user.ou_sabeon);
         const userStatus = daily?.userStatus || "미출근";
 
-        // 현재 로그인한 사용자의 자리인 경우 아바타 모델 로드
-        if (user.ou_sabeon === currentUserSabeon) {
-          const loader = new GLTFLoader();
-          const dracoLoader = new DRACOLoader();
-          dracoLoader.setDecoderPath("https://www.gstatic.com/draco/versioned/decoders/1.5.6/");
-          loader.setDRACOLoader(dracoLoader);
-
-          loader.load(
-            userGlb,
-            (gltf) => {
-              const avatar = gltf.scene;
-              avatar.scale.set(0.15, 0.15, 0.15);
-              avatar.position.set(0, 1.7, 0);
-              avatar.rotation.y = Math.PI / 2;
-
-              const existingAvatar = sit.obj.getObjectByName("userAvatar");
-              if (existingAvatar) {
-                sit.obj.remove(existingAvatar);
-              }
-
-              avatar.name = "userAvatar";
-              avatar.traverse((node) => {
-                if (node.isMesh) {
-                  node.castShadow = true;
-                  node.receiveShadow = true;
-                }
-              });
-
-              sit.obj.add(avatar);
-            },
-            undefined,
-            (error) => {
-              console.error("An error happened while loading the avatar:", error);
-            }
-          );
-        }
-
+        const currentUserSabeon = getCookie("sabeon");
         if (sit.label) {
           updateLabel(sit.obj, user.ou_nm, userStatus);
+          // 현재 로그인한 사용자의 자리인 경우 아바타 모델 로드
+          if (user.ou_sabeon === currentUserSabeon) moveModel(sit.obj);
         } else {
           createLabel(sit.obj, user.ou_nm, userStatus);
+
+          // 현재 로그인한 사용자의 자리인 경우 아바타 모델 로드
+          if (user.ou_sabeon === currentUserSabeon) addModel(sit.obj);
         }
       } else {
         if (sit.label) {
@@ -431,6 +456,42 @@ const OfficeThree = () => {
     } catch (error) {
       console.error("좌석 정보 업데이트 중 오류 발생:", error);
     }
+  };
+
+  const moveModel = (obj) => {
+    seatRef.current.userAvatar.position.set(obj.position.x, 2.5, obj.position.z);
+  };
+
+  const addModel = (obj) => {
+    const loader = new GLTFLoader();
+    const dracoLoader = new DRACOLoader();
+    dracoLoader.setDecoderPath("https://www.gstatic.com/draco/versioned/decoders/1.5.6/");
+    loader.setDRACOLoader(dracoLoader);
+
+    loader.load(
+      userGlb,
+      (gltf) => {
+        const avatar = gltf.scene;
+        avatar.scale.set(0.15, 0.15, 0.15);
+        avatar.position.set(obj.position.x, 2.5, obj.position.z);
+        avatar.rotation.y = Math.PI / 2;
+
+        avatar.name = "userAvatar";
+        avatar.traverse((node) => {
+          if (node.isMesh) {
+            node.castShadow = true;
+            node.receiveShadow = true;
+          }
+        });
+
+        sceneRef.current.add(avatar);
+        seatRef.current.userAvatar = avatar;
+      },
+      undefined,
+      (error) => {
+        console.error("An error happened while loading the avatar:", error);
+      }
+    );
   };
 
   // 데이터 변경시 새로고침
@@ -475,6 +536,16 @@ const OfficeThree = () => {
     };
   }, [mainRef]);
 
+  useEffect(() => {
+    if (conditionRef.current && conditionPannelRef.current && isLoaded) {
+      createCss3DObject();
+    }
+  }, [conditionRef, conditionPannelRef, isLoaded]);
+
+  useEffect(() => {
+    if (css3dObjectRef.current) css3dObjectRef.current.visible = isCondition;
+  }, [isCondition]);
+
   return (
     <main
       ref={mainRef}
@@ -503,7 +574,7 @@ const OfficeThree = () => {
               Green_1 상태
             </div>
           </div>
-          {isCondition && <RoomCondition conditionRef={conditionRef} closeEvent={() => setIsCondition(false)} />}
+          <RoomCondition conditionRef={conditionRef} closeEvent={() => setIsCondition(false)} />
           <div
             ref={labelRef}
             className="absolute top-0 left-0 w-12 h-12 px-2 py-2 rounded-full bg-white/75 backdrop-blur-sm border-x-2 border-y-2 border-black text-black cursor-pointer"

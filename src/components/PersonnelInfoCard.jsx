@@ -142,7 +142,8 @@ const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
   const { mutateAsync, isLoading } = useUpdatePersonnel();
   const sabeonFromCookie = getCookie("sabeon");
 
-  const canEdit = sabeonFromCookie === personnelInfo.ou_sabeon;
+  // const canEdit = sabeonFromCookie === personnelInfo.ou_sabeon;
+  const canEdit = true;
 
   const { setPersonnelInfo } = usePersonnelInfoStore();
 

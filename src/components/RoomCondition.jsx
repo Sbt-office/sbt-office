@@ -4,9 +4,12 @@ import LineChart from "./Chart/LineChart";
 import { CloseButton } from "../utils/icon";
 import useSocketStore from "../store/socketStore";
 import GaugeChart from "./Chart/GaugeChart";
+import { useState } from "react";
 
 const RoomCondition = ({ conditionRef, closeEvent }) => {
   const { getData } = useSocketStore();
+
+  const [showDetail, setShowDetail] = useState(null);
 
   const convertDist = (dist) => {
     if (dist > 1000) return (dist / 1000).toFixed(2) + "m";
@@ -51,41 +54,74 @@ const RoomCondition = ({ conditionRef, closeEvent }) => {
   return (
     <div
       ref={conditionRef}
-      className="absolute top-4 left-4 px-2 py-2 z-50 bg-white/75 text-black flex flex-col gap-2 rounded-lg overflow-hidden backdrop-blur-sm text-nowrap"
+      className="absolute w-[35rem] h-56 px-2 py-2 z-50 bg-white text-black flex flex-col gap-2 overflow-hidden text-nowrap"
     >
       <div className="font-bold px-2">Green_01</div>
-      <div className="flex gap-4 items-center">
-        <div className="w-4 h-4 rounded-full" style={{ backgroundColor: tempColor[tempIdx] }}></div>
-        <div>온도: </div>
-        <div>{temp} °C</div>
-        <div>{tempMessage[tempIdx]}</div>
-      </div>
-      <div className="flex gap-4 items-center">
-        <div className="w-4 h-4 rounded-full" style={{ backgroundColor: humidityColor[humidityIdx] }}></div>
-        <div>습도: </div>
-        <div>{humidity} %</div>
-        <div>{humidityMessage[humidityIdx]}</div>
-      </div>
-      <div className="flex gap-4 items-center">
-        <div className="w-4 h-4 rounded-full" style={{ backgroundColor: co2Color[co2Idx] }}></div>
-        <div>이산화탄소: </div>
-        <div>{co2} ppm</div>
-        <div>{co2Messages[co2Idx]}</div>
-      </div>
-      <div className="flex gap-4 items-center">
-        <div>거리센서: </div>
-        <div>{convertDist(dist)}</div>
-        <div>{distMessage[checkDist(dist)]}</div>
-      </div>
-      <table>
+      <table className="border-separate border-spacing-4">
+        <tbody>
+          <tr className="cursor-pointer hover:font-bold">
+            <td>
+              <div className="w-4 h-4 rounded-full" style={{ backgroundColor: tempColor[tempIdx] }}></div>
+            </td>
+            <td>
+              <div>온도 </div>
+            </td>
+            <td>
+              <div>{temp} °C</div>
+            </td>
+            <td>
+              <div>{tempMessage[tempIdx]}</div>
+            </td>
+          </tr>
+          <tr className="cursor-pointer hover:font-bold">
+            <td>
+              <div className="w-4 h-4 rounded-full" style={{ backgroundColor: humidityColor[humidityIdx] }}></div>
+            </td>
+            <td>
+              <div>습도 </div>
+            </td>
+            <td>
+              <div>{humidity} %</div>
+            </td>
+            <td>
+              <div>{humidityMessage[humidityIdx]}</div>
+            </td>
+          </tr>
+          <tr className="cursor-pointer hover:font-bold">
+            <td>
+              <div className="w-4 h-4 rounded-full" style={{ backgroundColor: co2Color[co2Idx] }}></div>
+            </td>
+            <td>
+              <div>이산화탄소 </div>
+            </td>
+            <td>
+              <div>{co2} ppm</div>
+            </td>
+            <td>
+              <div>{co2Messages[co2Idx]}</div>
+            </td>
+          </tr>
+          <tr className="cursor-pointer hover:font-bold">
+            <td></td>
+            <td>
+              <div>거리센서 </div>
+            </td>
+            <td>
+              <div>{convertDist(dist)}</div>
+            </td>
+            <td>
+              <div>{distMessage[checkDist(dist)]}</div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      {/* <table>
         <tbody>
           <tr>
             <td className="px-2 py-2">
-              {/* <LineChart title="온도" type="temp" /> */}
               <GaugeChart title="온도" type="temp" min={0} max={40} range={[17, 22, 26]} unit="°C" />
             </td>
             <td className="px-2 py-2">
-              {/* <LineChart title="습도" type="humidity" /> */}
               <GaugeChart title="습도" type="humidity" min={0} max={100} range={[30, 50, 70]} unit="%" />
             </td>
           </tr>
@@ -98,10 +134,10 @@ const RoomCondition = ({ conditionRef, closeEvent }) => {
             </td>
           </tr>
         </tbody>
-      </table>
-      <div className="absolute top-2 right-2">
+      </table> */}
+      {/* <div className="absolute top-2 right-2">
         <CloseButton closeEvent={closeEvent} />
-      </div>
+      </div> */}
       <Socket />
     </div>
   );
