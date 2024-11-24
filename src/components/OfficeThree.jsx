@@ -383,6 +383,9 @@ const OfficeThree = () => {
     if (!labelRef.current) return;
     const div = labelRef.current.cloneNode(true);
     div.style.display = "";
+    div.style.width = "40px"; 
+    div.style.height = "40px";
+    div.style.fontSize = "10px"; 
     div.addEventListener("click", () => {
       setSelectSeatName(obj.name);
     });
@@ -398,7 +401,7 @@ const OfficeThree = () => {
     if (name && div.children[1]) div.children[1].innerHTML = name;
 
     const label = new CSS2DObject(div);
-    label.position.set(0, 1, 0);
+    label.position.set(0, 0.8, 0);
     label.visible = validStatus !== "미정";
     obj.add(label);
 
