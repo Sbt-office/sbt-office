@@ -383,9 +383,9 @@ const OfficeThree = () => {
     if (!labelRef.current) return;
     const div = labelRef.current.cloneNode(true);
     div.style.display = "";
-    div.style.width = "40px"; 
+    div.style.width = "40px";
     div.style.height = "40px";
-    div.style.fontSize = "10px"; 
+    div.style.fontSize = "12px";
     div.addEventListener("click", () => {
       setSelectSeatName(obj.name);
     });
