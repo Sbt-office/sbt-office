@@ -32,6 +32,7 @@ import usePersonnelInfoStore from "@/store/personnelInfoStore";
 import PersonnelInfoCard from "./PersonnelInfoCard";
 import { useAllUserListQuery } from "../hooks/useAllUserListQuery";
 import { useShallow } from "zustand/react/shallow";
+import { BarLoader } from "react-spinners";
 
 const FLOAT_SPEED = 0.005;
 const FLOAT_HEIGHT = 0.08;
@@ -62,6 +63,7 @@ const OfficeThree = () => {
   const [isCondition, setIsCondition] = useState(true);
   const [isDaily, setIsDaily] = useState(true);
   const [selectSeatName, setSelectSeatName] = useState(null);
+  const [loadingProgress, setLoadingProgress] = useState(0);
   /**
    * Store
    */
@@ -262,8 +264,11 @@ const OfficeThree = () => {
         setSeatData(seatList);
         sceneRef.current.add(gltf.scene);
         setIsLoaded(true);
+        setLoadingProgress(100);
       },
-      undefined,
+      (xhr) => {
+        setLoadingProgress((xhr.loaded / xhr.total) * 100);
+      },
       (error) => {
         console.error("An error happened during loading:", error);
       }
@@ -279,12 +284,12 @@ const OfficeThree = () => {
     // 아바타와 라벨 부유 애니메이션
     if (seatRef.current.userAvatar) {
       const time = Date.now() * FLOAT_SPEED;
-      const newY = 2.5 + Math.sin(time) * FLOAT_HEIGHT;
+      const newY = 2.2 + Math.sin(time) * FLOAT_HEIGHT;
 
       // 아바타 위치 업데이트
       seatRef.current.userAvatar.position.y = newY;
 
-      seatRef.current.userAvatar.position.y = 2.5 + Math.sin(time) * FLOAT_HEIGHT;
+      seatRef.current.userAvatar.position.y = 2.2 + Math.sin(time) * FLOAT_HEIGHT;
     }
 
     if (rendererRef.current && cameraRef.current) {
@@ -385,7 +390,7 @@ const OfficeThree = () => {
     div.style.display = "";
     div.style.width = "40px";
     div.style.height = "40px";
-    div.style.fontSize = "12px";
+    div.style.fontSize = "0.75rem";
     div.addEventListener("click", () => {
       setSelectSeatName(obj.name);
     });
@@ -515,7 +520,7 @@ const OfficeThree = () => {
   };
 
   const moveModel = (obj) => {
-    seatRef.current.userAvatar.position.set(obj.position.x, 2.5, obj.position.z);
+    seatRef.current.userAvatar.position.set(obj.position.x, 2.2, obj.position.z);
   };
 
   const addModel = (obj) => {
@@ -529,7 +534,7 @@ const OfficeThree = () => {
       (gltf) => {
         const avatar = gltf.scene;
         avatar.scale.set(0.15, 0.15, 0.15);
-        avatar.position.set(obj.position.x, 2.5, obj.position.z);
+        avatar.position.set(obj.position.x, 2.2, obj.position.z);
         avatar.rotation.y = Math.PI / 2;
 
         avatar.name = "userAvatar";
@@ -615,6 +620,12 @@ const OfficeThree = () => {
       className={`z-0 bg-[#292929] flex-1 overflow-hidden ${isPopupOpen ? "absolute left-64" : "relative"}`}
     >
       <canvas className="absolute top-0 left-0" ref={canvasRef} />
+      {!isLoaded && (
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+          <BarLoader color="#36d7b7" width={200} />
+          <div className="text-white text-center mt-4">Sbt Global Office - {Math.round(loadingProgress)}%</div>
+        </div>
+      )}
       {isLoaded && (
         <>
           <div className="absolute bottom-4 right-4 flex gap-4">
