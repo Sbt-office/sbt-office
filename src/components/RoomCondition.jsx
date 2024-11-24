@@ -6,7 +6,7 @@ import useSocketStore from "../store/socketStore";
 // import GaugeChart from "./Chart/GaugeChart";
 
 const RoomCondition = ({ conditionRef }) => {
-  const getData = useSocketStore((state) => state.getData);
+  const { getData } = useSocketStore();
 
   // const [showDetail, setShowDetail] = useState(null);
 
@@ -54,7 +54,7 @@ const RoomCondition = ({ conditionRef }) => {
     else if (dist <= 48) return 1;
     else return 2;
   };
-
+  console.log("co2", co2);
   return (
     <div
       ref={conditionRef}

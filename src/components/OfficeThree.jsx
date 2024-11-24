@@ -620,13 +620,12 @@ const OfficeThree = () => {
       className={`z-0 bg-[#292929] flex-1 overflow-hidden ${isPopupOpen ? "absolute left-64" : "relative"}`}
     >
       <canvas className="absolute top-0 left-0" ref={canvasRef} />
-      {!isLoaded && (
+      {!isLoaded ? (
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
           <BarLoader color="#36d7b7" width={200} />
           <div className="text-white text-center mt-4">Sbt Global Office - {Math.round(loadingProgress)}%</div>
         </div>
-      )}
-      {isLoaded && (
+      ) : (
         <>
           <div className="absolute bottom-4 right-4 flex gap-4">
             <div

@@ -68,6 +68,7 @@ const Socket = () => {
 
       socketRef.current.on(TopicCo2, (data) => {
         const now = dayjs().format("YYYY-MM-DD HH:mm:ss");
+        console.log("data", data);
         setCo2({ time: now, value: data.split(": ")[1] });
       });
       socketRef.current.on(TopicTemp, (data) => {
