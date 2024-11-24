@@ -14,7 +14,7 @@ import { SearchInput } from "./SearchInput";
 import { useInfiniteUserListQuery } from "@/hooks/useInfiniteUserListQuery";
 
 import profile from "@/assets/images/profile.png";
-import { usePopupStore } from "./../store/usePopupStore";
+import { usePopupStore } from "@/store/usePopupStore";
 
 const ManagePersonnelPopup = () => {
   const [currentPage, setCurrentPage] = useState(1);
@@ -22,7 +22,7 @@ const ManagePersonnelPopup = () => {
   const [selectedItems, setSelectedItems] = useState({});
   const [selectedDepartment, setSelectedDepartment] = useState("");
 
-  const { togglePopup } = usePopupStore();
+  const togglePopup = usePopupStore((state) => state.togglePopup);
 
   const itemsPerPage = 16;
 

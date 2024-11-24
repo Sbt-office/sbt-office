@@ -10,7 +10,8 @@ export const useLogin = () => {
   const navigate = useNavigate();
   const setUser = useAuthStore((state) => state.setUser);
   const { addToast } = useToast();
-  const { setIsAdmin, setSabeon } = useAdminStore();
+  const setIsAdmin = useAdminStore((state) => state.setIsAdmin);
+  const setSabeon = useAdminStore((state) => state.setSabeon);
 
   return useMutation({
     mutationFn: loginCheckFetch,

@@ -1,11 +1,12 @@
+/* eslint-disable react/prop-types */
 import { useEffect, useRef, useState } from "react";
 import useSocketStore from "../../store/socketStore";
 import EChartsReact from "echarts-for-react";
 
 const GaugeChart = ({ title, type, min = 0, max = 100, range = [], unit }) => {
-  const { getData } = useSocketStore();
+  const getData = useSocketStore((state) => state.getData);
 
-  const chartInitRef = useRef();
+  const chartInitRef = useRef(null);
   const valueRef = useRef({});
 
   const [options, setOptions] = useState({});

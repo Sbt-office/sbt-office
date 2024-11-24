@@ -6,9 +6,9 @@ import { cloneDeep } from "es-toolkit/object";
 import useSocketStore from "@/store/socketStore";
 
 const LineChart = ({ title, type }) => {
-  const { getData } = useSocketStore();
+  const getData = useSocketStore((state) => state.getData);
 
-  const chartInitRef = useRef();
+  const chartInitRef = useRef(null);
   const valueRef = useRef({});
   valueRef.current = getData(type);
 

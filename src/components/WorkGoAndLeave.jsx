@@ -8,18 +8,26 @@ import { useThrottle } from "../hooks/useThrottle";
 import { useAuthStore } from "../store/authStore";
 import { getWorkStatusStore, setWorkStatusStore } from "../hooks/useWorkStatus";
 import useAdminStore from "@/store/adminStore";
+import { useShallow } from "zustand/react/shallow";
 
 const WorkGoAndLeave = () => {
-  const { isWorking } = useWorkStatusStore();
-  const { logout } = useAuthStore();
+  const isWorking = useWorkStatusStore((state) => state.isWorking);
+  const logout = useAuthStore((state) => state.logout);
+  const userInfo = useUserStore((state) => state.userInfo);
+  const setUserInfo = useUserStore((state) => state.setUserInfo);
+  const { sabeon, setIsAdmin, setSabeon } = useAdminStore(
+    useShallow((state) => ({
+      sabeon: state.sabeon,
+      setIsAdmin: state.setIsAdmin,
+      setSabeon: state.setSabeon,
+    }))
+  );
 
   const getWorkStatus = getWorkStatusStore();
   const setWorkStatus = setWorkStatusStore();
 
-  const { userInfo, setUserInfo } = useUserStore();
-  const { sabeon, setIsAdmin, setSabeon } = useAdminStore();
   const { data, isLoading, error, refetch } = useUserQuery();
-  
+
   useEffect(() => {
     if (!data) {
       refetch();

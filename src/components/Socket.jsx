@@ -1,14 +1,18 @@
-import React, { useEffect, useRef } from "react";
-import io from "socket.io-client";
+import { useEffect, useRef } from "react";
+// import io from "socket.io-client";
 import useSocketStore from "../store/socketStore";
 import dayjs from "dayjs";
 import { HubConnectionBuilder } from "@microsoft/signalr";
 
 const Socket = () => {
   const socketRef = useRef();
-  const socketRef2 = useRef();
+  // const socketRef2 = useRef();
 
-  const { setCo2, setTemp, setHumidity, setDist } = useSocketStore();
+  const setCo2 = useSocketStore((state) => state.setCo2);
+  const setTemp = useSocketStore((state) => state.setTemp);
+  const setHumidity = useSocketStore((state) => state.setHumidity);
+  const setDist = useSocketStore((state) => state.setDist);
+
   const TopicCo2 = import.meta.env.VITE_TOPIC_CO2;
   const TopicTemp = import.meta.env.VITE_TOPIC_TEMP;
   const TopicDist = import.meta.env.VITE_TOPIC_DIST;

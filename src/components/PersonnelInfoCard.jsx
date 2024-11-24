@@ -88,7 +88,16 @@ const InfoRow = ({ label, value, isEditing, onChange, type = "text", options, on
 
 const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
   const fileInputRef = useRef(null);
-  const { selectedSeat, setSelectedSeat, setIsSeatEdit } = useSeatStore();
+  const selectedSeat = useSeatStore((state) => state.selectedSeat);
+  const setSelectedSeat = useSeatStore((state) => state.setSelectedSeat);
+  const setIsSeatEdit = useSeatStore((state) => state.setIsSeatEdit);
+  const sabeon = useAdminStore((state) => state.sabeon);
+  const isAdmin = useAdminStore((state) => state.isAdmin);
+  const setSeatNo = usePersonnelEditStore((state) => state.setSeatNo);
+  const setPersonnelInfo = usePersonnelInfoStore((state) => state.setPersonnelInfo);
+
+  const canEdit = isAdmin === "Y" || sabeon === personnelInfo.ou_sabeon;
+
   const { addToast } = useToast();
 
   const [isEditing, setIsEditing] = useState(false);
@@ -139,16 +148,8 @@ const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
     };
   }, [setIsSeatEdit, setSelectedSeat]);
 
-  const { setSeatNo } = usePersonnelEditStore();
   const { compressImage } = useImageCompression();
-
   const { mutateAsync, isLoading } = useUpdatePersonnel();
-  const { sabeon, isAdmin } = useAdminStore();
-
-  const canEdit = isAdmin==="Y" || sabeon === personnelInfo.ou_sabeon;
-
-  const { setPersonnelInfo } = usePersonnelInfoStore();
-
   const { refetch: refetchUserList } = useAllUserListQuery();
 
   const handleImageUpload = async (event) => {
@@ -177,7 +178,7 @@ const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
 
     try {
       await mutateAsync({
-        sabeon: isAdmin==="Y" ? personnelInfo.ou_sabeon : sabeon,
+        sabeon: isAdmin === "Y" ? personnelInfo.ou_sabeon : sabeon,
         username: editData.name,
         seat_cd: selectedSeat || editData.seatNo,
         team_cd: editData.team_cd,
@@ -224,7 +225,7 @@ const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
               level: editData.level,
               profile_img: editData.profile_img,
             },
-            ou_sabeon: isAdmin==="Y" ? personnelInfo.ou_sabeon : sabeon,
+            ou_sabeon: isAdmin === "Y" ? personnelInfo.ou_sabeon : sabeon,
           };
           setPersonnelInfo(userWithParsedInfo);
         }, 100);

@@ -1,7 +1,8 @@
 import { useToastStore } from "@/store/toastStore";
 
 export const useToast = () => {
-  const { addToast: addToastToStore, removeToast } = useToastStore();
+  const addToastToStore = useToastStore((state) => state.addToast);
+  const removeToast = useToastStore((state) => state.removeToast);
 
   const addToast = ({ type, message }) => {
     const id = Date.now();

@@ -3,9 +3,15 @@ import { useMutation } from "@tanstack/react-query";
 import { getDailyFetch, setDailyFetch } from "@/utils/api";
 import useWorkStatusStore from "@/store/useWorkStatusStore";
 import { useToast } from "@/hooks/useToast";
+import { useShallow } from "zustand/react/shallow";
 
 export const setWorkStatusStore = () => {
-  const { setData, setShowModal } = useWorkStatusStore();
+  const { setData, setShowModal } = useWorkStatusStore(
+    useShallow((state) => ({
+      setData: state.setData,
+      setShowModal: state.setShowModal,
+    }))
+  );
   const { addToast } = useToast();
 
   return useMutation({
@@ -21,7 +27,7 @@ export const setWorkStatusStore = () => {
 };
 
 export const getWorkStatusStore = () => {
-  const { setData } = useWorkStatusStore();
+  const setData = useWorkStatusStore((state) => state.setData);
   const { addToast } = useToast();
 
   return useMutation({

@@ -31,6 +31,7 @@ import useSeatStore from "@/store/seatStore";
 import usePersonnelInfoStore from "@/store/personnelInfoStore";
 import PersonnelInfoCard from "./PersonnelInfoCard";
 import { useAllUserListQuery } from "../hooks/useAllUserListQuery";
+import { useShallow } from "zustand/react/shallow";
 
 const FLOAT_SPEED = 0.005;
 const FLOAT_HEIGHT = 0.08;
@@ -38,14 +39,14 @@ const FLOAT_HEIGHT = 0.08;
 const OfficeThree = () => {
   const { data: userList } = useAllUserListQuery();
 
-  const mainRef = useRef();
-  const labelRendererRef = useRef();
-  const conditionRef = useRef();
-  const css3dRendererRef = useRef();
-  const conditionPannelRef = useRef();
+  const mainRef = useRef(null);
+  const labelRendererRef = useRef(null);
+  const conditionRef = useRef(null);
+  const css3dRendererRef = useRef(null);
+  const conditionPannelRef = useRef(null);
   const css3dObjectRef = useRef({});
   const tweenRef = useRef([]);
-  const labelRef = useRef();
+  const labelRef = useRef(null);
   const modelRef = useRef(null);
   const canvasRef = useRef(null);
   const cameraRef = useRef(null);
@@ -64,11 +65,25 @@ const OfficeThree = () => {
   /**
    * Store
    */
-  const { setSeatData } = seatListStore();
-  const { isPopupOpen } = usePopupStore();
-  const { isWorking } = useWorkStatusStore();
-  const { selectedSeat, isSeatEdit, setSelectedSeat } = useSeatStore();
-  const { personnelInfo, setPersonnelInfo, clearPersonnelInfo } = usePersonnelInfoStore();
+  const setSeatData = seatListStore((state) => state.setSeatData);
+  const isPopupOpen = usePopupStore((state) => state.isPopupOpen);
+  const isWorking = useWorkStatusStore((state) => state.isWorking);
+
+  const { selectedSeat, isSeatEdit, setSelectedSeat } = useSeatStore(
+    useShallow((state) => ({
+      selectedSeat: state.selectedSeat,
+      isSeatEdit: state.isSeatEdit,
+      setSelectedSeat: state.setSelectedSeat,
+    }))
+  );
+
+  const { personnelInfo, setPersonnelInfo, clearPersonnelInfo } = usePersonnelInfoStore(
+    useShallow((state) => ({
+      personnelInfo: state.personnelInfo,
+      setPersonnelInfo: state.setPersonnelInfo,
+      clearPersonnelInfo: state.clearPersonnelInfo,
+    }))
+  );
 
   // CAMERA
   const setupCamera = () => {
@@ -448,7 +463,7 @@ const OfficeThree = () => {
         const daily = dailyList.find((item) => item?.ouds_sabeon === user.ou_sabeon);
         const userStatus = daily?.userStatus || "미출근";
 
-        const sabeon = JSON.parse(localStorage.getItem('auth-storage'))?.state?.user.sabeon;
+        const sabeon = JSON.parse(localStorage.getItem("auth-storage"))?.state?.user.sabeon;
 
         if (sit.label) {
           updateLabel(sit.obj, user.ou_nm, userStatus);

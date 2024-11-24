@@ -6,25 +6,43 @@ import useAdminStore from "@/store/adminStore";
 import logo from "@/assets/images/logo.png";
 import { HiOutlineMenu, HiMenuAlt1 } from "react-icons/hi";
 import { IoIdCardOutline, IoSettingsOutline } from "react-icons/io5";
-// import {  HiMenuAlt2 } from "react-icons/hi";
 
 import WorkGoAndLeave from "./WorkGoAndLeave";
 import PersonnelInfoCard from "./PersonnelInfoCard";
 import ManagePersonnelPopup from "./ManagePersonnelPopup";
 import { useAllUserListQuery } from "@/hooks/useAllUserListQuery";
 import { usePopupStore } from "@/store/usePopupStore";
+import { useUserQuery } from "../hooks/useUserQuery";
+import { useShallow } from "zustand/react/shallow";
 
 const SideBar = () => {
-  const { personnelInfo, setPersonnelInfo, clearPersonnelInfo } = usePersonnelInfoStore();
-  const { isAdmin } = useAdminStore();
+  /** store */
+  const { setPersonnelInfo, clearPersonnelInfo } = usePersonnelInfoStore(
+    useShallow((state) => ({
+      setPersonnelInfo: state.setPersonnelInfo,
+      clearPersonnelInfo: state.clearPersonnelInfo,
+    }))
+  );
+
+  const { setIsAdmin, setSabeon } = useAdminStore(
+    useShallow((state) => ({
+      setIsAdmin: state.setIsAdmin,
+      setSabeon: state.setSabeon,
+    }))
+  );
+
+  const isPopupOpen = usePopupStore((state) => state.isPopupOpen);
+  const togglePopup = usePopupStore((state) => state.togglePopup);
+
+  const isAdmin = useAdminStore((state) => state.isAdmin);
+  const personnelInfo = usePersonnelInfoStore((state) => state.personnelInfo);
 
   const [openSection, setOpenSection] = useState(null);
   const [openSubItem, setOpenSubItem] = useState(null);
   const [selectedItem, setSelectedItem] = useState(null);
 
   const { data } = useAllUserListQuery();
-
-  const { isPopupOpen, togglePopup } = usePopupStore();
+  const { data: userInfoData } = useUserQuery();
 
   const organizedData = useMemo(() => {
     if (!data || !Array.isArray(data)) return [];
@@ -117,6 +135,13 @@ const SideBar = () => {
       }
     }
   }, [personnelInfo, organizedData]);
+
+  useEffect(() => {
+    if (userInfoData) {
+      setIsAdmin(userInfoData?.ou_admin_yn);
+      setSabeon(userInfoData?.ou_sabeon);
+    }
+  }, [userInfoData]);
 
   return (
     <div className="flex items-center h-dvh">

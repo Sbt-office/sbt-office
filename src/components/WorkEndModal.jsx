@@ -3,7 +3,8 @@ import dayjs from "dayjs";
 import useWorkStatusStore from "@/store/useWorkStatusStore";
 
 const WorkEndModal = ({ onClose }) => {
-  const { modalType, workStartTime } = useWorkStatusStore();
+  const modalType = useWorkStatusStore((state) => state.modalType);
+  const workStartTime = useWorkStatusStore((state) => state.workStartTime);
 
   const getModalContent = () => {
     if (modalType === "start") {

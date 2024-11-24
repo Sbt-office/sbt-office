@@ -6,7 +6,8 @@ import useAdminStore from "@/store/adminStore";
 export const useUpdatePersonnel = () => {
   const queryClient = useQueryClient();
   const { addToast } = useToast();
-  const { sabeon: storedSabeon, isAdmin } = useAdminStore();
+  const storedSabeon = useAdminStore((state) => state.sabeon);
+  const isAdmin = useAdminStore((state) => state.isAdmin);
 
   return useMutation({
     mutationFn: (updateData) => {

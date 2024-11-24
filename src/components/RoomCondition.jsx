@@ -1,21 +1,20 @@
 /* eslint-disable react/prop-types */
 import Socket from "./Socket";
-import LineChart from "./Chart/LineChart";
-import { CloseButton } from "../utils/icon";
 import useSocketStore from "../store/socketStore";
-import GaugeChart from "./Chart/GaugeChart";
-import { useState } from "react";
+// import LineChart from "./Chart/LineChart";
+// import { CloseButton } from "../utils/icon";
+// import GaugeChart from "./Chart/GaugeChart";
 
-const RoomCondition = ({ conditionRef, closeEvent }) => {
-  const { getData } = useSocketStore();
+const RoomCondition = ({ conditionRef }) => {
+  const getData = useSocketStore((state) => state.getData);
 
-  const [showDetail, setShowDetail] = useState(null);
+  // const [showDetail, setShowDetail] = useState(null);
 
-  const convertDist = (dist) => {
-    if (dist > 1000) return (dist / 1000).toFixed(2) + "m";
-    else if (dist > 10) return (dist / 10).toFixed(2) + "cm";
-    else return dist + "mm";
-  };
+  // const convertDist = (dist) => {
+  //   if (dist > 1000) return (dist / 1000).toFixed(2) + "m";
+  //   else if (dist > 10) return (dist / 10).toFixed(2) + "cm";
+  //   else return dist + "mm";
+  // };
 
   const co2Messages = [
     "매우 쾌적한 사무실 입니다.",
