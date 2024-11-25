@@ -54,7 +54,7 @@ const RoomCondition = ({ conditionRef }) => {
     else if (dist <= 48) return 1;
     else return 2;
   };
-  
+
   return (
     <div
       ref={conditionRef}
