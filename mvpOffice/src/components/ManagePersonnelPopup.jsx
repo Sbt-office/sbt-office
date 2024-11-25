@@ -103,13 +103,8 @@ const ManagePersonnelPopup = () => {
 
   const currentEmployees = getCurrentPageData();
 
-  const filteredTotalEmployees = getAllEmployees().filter((emp) => {
-    const matchesSearch = !searchTerm || emp.name.includes(searchTerm) || emp.department.includes(searchTerm);
-    const matchesDepartment = !selectedDepartment || emp.department === selectedDepartment;
-    return matchesSearch && matchesDepartment;
-  }).length;
-
-  const pageCount = Math.ceil(filteredTotalEmployees / itemsPerPage);
+  const totalEmployees = infiniteData?.pages[0]?.totalItems || 0;
+  const pageCount = Math.ceil(totalEmployees / itemsPerPage);
 
   const handlePageChange = async (newPage) => {
     if (newPage < 1 || newPage > pageCount) return;
@@ -249,13 +244,13 @@ const ManagePersonnelPopup = () => {
               {[...Array(pageCount)].map((_, i) => {
                 const pageNumber = i + 1;
 
-                // 필터링된 직원이 16명 이하면 1페이지만 표시
-                if (filteredTotalEmployees <= itemsPerPage && pageNumber > 1) {
+                // 32명 미만일 경우 3페이지 이상은 표시하지 않음
+                if (totalEmployees <= itemsPerPage * 2 && pageNumber > 2) {
                   return null;
                 }
 
                 const windowStart = Math.max(1, currentPage - 1);
-                const windowEnd = Math.min(pageCount, windowStart + 2);
+                const windowEnd = Math.min(pageCount, totalEmployees <= itemsPerPage * 2 ? 2 : windowStart + 2);
 
                 if (pageNumber >= windowStart && pageNumber <= windowEnd) {
                   return (
