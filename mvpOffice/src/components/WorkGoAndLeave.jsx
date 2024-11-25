@@ -5,14 +5,14 @@ import { useUserStore } from "@/store/userStore";
 import { useUserQuery } from "@/hooks/useUserQuery";
 import { IoWarningOutline } from "react-icons/io5";
 import { useThrottle } from "../hooks/useThrottle";
-import { useAuthStore } from "../store/authStore";
+import { useLogout } from "../hooks/useAuth";
 import { getWorkStatusStore, setWorkStatusStore } from "../hooks/useWorkStatus";
 import useAdminStore from "@/store/adminStore";
 import { useShallow } from "zustand/react/shallow";
 
 const WorkGoAndLeave = () => {
   const isWorking = useWorkStatusStore((state) => state.isWorking);
-  const logout = useAuthStore((state) => state.logout);
+  const handleLogout = useLogout();
   const userInfo = useUserStore((state) => state.userInfo);
   const setUserInfo = useUserStore((state) => state.setUserInfo);
   const { sabeon, setIsAdmin, setSabeon } = useAdminStore(
@@ -120,7 +120,7 @@ const WorkGoAndLeave = () => {
           퇴근
         </button>
         <button
-          onClick={logout}
+          onClick={handleLogout}
           className="flex-1 w-full text-center py-2 rounded-md text-sm bg-sbtLightBlue hover:bg-sbtDarkBlue hover:text-white"
         >
           로그아웃

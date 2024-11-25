@@ -20,7 +20,7 @@ export const loginCheckFetch = async (credentials) => {
     }
     throw new Error(res.data.message || "로그인에 실패했습니다.");
   } catch (err) {
-    if (err.response?.status === 401) {
+    if (err.response?.status === 404) {
       throw new Error("사번 또는 비밀번호가 올바르지 않습니다.");
     }
     throw new Error("서버 연결에 실패했습니다.");
@@ -100,9 +100,17 @@ export const setDailyFetch = async (data) => {
 export const getDailyFetch = async (sabeon) => {
   try {
     const res = await axios.get(`${baseURL}/api/office_daily/${sabeon}`);
-    if (res.status === 200 && res.data.status === "200") return res.data;
+    if (res.status === 200) {
+      if (res.data.status === "200") {
+        // 데이터가 있는 경우 전체 응답 반환
+        return res.data;
+      }
+      // 미출근 상태인 경우
+      return { message: "미출근" };
+    }
+    throw new Error("서버 응답 오류");
   } catch (err) {
-    throw new Error(err.message);
+    throw new Error(err.message || "출퇴근 상태 조회 실패");
   }
 };
 

@@ -10,6 +10,7 @@ import useSeatStore from "@/store/seatStore";
 import useAdminStore from "@/store/adminStore";
 import usePersonnelInfoStore from "@/store/personnelInfoStore";
 import { usePersonnelEditStore } from "@/store/personnelEditStore";
+import { useThreeStore } from "@/store/threeStore";
 
 import { useToast } from "@/hooks/useToast";
 import { useUpdatePersonnel } from "@/hooks/useUpdatePersonnel";
@@ -18,7 +19,7 @@ import { useImageCompression } from "@/hooks/useImageCompression";
 
 import { DEPARTMENTS, POSITIONS } from "@/data/companyInfo";
 
-const InfoRow = ({ label, value, isEditing, onChange, type = "text", options, onClick }) => {
+const InfoRow = ({ label, value, isEditing, onChange, type = "text", options, onClick, required = false }) => {
   const [isValidPhone, setIsValidPhone] = useState(true);
 
   const formatPhoneNumber = (input) => {
@@ -57,18 +58,29 @@ const InfoRow = ({ label, value, isEditing, onChange, type = "text", options, on
   return (
     <div className="flex w-48 gap-2">
       <div className="font-semibold w-14 text-black/70 truncate overflow-hidden text-base flex items-center justify-around">
-        <p>{label}</p>
+        <p>
+          {label}
+          {required && <span className="text-red-500 ml-0.5">*</span>}
+        </p>
         <span>:</span>
       </div>
       {type === "select" ? (
-        <Select className="w-full" value={value} onChange={(val) => onChange(val)} options={options} />
+        <Select
+          className={`w-full ${!value && required ? "border-red-500" : ""}`}
+          value={value}
+          onChange={(val) => onChange(val)}
+          options={options}
+          status={!value && required ? "error" : ""}
+          placeholder={`${label} 선택`}
+        />
       ) : label === "자리" ? (
         <span
-          className="text-gray-800 truncate overflow-hidden w-full cursor-pointer rounded-md ring-1 ring-sbtLightBlue px-3 py-1 
-          hover:bg-sbtDarkBlue hover:text-white"
+          className={`text-gray-800 truncate overflow-hidden w-full cursor-pointer rounded-md ring-1 
+          ${!value && required ? "ring-red-500" : "ring-sbtLightBlue"} px-3 py-1 
+          hover:bg-sbtDarkBlue hover:text-white`}
           onClick={onClick}
         >
-          {value}
+          {value || `자리를 선택하세요`}
         </span>
       ) : label === "H.P" ? (
         <Input
@@ -95,6 +107,7 @@ const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
   const isAdmin = useAdminStore((state) => state.isAdmin);
   const setSeatNo = usePersonnelEditStore((state) => state.setSeatNo);
   const setPersonnelInfo = usePersonnelInfoStore((state) => state.setPersonnelInfo);
+  const isMoving = useThreeStore((state) => state.isMoving);
 
   const canEdit = isAdmin === "Y" || sabeon === personnelInfo.ou_sabeon;
 
@@ -112,6 +125,10 @@ const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
     team_cd: personnelInfo.ou_team_cd || "ST001",
     profile_img: personnelInfo.ou_insa_info?.profile_img || "",
   });
+
+  const isFormValid = () => {
+    return editData.seatNo && editData.teamName && editData.level;
+  };
 
   useEffect(() => {
     setEditData({
@@ -171,6 +188,11 @@ const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
   };
 
   const handleSave = async () => {
+    if (!isFormValid()) {
+      addToast({ type: "error", message: "자리, 부서, 직급을 모두 입력해주세요." });
+      return;
+    }
+
     if (!isValidPhone) {
       addToast({ type: "error", message: "올바른 전화번호 형식을 입력해주세요." });
       return;
@@ -286,12 +308,21 @@ const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
           <div className="space-y-2">
             <InfoRow label="성함" value={displayData.name} />
             <InfoRow
+              label="자리"
+              value={displayData.seatNo}
+              isEditing={isEditing}
+              onChange={(val) => setEditData({ ...editData, seatNo: val })}
+              onClick={handleSeatClick}
+              required
+            />
+            <InfoRow
               label="부서"
               value={displayData.teamName}
               isEditing={isEditing}
               type="select"
               options={DEPARTMENTS}
               onChange={(val) => setEditData({ ...editData, teamName: val })}
+              required
             />
             <InfoRow
               label="직급"
@@ -300,6 +331,7 @@ const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
               type="select"
               options={POSITIONS}
               onChange={(val) => setEditData({ ...editData, level: val })}
+              required
             />
             <InfoRow
               label="H.P"
@@ -309,13 +341,6 @@ const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
                 setEditData({ ...editData, hp: val });
                 setIsValidPhone(isValid);
               }}
-            />
-            <InfoRow
-              label="자리"
-              value={displayData.seatNo}
-              isEditing={isEditing}
-              onChange={(val) => setEditData({ ...editData, seatNo: val })}
-              onClick={handleSeatClick}
             />
           </div>
           <div
@@ -344,9 +369,11 @@ const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
         <Button
           color="primary"
           variant="outlined"
-          className="rounded transition-colors text-sbtDarkBlue"
+          className={`rounded transition-colors ${
+            isMoving ? "text-gray-400 border-gray-300 cursor-not-allowed pointer-events-none" : "text-sbtDarkBlue"
+          }`}
           onClick={handleClose}
-          disabled={isLoading}
+          disabled={isLoading || isMoving}
         >
           닫기
         </Button>
@@ -365,8 +392,11 @@ const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
               <Button
                 type="primary"
                 loading={isLoading}
-                className="rounded transition-colors text-white bg-sbtDarkBlue"
+                className={`rounded transition-colors text-white ${
+                  isFormValid() ? "bg-sbtDarkBlue hover:bg-sbtDarkBlue/90" : "bg-gray-400 cursor-not-allowed"
+                }`}
                 onClick={handleSave}
+                disabled={!isFormValid()}
               >
                 저장
               </Button>
@@ -374,7 +404,7 @@ const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
           ) : (
             <Button
               type="primary"
-              className="rounded transition-colors text-white bg-sbtDarkBlue"
+              className="rounded transition-colors text-white bg-sbtDarkBlue hover:bg-sbtDarkBlue/90"
               onClick={() => setIsEditing(true)}
             >
               수정

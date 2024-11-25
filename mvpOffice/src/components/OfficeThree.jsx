@@ -20,18 +20,23 @@ import hdr from "@/assets/three.hdr";
 import model from "@/assets/model/office.glb";
 import userGlb from "@/assets/model/user.glb";
 
-import { clearScene } from "../utils/three/SceneCleanUp";
-import { usePopupStore } from "../store/usePopupStore";
-import { getDailyListFetch } from "../utils/api";
-import { userIcon } from "../utils/icon";
-import useWorkStatusStore from "../store/useWorkStatusStore";
+import { userIcon } from "@/utils/icon";
+
+import { clearScene } from "@/utils/three/SceneCleanUp";
+import { getDailyListFetch } from "@/utils/api";
+import { useAllUserListQuery } from "@/hooks/useAllUserListQuery";
+import PersonnelInfoCard from "./PersonnelInfoCard";
+import useWorkStatusStore from "@/store/useWorkStatusStore";
 import RoomCondition from "./RoomCondition";
-import seatListStore from "../store/seatListStore";
+/** STORE */
+import seatListStore from "@/store/seatListStore";
 import useSeatStore from "@/store/seatStore";
 import usePersonnelInfoStore from "@/store/personnelInfoStore";
-import PersonnelInfoCard from "./PersonnelInfoCard";
-import { useAllUserListQuery } from "../hooks/useAllUserListQuery";
+import { usePopupStore } from "@/store/usePopupStore";
+import useAdminStore from "@/store/adminStore";
 import { useShallow } from "zustand/react/shallow";
+import { useThreeStore } from "@/store/threeStore";
+
 import { BarLoader } from "react-spinners";
 
 const FLOAT_SPEED = 0.005;
@@ -70,22 +75,26 @@ const OfficeThree = () => {
   const setSeatData = seatListStore((state) => state.setSeatData);
   const isPopupOpen = usePopupStore((state) => state.isPopupOpen);
   const isWorking = useWorkStatusStore((state) => state.isWorking);
+  const sabeon = useAdminStore((state) => state.sabeon);
 
-  const { selectedSeat, isSeatEdit, setSelectedSeat } = useSeatStore(
+  const selectedSeat = useSeatStore((state) => state.selectedSeat);
+  const personnelInfo = usePersonnelInfoStore((state) => state.personnelInfo);
+
+  const { isSeatEdit, setSelectedSeat } = useSeatStore(
     useShallow((state) => ({
-      selectedSeat: state.selectedSeat,
       isSeatEdit: state.isSeatEdit,
       setSelectedSeat: state.setSelectedSeat,
     }))
   );
 
-  const { personnelInfo, setPersonnelInfo, clearPersonnelInfo } = usePersonnelInfoStore(
+  const { setPersonnelInfo, clearPersonnelInfo } = usePersonnelInfoStore(
     useShallow((state) => ({
-      personnelInfo: state.personnelInfo,
       setPersonnelInfo: state.setPersonnelInfo,
       clearPersonnelInfo: state.clearPersonnelInfo,
     }))
   );
+
+  const { cameraPosition, cameraTarget, setSeatRefs, setIsMoving } = useThreeStore();
 
   // CAMERA
   const setupCamera = () => {
@@ -144,27 +153,26 @@ const OfficeThree = () => {
     css3dRendererRef.current.domElement.style.position = "absolute";
     css3dRendererRef.current.domElement.style.top = 0;
     css3dRendererRef.current.domElement.style.left = 0;
-    // css3dRendererRef.current.domElement.style.width = 0;
-    // css3dRendererRef.current.domElement.style.height = 0;
-    // css3dRendererRef.current.domElement.style.overflow = "visible";
-    // css3dRendererRef.current.domElement.style.zIndex = 0;
     canvasRef.current.before(css3dRendererRef.current.domElement);
   };
 
   const moveCamera = (pos, tar) => {
+    setIsMoving(true);
+
     const newPos = pos.clone();
     const newTar = tar.clone();
     const t1 = new Tween(cameraRef.current.position);
-    t1.to(newPos, 1000);
-    t1.easing(Easing.Cubic.InOut);
+    t1.to(newPos, 1500);
+    t1.easing(Easing.Quadratic.InOut);
     t1.onStart(() => (controlsRef.current.enabled = false));
     t1.onComplete(() => {
       controlsRef.current.enabled = true;
       tweenRef.current = [];
+      setIsMoving(false);
     });
     t1.start();
-    const t2 = new Tween(controlsRef.current.target).to(newTar, 900);
-    t2.easing(Easing.Cubic.Out);
+    const t2 = new Tween(controlsRef.current.target).to(newTar, 1500);
+    t2.easing(Easing.Quadratic.InOut);
     t2.start();
 
     tweenRef.current.push(...[t1, t2]);
@@ -218,8 +226,6 @@ const OfficeThree = () => {
 
       if (css3dRendererRef.current) {
         css3dRendererRef.current.setSize(mainRef.current.offsetWidth, mainRef.current.offsetHeight);
-        // css3dRendererRef.current.domElement.style.width = 0;
-        // css3dRendererRef.current.domElement.style.height = 0;
       }
     }
   };
@@ -284,21 +290,18 @@ const OfficeThree = () => {
     // 아바타와 라벨 부유 애니메이션
     if (seatRef.current.userAvatar) {
       const time = Date.now() * FLOAT_SPEED;
-      const newY = 2.2 + Math.sin(time) * FLOAT_HEIGHT;
+      const newY = 2 + Math.sin(time) * FLOAT_HEIGHT;
 
       // 아바타 위치 업데이트
       seatRef.current.userAvatar.position.y = newY;
-
-      seatRef.current.userAvatar.position.y = 2.2 + Math.sin(time) * FLOAT_HEIGHT;
+      seatRef.current.userAvatar.position.y = 2 + Math.sin(time) * FLOAT_HEIGHT;
     }
 
     if (rendererRef.current && cameraRef.current) {
       rendererRef.current.render(sceneRef.current, cameraRef.current);
-
       if (labelRendererRef.current) {
         labelRendererRef.current.render(sceneRef.current, cameraRef.current);
       }
-
       if (css3dRendererRef.current) {
         css3dRendererRef.current.render(sceneRef.current, cameraRef.current);
       }
@@ -337,11 +340,76 @@ const OfficeThree = () => {
     if (tweenRef.current.length > 0) {
       tweenRef.current.map((tween) => tween.update());
     }
-
     animRef.current = requestAnimationFrame(animate);
   };
 
+  const drawUserIcon = () => {
+    if (!Array.isArray(userList) || !Array.isArray(dailyList)) return;
+
+    Object.keys(seatRef.current).forEach((key) => {
+      const sit = seatRef.current[key];
+      if (!sit || !sit.obj) return;
+
+      const user = userList.find((item) => item?.ou_seat_cd === key);
+
+      if (user) {
+        const daily = dailyList.find((item) => item?.ouds_sabeon === user.ou_sabeon);
+        const userStatus = daily?.userStatus || "미출근";
+
+        if (sit.label) {
+          updateLabel(sit.obj, user.ou_nm, userStatus);
+        } else {
+          createLabel(sit.obj, user.ou_nm, userStatus);
+        }
+      } else {
+        if (sit.label) {
+          updateLabel(sit.obj, sit.obj.name, "미정");
+        } else {
+          createLabel(sit.obj, sit.obj.name, "미정");
+        }
+      }
+    });
+  };
+
+  // 기본 카메라 위치 상수 추가
+  const DEFAULT_CAMERA_POSITION = new THREE.Vector3(-3.684, 13.704, -19.717);
+  const DEFAULT_CAMERA_TARGET = new THREE.Vector3(-3.84, 1.063, -7.064);
+
+  useEffect(() => {
+    if (isLoaded && Array.isArray(userList) && sabeon) {
+      const userSeat = userList.find((user) => user.ou_sabeon === sabeon)?.ou_seat_cd;
+      if (userSeat && seatRef.current[userSeat]?.obj) {
+        const seatObj = seatRef.current[userSeat].obj;
+
+        // 아바타가 없거나 위치가 변경된 경우에만 처리
+        if (!seatRef.current.userAvatar) {
+          addModel(seatObj);
+        } else {
+          moveModel(seatObj);
+        }
+
+        // 카메라 이동
+        const targetPos = seatObj.position.clone();
+        const cameraPos = targetPos.clone().add(new THREE.Vector3(6, 6, 6));
+        moveCamera(cameraPos, targetPos);
+      } else {
+        // 자리가 없는 경우 기본 위치로 이동
+        moveCamera(DEFAULT_CAMERA_POSITION, DEFAULT_CAMERA_TARGET);
+      }
+    }
+  }, [isLoaded, userList, sabeon]);
+
   const handleLabelClick = (seatName, isEmptySeat) => {
+    // 해당 좌석 오브젝트의 위치 가져오기
+    const seatObj = seatRef.current[seatName]?.obj;
+    if (seatObj) {
+      const targetPos = seatObj.position.clone();
+      const cameraPos = targetPos.clone().add(new THREE.Vector3(6, 6, 6));
+
+      // 카메라 이동 애니메이션 실행
+      moveCamera(cameraPos, targetPos);
+    }
+
     if (isEmptySeat) {
       setSelectedSeat(seatName);
     } else {
@@ -392,7 +460,7 @@ const OfficeThree = () => {
     div.style.height = "40px";
     div.style.fontSize = "0.75rem";
     div.addEventListener("click", () => {
-      setSelectSeatName(obj.name);
+      setSelectSeatName(obj.name === selectSeatName ? null : obj.name);
     });
 
     // daily 값이 유효한지 확인
@@ -438,16 +506,6 @@ const OfficeThree = () => {
     };
   };
 
-  // const getAllUser = async () => {
-  //   try {
-  //     const res = await getUserListFetch();
-  //     if (res) setUserList(res);
-  //   } catch (error) {
-  //     console.error("사용자 목록을 가져오는데 실패했습니다:", error);
-  //     setUserList([]);
-  //   }
-  // };
-
   const getDailyList = async () => {
     try {
       const res = await getDailyListFetch();
@@ -456,41 +514,6 @@ const OfficeThree = () => {
       console.error("일일 출근 현황을 가져오는데 실패했습니다:", error);
       setDailyList([]);
     }
-  };
-
-  const drawUserIcon = () => {
-    if (!Array.isArray(userList) || !Array.isArray(dailyList)) return;
-
-    Object.keys(seatRef.current).forEach((key) => {
-      const sit = seatRef.current[key];
-      if (!sit || !sit.obj) return;
-
-      const user = userList.find((item) => item?.ou_seat_cd === key);
-
-      if (user) {
-        const daily = dailyList.find((item) => item?.ouds_sabeon === user.ou_sabeon);
-        const userStatus = daily?.userStatus || "미출근";
-
-        const sabeon = JSON.parse(localStorage.getItem("auth-storage"))?.state?.user.sabeon;
-
-        if (sit.label) {
-          updateLabel(sit.obj, user.ou_nm, userStatus);
-          // 현재 로그인한 사용자의 자리인 경우 아바타 모델 로드
-          if (user.ou_sabeon === sabeon) moveModel(sit.obj);
-        } else {
-          createLabel(sit.obj, user.ou_nm, userStatus);
-
-          // 현재 로그인한 사용자의 자리인 경우 아바타 모델 로드
-          if (user.ou_sabeon === sabeon) addModel(sit.obj);
-        }
-      } else {
-        if (sit.label) {
-          updateLabel(sit.obj, sit.obj.name, "미정");
-        } else {
-          createLabel(sit.obj, sit.obj.name, "미정");
-        }
-      }
-    });
   };
 
   const editSeat = () => {
@@ -520,10 +543,19 @@ const OfficeThree = () => {
   };
 
   const moveModel = (obj) => {
-    seatRef.current.userAvatar.position.set(obj.position.x, 2.2, obj.position.z);
+    if (!obj || !seatRef.current.userAvatar) return;
+    seatRef.current.userAvatar.position.set(obj.position.x, 2, obj.position.z);
   };
 
   const addModel = (obj) => {
+    if (!obj) return;
+
+    // 기존 아바타가 있다면 제거
+    if (seatRef.current.userAvatar) {
+      sceneRef.current.remove(seatRef.current.userAvatar);
+      seatRef.current.userAvatar = null;
+    }
+
     const loader = new GLTFLoader();
     const dracoLoader = new DRACOLoader();
     dracoLoader.setDecoderPath("https://www.gstatic.com/draco/versioned/decoders/1.5.6/");
@@ -534,7 +566,7 @@ const OfficeThree = () => {
       (gltf) => {
         const avatar = gltf.scene;
         avatar.scale.set(0.15, 0.15, 0.15);
-        avatar.position.set(obj.position.x, 2.2, obj.position.z);
+        avatar.position.set(obj.position.x, 2, obj.position.z);
         avatar.rotation.y = Math.PI / 2;
 
         avatar.name = "userAvatar";
@@ -613,6 +645,45 @@ const OfficeThree = () => {
       }
     }
   }, [isCondition]);
+
+  // moveToUserSeat 함수 수정
+  const moveToUserSeat = () => {
+    if (isLoaded && Array.isArray(userList) && sabeon) {
+      const userSeat = userList.find((user) => user.ou_sabeon === sabeon)?.ou_seat_cd;
+      if (userSeat && seatRef.current[userSeat]?.obj) {
+        const seatObj = seatRef.current[userSeat].obj;
+        const targetPos = seatObj.position.clone();
+        const cameraPos = targetPos.clone().add(new THREE.Vector3(6, 6, 6));
+        moveCamera(cameraPos, targetPos);
+      } else {
+        // 자리가 없는 경우 기본 위치로 이동
+        moveCamera(DEFAULT_CAMERA_POSITION, DEFAULT_CAMERA_TARGET);
+      }
+    }
+  };
+
+  // personnelInfo가 null이 될 때(카드가 닫힐 때) 원래 자리로 이동
+  useEffect(() => {
+    if (!personnelInfo) {
+      moveToUserSeat();
+    }
+  }, [personnelInfo]);
+
+  // seatRef가 업데이트될 때마다 store에 저장
+  useEffect(() => {
+    setSeatRefs(seatRef.current);
+  }, [seatRef.current, setSeatRefs]);
+
+  // 카메라 위치가 변경될 때 이동
+  useEffect(() => {
+    if (cameraPosition && cameraTarget && cameraRef.current) {
+      moveCamera(cameraPosition, cameraTarget);
+    }
+  }, [cameraPosition, cameraTarget]);
+
+  // isWorking 상태에 따른 처리
+  const userStatus = isWorking === 0 ? "미출근" : 
+                    isWorking === 1 ? "출근" : "퇴근";
 
   return (
     <main

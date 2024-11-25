@@ -12,6 +12,7 @@ export const useAuthStore = create(
         set({ user: null, isAuthenticated: false });
         Cookies.remove("isLogin");
         localStorage.removeItem("auth-storage");
+        
       },
     }),
     {

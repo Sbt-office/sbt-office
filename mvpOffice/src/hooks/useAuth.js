@@ -5,6 +5,8 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/useToast";
 import { setCookie } from "@/utils/cookie";
 import useAdminStore from "@/store/adminStore";
+import { usePopupStore } from "@/store/usePopupStore";
+import usePersonnelInfoStore from "@/store/personnelInfoStore";
 
 export const useLogin = () => {
   const navigate = useNavigate();
@@ -12,6 +14,7 @@ export const useLogin = () => {
   const { addToast } = useToast();
   const setIsAdmin = useAdminStore((state) => state.setIsAdmin);
   const setSabeon = useAdminStore((state) => state.setSabeon);
+  const { togglePopup } = usePopupStore();
 
   return useMutation({
     mutationFn: loginCheckFetch,
@@ -21,6 +24,7 @@ export const useLogin = () => {
         setSabeon(data.sabeon);
         setIsAdmin(data.user.ou_admin_yn);
         setCookie("isLogin", true);
+        togglePopup();
         addToast({ type: "success", message: "로그인에 성공했습니다." });
         navigate("/main");
       } else {
@@ -57,13 +61,19 @@ export const useLogout = () => {
   const navigate = useNavigate();
   const logout = useAuthStore((state) => state.logout);
   const { addToast } = useToast();
-  const { setIsAdmin, setSabeon } = useAdminStore();
+  const setIsAdmin = useAdminStore((state) => state.setIsAdmin);
+  const setSabeon = useAdminStore((state) => state.setSabeon);
+  const { togglePopup } = usePopupStore();
+  const clearPersonnelInfo = usePersonnelInfoStore((state) => state.clearPersonnelInfo);
 
   const handleLogout = () => {
     logout();
     setIsAdmin("N");
     setSabeon("");
+    // 팝업이 열려있다면 닫기
+    togglePopup();
     localStorage.removeItem("auth-storage");
+    clearPersonnelInfo();
     addToast({ type: "success", message: "로그아웃되었습니다." });
     navigate("/");
   };
