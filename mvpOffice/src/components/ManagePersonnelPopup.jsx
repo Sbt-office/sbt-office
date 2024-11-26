@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 import { useState, useEffect } from "react";
 import {
   MdKeyboardArrowLeft,
@@ -16,14 +17,11 @@ import { useInfiniteUserListQuery } from "@/hooks/useInfiniteUserListQuery";
 import { getDailyListFetch } from "@/utils/api";
 
 import profile from "@/assets/images/profile.png";
-import { usePopupStore } from "@/store/usePopupStore";
 
-const ManagePersonnelPopup = () => {
+const ManagePersonnelPopup = ({ onClose }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedItems, setSelectedItems] = useState({});
   const [selectedDepartment, setSelectedDepartment] = useState("");
-
-  const togglePopup = usePopupStore((state) => state.togglePopup);
 
   const itemsPerPage = 16;
 
@@ -136,14 +134,14 @@ const ManagePersonnelPopup = () => {
   }, []);
 
   return (
-    <div className="h-dvh text-black z-50 bg-white flex flex-col w-[calc(100vw-16rem)]">
+    <div className=" text-black z-50 bg-white/80 flex flex-col w-full h-full rounded-lg overflow-hidden shadow-lg">
       {/* 상단 타이틀 */}
-      <header className="bg-sbtLightBlue/75 relative">
+      <header className="relative">
         <h2 className="text-2xl font-semibold w-full h-16 flex justify-center items-center">인사정보관리</h2>
         <IoMdClose
           size={30}
           className="absolute right-5 top-4 cursor-pointer text-sbtDarkBlue hover:text-black"
-          onClick={togglePopup}
+          onClick={onClose}
         />
       </header>
       <div className="w-full h-full flex flex-col px-3 py-7">
@@ -216,15 +214,15 @@ const ManagePersonnelPopup = () => {
           {/* 페이지네이션 */}
           {pageCount > 1 && (
             <div className="flex justify-center items-center gap-3 absolute bottom-0 left-1/2 transform -translate-x-1/2 py-3 w-64 h-24">
-              {/* 3페이지씩 넘기기 버튼 */}
+              {/* 5페이지씩 넘기기 버튼 */}
               <button
-                onClick={() => handlePageChange(currentPage - 3)}
-                disabled={currentPage <= 3}
+                onClick={() => handlePageChange(currentPage - 5)}
+                disabled={currentPage <= 5}
                 className="py-1 rounded"
               >
                 <MdOutlineKeyboardDoubleArrowLeft
                   size={22}
-                  className={`${currentPage <= 3 ? "text-gray-400" : "hover:text-sbtDarkBlue"}`}
+                  className={`${currentPage <= 5 ? "text-gray-400" : "hover:text-sbtDarkBlue"}`}
                 />
               </button>
 
@@ -249,8 +247,9 @@ const ManagePersonnelPopup = () => {
                   return null;
                 }
 
-                const windowStart = Math.max(1, currentPage - 1);
-                const windowEnd = Math.min(pageCount, totalEmployees <= itemsPerPage * 2 ? 2 : windowStart + 2);
+                // 현재 페이지를 중심으로 앞뒤 1페이지씩 표시
+                const windowStart = Math.max(1, Math.min(currentPage - 1, pageCount - 2));
+                const windowEnd = Math.min(pageCount, Math.max(currentPage + 1, 3));
 
                 if (pageNumber >= windowStart && pageNumber <= windowEnd) {
                   return (
@@ -280,15 +279,15 @@ const ManagePersonnelPopup = () => {
                 />
               </button>
 
-              {/* 3페이지씩 넘기기 버튼 */}
+              {/* 5페이지씩 넘기기 버튼 */}
               <button
-                onClick={() => handlePageChange(currentPage + 3)}
-                disabled={currentPage >= pageCount - 2}
+                onClick={() => handlePageChange(currentPage + 5)}
+                disabled={currentPage >= pageCount - 4}
                 className="py-1 rounded"
               >
                 <MdOutlineKeyboardDoubleArrowRight
                   size={22}
-                  className={`${currentPage >= pageCount - 2 ? "text-gray-400" : "hover:text-sbtDarkBlue"}`}
+                  className={`${currentPage >= pageCount - 4 ? "text-gray-400" : "hover:text-sbtDarkBlue"}`}
                 />
               </button>
             </div>

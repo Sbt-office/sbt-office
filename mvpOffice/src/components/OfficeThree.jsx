@@ -290,7 +290,7 @@ const OfficeThree = () => {
     // 아바타와 라벨 부유 애니메이션
     if (seatRef.current.userAvatar) {
       const time = Date.now() * FLOAT_SPEED;
-      const newY = 2 + Math.sin(time) * FLOAT_HEIGHT;
+      const newY = 1.8 + Math.sin(time) * FLOAT_HEIGHT;
 
       // 아바타 위치 업데이트
       seatRef.current.userAvatar.position.y = newY;
@@ -544,7 +544,7 @@ const OfficeThree = () => {
 
   const moveModel = (obj) => {
     if (!obj || !seatRef.current.userAvatar) return;
-    seatRef.current.userAvatar.position.set(obj.position.x, 2, obj.position.z);
+    seatRef.current.userAvatar.position.set(obj.position.x, 1.8, obj.position.z);
   };
 
   const addModel = (obj) => {
@@ -566,7 +566,7 @@ const OfficeThree = () => {
       (gltf) => {
         const avatar = gltf.scene;
         avatar.scale.set(0.15, 0.15, 0.15);
-        avatar.position.set(obj.position.x, 2, obj.position.z);
+        avatar.position.set(obj.position.x, 1.8, obj.position.z);
         avatar.rotation.y = Math.PI / 2;
 
         avatar.name = "userAvatar";
@@ -681,16 +681,9 @@ const OfficeThree = () => {
     }
   }, [cameraPosition, cameraTarget]);
 
-  // isWorking 상태에 따른 처리
-  const userStatus = isWorking === 0 ? "미출근" : 
-                    isWorking === 1 ? "출근" : "퇴근";
-
   return (
-    <main
-      ref={mainRef}
-      className={`z-0 bg-[#292929] flex-1 overflow-hidden ${isPopupOpen ? "absolute left-64" : "relative"}`}
-    >
-      <canvas className="absolute top-0 left-0" ref={canvasRef} />
+    <main ref={mainRef} className="z-0 bg-[#292929] overflow-hidden w-dvw h-dvh">
+      <canvas className="absolute top-0 left-0 w-full h-full" ref={canvasRef} />
       {!isLoaded ? (
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
           <BarLoader color="#36d7b7" width={200} />

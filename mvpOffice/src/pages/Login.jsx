@@ -1,12 +1,14 @@
 import { useState, useEffect } from "react";
-import { useLogin } from "@/hooks/useAuth";
-import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";
-import { useAuthStore } from "@/store/authStore";
-import { FaRegUser } from "react-icons/fa";
-import { RiLockUnlockLine, RiEyeLine, RiEyeOffLine } from "react-icons/ri";
-import logo from "@/assets/images/logo.png";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+
+import { useLogin } from "@/hooks/useAuth";
 import { getCookie } from "@/utils/cookie";
+import { useAuthStore } from "@/store/authStore";
+
+import { RiEyeLine, RiEyeOffLine } from "react-icons/ri";
+import logo from "@/assets/images/logo.png";
+import AuthBackground from "@/components/AuthBackground";
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -49,91 +51,93 @@ const Login = () => {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="w-dvw h-dvh bg-sbtLightBlue2 text-black">
-      <div className="shadow-md flex flex-col gap-3 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white/70 p-4 rounded-lg max-w-md w-96">
-        <div className="w-full h-[76px] flex justify-center items-center p-5">
-          <img
-            src={logo}
-            alt="logo"
-            className="w-full h-12 object-contain"
-            aria-label="Company logo"
-            draggable={false}
-          />
-        </div>
-        <div className="flex gap-1 items-center justify-between w-full">
-          <FaRegUser size={20} className="w-20 h-7 text-sbtDarkBlue" />
-          <input
-            type="text"
-            {...register("sabeon", {
-              required: "사번을 입력해주세요",
-              minLength: {
-                value: 3,
-                message: "사번은 최소 3자 이상이어야 합니다",
-              },
-              pattern: {
-                value: /^[A-Za-z]+\d+$/,
-                message: "사번 형식이 올바르지 않습니다 (예:A0001)",
-              },
-            })}
-            placeholder="사번을 입력하세요."
-            className="p-2 ring-1 ring-sbtLightBlue rounded-md text-black w-72 px-3"
-            aria-label="사번 입력"
-            autoFocus
-          />
-        </div>
-        {errors.sabeon && (
-          <span className="text-red-500 text-sm w-60 mb-1 ml-20 flex justify-start items-center">
-            {errors.sabeon.message}
-          </span>
-        )}
-
-        <div className="flex gap-1 items-center justify-between">
-          <RiLockUnlockLine size={20} className="w-20 h-7 text-sbtDarkBlue" />
-          <div className="relative w-72">
+    <form
+      onSubmit={handleSubmit(onSubmit)}
+      className="w-dvw h-dvh bg-gradient-to-r from-[#9FAFD8] to-[#BDCAE7] text-black"
+    >
+      <div className="flex justify-evenly items-center w-full h-full gap-4">
+        <div className="flex flex-col gap-2 w-[32rem] h-[42rem] bg-white rounded-3xl px-14 py-16 shadow-xl">
+          {/* Introduce */}
+          <div className="w-full h-20 p-5 flex flex-col justify-center items-center gap-4 mb-7">
+            <img src={logo} alt="logo" aria-label="Company logo" draggable={false} className="w-36 h-9" />
+            <p className="text-sm text-[#919191]">Welcome to the SBT Global Office IoT world</p>
+          </div>
+          {/* ID */}
+          <div className="flex flex-col gap-3 w-full h-[5.5rem]">
+            <p className="text-comBlue text-lg">ID</p>
             <input
-              type={showPassword ? "text" : "password"}
-              {...register("password", {
-                required: "비밀번호를 입력해주세요",
+              type="text"
+              {...register("sabeon", {
+                required: "사번을 입력해주세요",
                 minLength: {
-                  value: 4,
-                  message: "비밀번호는 최소 4자 이상이어야 합니다",
+                  value: 3,
+                  message: "사번은 최소 3자 이상이어야 합니다",
+                },
+                pattern: {
+                  value: /^[A-Za-z0-9]+$/,
+                  message: "사번은 영문자와 숫자만 입력 가능합니다",
                 },
               })}
-              placeholder="비밀번호를 입력하세요"
-              className="p-2 ring-1 ring-sbtLightBlue rounded-md text-black w-full px-3 pr-10"
-              aria-label="비밀번호 입력"
+              placeholder="사번을 입력하세요."
+              aria-label="사번 입력"
+              autoFocus
+              className="p-3 ring-1 ring-sbtLightBlue rounded-sm text-black w-full px-4 bg-[#E7ECF8]"
             />
+          </div>
+          {errors.sabeon && (
+            <span className="text-red-500 text-sm w-full flex justify-start items-center mb-2">
+              {errors.sabeon.message}
+            </span>
+          )}
+          {/* Password */}
+          <div className="relative w-full flex flex-col gap-3 mt-3">
+            <p className="text-comBlue text-lg">Password</p>
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                {...register("password", {
+                  required: "비밀번호를 입력해주세요",
+                  minLength: {
+                    value: 4,
+                    message: "비밀번호는 최소 4자 이상이어야 합니다",
+                  },
+                })}
+                placeholder="비밀번호를 입력하세요"
+                aria-label="비밀번호 입력"
+                className="p-3 px-4 ring-1 ring-sbtLightBlue rounded-sm text-black w-full bg-[#E7ECF8] pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 "
+                aria-label={showPassword ? "비밀번호 숨기기" : "비밀번호 보기"}
+              >
+                {showPassword ? <RiEyeOffLine size={20} /> : <RiEyeLine size={20} />}
+              </button>
+            </div>
+          </div>
+          {errors.password && (
+            <span className="text-red-500 text-sm w-60 flex justify-start items-center">{errors.password.message}</span>
+          )}
+          {/* Button */}
+          <div className="flex flex-col gap-4 mt-10">
             <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-              aria-label={showPassword ? "비밀번호 숨기기" : "비밀번호 보기"}
+              type="submit"
+              disabled={login.isLoading}
+              className="p-2 bg-comBlue ring-1 ring-comBlue text-white rounded-lg disabled:bg-gray-300 text-center transition-colors 
+              h-12 text-lg hover:bg-sbtDarkBlue"
             >
-              {showPassword ? <RiEyeOffLine size={20} /> : <RiEyeLine size={20} />}
+              {login.isLoading ? "Login in..." : "Login"}
             </button>
+            <Link
+              to="/signin"
+              className="text-center p-2 ring-1 ring-comBlue text-comBlue rounded-lg hover:bg-blue-50 transition-colors h-12 text-lg"
+            >
+              Create Account
+            </Link>
           </div>
         </div>
-        {errors.password && (
-          <span className="text-red-500 text-sm w-60 ml-20 flex justify-start items-center">
-            {errors.password.message}
-          </span>
-        )}
-
-        <div className="flex flex-col gap-3 mt-2">
-          <button
-            type="submit"
-            disabled={login.isLoading}
-            className="p-2 bg-sbtDarkBlue text-white rounded disabled:bg-gray-300 text-center hover:bg-sbtDarkBlue/80 transition-colors"
-          >
-            {login.isLoading ? "로그인 중..." : "로그인"}
-          </button>
-          <Link
-            to="/signin"
-            className="text-center p-2 ring-1 ring-sbtDarkBlue/40 text-sbtDarkBlue rounded hover:bg-blue-50 transition-colors"
-          >
-            회원가입
-          </Link>
-        </div>
+        <AuthBackground />
       </div>
     </form>
   );

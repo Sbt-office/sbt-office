@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react/prop-types */
 import { useState, useEffect, useRef } from "react";
-import { Select, Input, Button } from "antd";
+import { Select, Input } from "antd";
 import ClipLoader from "react-spinners/ClipLoader";
 
 import profile from "@/assets/images/profile.png";
@@ -11,6 +11,7 @@ import useAdminStore from "@/store/adminStore";
 import usePersonnelInfoStore from "@/store/personnelInfoStore";
 import { usePersonnelEditStore } from "@/store/personnelEditStore";
 import { useThreeStore } from "@/store/threeStore";
+import useThemeStore from "@/store/themeStore";
 
 import { useToast } from "@/hooks/useToast";
 import { useUpdatePersonnel } from "@/hooks/useUpdatePersonnel";
@@ -20,6 +21,7 @@ import { useImageCompression } from "@/hooks/useImageCompression";
 import { DEPARTMENTS, POSITIONS } from "@/data/companyInfo";
 
 const InfoRow = ({ label, value, isEditing, onChange, type = "text", options, onClick, required = false }) => {
+  const isDark = useThemeStore((state) => state.isDark);
   const [isValidPhone, setIsValidPhone] = useState(true);
 
   const formatPhoneNumber = (input) => {
@@ -44,11 +46,11 @@ const InfoRow = ({ label, value, isEditing, onChange, type = "text", options, on
   if (!isEditing) {
     return (
       <div className="flex w-48 gap-2">
-        <div className="font-semibold w-14 text-black/70 truncate overflow-hidden text-base flex items-center justify-around">
-          <p>{label}</p>
-          <span>:</span>
+        <div className="w-14 truncate overflow-hidden text-base flex items-center justify-around">
+          <p className={isDark ? "text-gray-300" : "text-[#7B7B7B]"}>{label}</p>
+          <span className={isDark ? "text-gray-300" : "text-[#7B7B7B]"}>:</span>
         </div>
-        <span className="text-gray-800 truncate overflow-hidden w-full" title={value}>
+        <span className={`truncate overflow-hidden w-full ${isDark ? "text-gray-200" : "text-gray-800"}`} title={value}>
           {value}
         </span>
       </div>
@@ -57,16 +59,16 @@ const InfoRow = ({ label, value, isEditing, onChange, type = "text", options, on
 
   return (
     <div className="flex w-48 gap-2">
-      <div className="font-semibold w-14 text-black/70 truncate overflow-hidden text-base flex items-center justify-around">
-        <p>
+      <div className="w-14 truncate overflow-hidden flex items-center justify-around">
+        <p className={isDark ? "text-gray-300" : "text-[#7B7B7B]"}>
           {label}
           {required && <span className="text-red-500 ml-0.5">*</span>}
         </p>
-        <span>:</span>
+        <span className={isDark ? "text-gray-300" : "text-[#7B7B7B]"}>:</span>
       </div>
       {type === "select" ? (
         <Select
-          className={`w-full ${!value && required ? "border-red-500" : ""}`}
+          className={`w-full ${!value && required ? "border-red-500" : ""} truncate`}
           value={value}
           onChange={(val) => onChange(val)}
           options={options}
@@ -75,9 +77,13 @@ const InfoRow = ({ label, value, isEditing, onChange, type = "text", options, on
         />
       ) : label === "자리" ? (
         <span
-          className={`text-gray-800 truncate overflow-hidden w-full cursor-pointer rounded-md ring-1 
-          ${!value && required ? "ring-red-500" : "ring-sbtLightBlue"} px-3 py-1 
-          hover:bg-sbtDarkBlue hover:text-white`}
+          className={`truncate overflow-hidden w-full cursor-pointer rounded-md ring-1 
+          ${!value && required ? "ring-red-500" : "ring-comBlue"} px-3 py-1 
+          ${
+            isDark
+              ? "hover:bg-sbtDarkBlue hover:text-white text-gray-200"
+              : "hover:bg-comBlue hover:text-white text-gray-800"
+          }`}
           onClick={onClick}
         >
           {value || `자리를 선택하세요`}
@@ -99,6 +105,7 @@ const InfoRow = ({ label, value, isEditing, onChange, type = "text", options, on
 };
 
 const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
+  const isDark = useThemeStore((state) => state.isDark);
   const fileInputRef = useRef(null);
   const selectedSeat = useSeatStore((state) => state.selectedSeat);
   const setSelectedSeat = useSeatStore((state) => state.setSelectedSeat);
@@ -292,19 +299,27 @@ const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
 
   if (isLoading) {
     return (
-      <div className="w-96 h-96 bg-white/70 backdrop-blur-sm shadow-lg rounded-md overflow-hidden z-10 absolute bottom-4 right-4 flex items-center justify-center">
+      <div
+        className={`w-96 h-96 ${
+          isDark ? "bg-gray-800/70" : "bg-white/70"
+        } backdrop-blur-sm shadow-lg rounded-2xl overflow-hidden z-10 absolute bottom-4 right-4 flex items-center justify-center`}
+      >
         <ClipLoader color="#4F46E5" loading={true} size={50} aria-label="Loading Spinner" />
       </div>
     );
   }
 
   return (
-    <div className="w-96 bg-white shadow-lg rounded-md overflow-hidden z-10 absolute bottom-4 right-4">
-      <div className="bg-sbtLightBlue text-black p-4">
-        <h2 className="text-2xl font-bold text-center">인사 정보</h2>
+    <div
+      className={`w-[26rem] ${
+        isDark ? "bg-[#1f1f1f]/60" : "bg-white/60"
+      } shadow-lg backdrop-blur-md rounded-2xl overflow-hidden z-10 absolute bottom-4 right-4`}
+    >
+      <div className={`p-4 ${isDark ? "text-gray-200" : "text-[#393939]"}`}>
+        <h2 className="text-lg font-medium text-center mt-2">인사 정보</h2>
       </div>
-      <div className="p-6">
-        <div className="flex items-center space-x-6">
+      <div className={`px-8 py-6 w-full ${isDark ? "text-gray-200" : "text-[#393939]"}`}>
+        <div className="flex items-center w-full justify-center">
           <div className="space-y-2">
             <InfoRow label="성함" value={displayData.name} />
             <InfoRow
@@ -344,7 +359,9 @@ const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
             />
           </div>
           <div
-            className={`w-32 h-36 rounded-md bg-sbtLightBlue/70 flex items-center justify-center text-gray-600 ${
+            className={`w-36 h-40 rounded-md ${
+              isDark ? "bg-[#1f1f1f]" : "bg-gray-300"
+            } flex items-center justify-center ${isDark ? "text-gray-300" : "text-gray-600"} ml-2 ${
               isEditing ? "cursor-pointer hover:bg-sbtLightBlue/90" : ""
             }`}
             onClick={() => isEditing && fileInputRef.current?.click()}
@@ -365,50 +382,46 @@ const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
           </div>
         </div>
       </div>
-      <div className="flex justify-between px-6 py-4">
-        <Button
-          color="primary"
-          variant="outlined"
-          className={`rounded transition-colors ${
-            isMoving ? "text-gray-400 border-gray-300 cursor-not-allowed pointer-events-none" : "text-sbtDarkBlue"
+      <div className="flex justify-between px-10 py-3 mb-4">
+        <button
+          className={`rounded transition-colors w-20 h-10 ${
+            isMoving
+              ? "text-gray-400 border-gray-300 cursor-not-allowed pointer-events-none"
+              : "text-black bg-[#919191] hover:bg-[#919191]/40"
           }`}
           onClick={handleClose}
           disabled={isLoading || isMoving}
         >
           닫기
-        </Button>
+        </button>
         {canEdit &&
           (isEditing ? (
             <div className="flex gap-3">
-              <Button
-                color="primary"
-                variant="outlined"
+              <button
                 loading={isLoading}
-                className="rounded transition-colors text-sbtDarkBlue"
+                className="rounded transition-colors bg-[#919191] text-black w-20 h-10 hover:bg-[#919191]/40"
                 onClick={handleIsCancelSave}
               >
                 취소
-              </Button>
-              <Button
-                type="primary"
+              </button>
+              <button
                 loading={isLoading}
                 className={`rounded transition-colors text-white ${
-                  isFormValid() ? "bg-sbtDarkBlue hover:bg-sbtDarkBlue/90" : "bg-gray-400 cursor-not-allowed"
+                  isFormValid() ? "w-20 h-10 hover:bg-sbtDarkBlue/90 bg-comBlue" : "bg-gray-400 cursor-not-allowed"
                 }`}
                 onClick={handleSave}
                 disabled={!isFormValid()}
               >
                 저장
-              </Button>
+              </button>
             </div>
           ) : (
-            <Button
-              type="primary"
-              className="rounded transition-colors text-white bg-sbtDarkBlue hover:bg-sbtDarkBlue/90"
+            <button
+              className="rounded transition-colors text-white bg-comBlue hover:bg-sbtDarkBlue/90 w-20 h-10"
               onClick={() => setIsEditing(true)}
             >
               수정
-            </Button>
+            </button>
           ))}
       </div>
     </div>

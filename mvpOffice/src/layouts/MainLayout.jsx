@@ -4,6 +4,7 @@ import WorkStatusNotification from "@/components/WorkStatusNotification";
 import WorkEndModal from "@/components/WorkEndModal";
 import useWorkStatusStore from "@/store/useWorkStatusStore";
 import { useShallow } from "zustand/react/shallow";
+import Header from "./Header";
 
 const MainLayout = () => {
   const { isWorking, showModal, setShowModal } = useWorkStatusStore(
@@ -15,6 +16,7 @@ const MainLayout = () => {
   );
   return (
     <>
+      <Header />
       <SideBar />
       <OfficeThree />
       {(isWorking === 1 || isWorking === 2) && <WorkStatusNotification isWorking={isWorking} />}

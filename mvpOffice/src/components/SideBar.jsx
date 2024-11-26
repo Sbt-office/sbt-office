@@ -1,25 +1,33 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
-import usePersonnelInfoStore from "@/store/personnelInfoStore";
-import useAdminStore from "@/store/adminStore";
-import { usePopupStore } from "@/store/usePopupStore";
-import { useAllUserListQuery } from "@/hooks/useAllUserListQuery";
-import { useUserQuery } from "../hooks/useUserQuery";
 import { useShallow } from "zustand/react/shallow";
 
-import logo from "@/assets/images/logo.png";
-import { HiOutlineMenu, HiMenuAlt1 } from "react-icons/hi";
-import { IoIdCardOutline, IoSettingsOutline } from "react-icons/io5";
-
-import WorkGoAndLeave from "./WorkGoAndLeave";
-import PersonnelInfoCard from "./PersonnelInfoCard";
-import ManagePersonnelPopup from "./ManagePersonnelPopup";
 import { useThreeStore } from "@/store/threeStore";
+import { usePopupStore } from "@/store/usePopupStore";
+import useAdminStore from "@/store/adminStore";
+import usePersonnelInfoStore from "@/store/personnelInfoStore";
+import useThemeStore from "@/store/themeStore";
+
+import { useThrottle } from "@/hooks/useThrottle";
+import { useUserQuery } from "@/hooks/useUserQuery";
+import { useAllUserListQuery } from "@/hooks/useAllUserListQuery";
+
+import { MdManageAccounts } from "react-icons/md";
+import { RiTeamFill } from "react-icons/ri";
+
+import ManagePersonnelPopup from "./ManagePersonnelPopup";
+
+import { MdOutlineKeyboardArrowLeft } from "react-icons/md";
 
 const SideBar = () => {
   const [openSection, setOpenSection] = useState(null);
   const [openSubItem, setOpenSubItem] = useState(null);
-  const [selectedItem, setSelectedItem] = useState(null);
+  const [selectedPerson, setSelectedPerson] = useState(null);
+  const [selectedTeam, setSelectedTeam] = useState(null);
+  const [showTeamList, setShowTeamList] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(true);
+
+  const isDark = useThemeStore((state) => state.isDark);
 
   const { setPersonnelInfo, clearPersonnelInfo, personnelInfo } = usePersonnelInfoStore(
     useShallow((state) => ({
@@ -50,8 +58,7 @@ const SideBar = () => {
   const moveCamera = useThreeStore((state) => state.moveCamera);
 
   useEffect(() => {
-    // 초기 로딩시 팝업 닫기
-    if(isPopupOpen) {
+    if (isPopupOpen) {
       togglePopup();
     }
   }, []);
@@ -82,58 +89,52 @@ const SideBar = () => {
     }));
   }, [userList]);
 
-  const handleItemClick = useCallback((itemPath) => {
-    setSelectedItem(itemPath);
-  }, []);
-
   const toggleSection = useCallback(
     (index) => {
       setOpenSection((prev) => {
         if (prev === index) {
-          setSelectedItem(null);
           setPersonnelInfo(null);
+          setSelectedTeam(null);
           return null;
         }
-        handleItemClick(`${index}`);
+        if (prev !== null && prev !== index) {
+          setSelectedPerson(null);
+        }
+        setSelectedTeam(index);
         return index;
       });
     },
-    [handleItemClick, setPersonnelInfo]
+    [setPersonnelInfo]
   );
 
-  const toggleSubItem = useCallback(
-    (index) => {
-      setOpenSubItem((prev) => {
-        if (prev === index) {
-          setSelectedItem(null);
-          setPersonnelInfo(null);
-          return null;
-        }
-        if (isPopupOpen) {
-          togglePopup();
-        }
-        return index;
-      });
-    },
-    [isPopupOpen, togglePopup, setPersonnelInfo]
-  );
+  const toggleSubItem = useThrottle((index) => {
+    setOpenSubItem((prev) => {
+      if (prev === index) {
+        setPersonnelInfo(null);
+        setSelectedPerson(null);
+        return null;
+      }
+      if (isPopupOpen) {
+        togglePopup();
+      }
+      setSelectedPerson(index);
+      return index;
+    });
+  }, 1000);
 
-  const handleCloseInfoCard = useCallback(() => {
-    setSelectedItem(null);
-    setOpenSection(null);
-    setOpenSubItem(null);
-    clearPersonnelInfo();
-  }, [clearPersonnelInfo]);
-
-  const handleTogglePopup = useCallback(() => {
+  const handleTogglePopup = useThrottle(() => {
     if (!isPopupOpen && openSubItem !== null) {
       setOpenSection(null);
       setOpenSubItem(null);
-      setSelectedItem(null);
       setPersonnelInfo(null);
     }
+    if (isPopupOpen) {
+      setShowTeamList(true);
+    } else {
+      setShowTeamList(false);
+    }
     togglePopup();
-  }, [isPopupOpen, openSubItem, togglePopup, setPersonnelInfo]);
+  }, 1000);
 
   useEffect(() => {
     if (personnelInfo) {
@@ -145,7 +146,8 @@ const SideBar = () => {
         if (subItemIndex !== -1) {
           setOpenSection(sectionIndex);
           setOpenSubItem(subItemIndex);
-          setSelectedItem(`${sectionIndex}-${subItemIndex}`);
+          setSelectedTeam(sectionIndex);
+          setSelectedPerson(subItemIndex);
         }
       }
     }
@@ -162,37 +164,87 @@ const SideBar = () => {
     return () => {
       setOpenSection(null);
       setOpenSubItem(null);
-      setSelectedItem(null);
+      setSelectedTeam(null);
+      setSelectedPerson(null);
       clearPersonnelInfo();
     };
   }, [userInfoData, clearPersonnelInfo]);
 
+  useEffect(() => {
+    if (!personnelInfo) {
+      setOpenSection(null);
+      setOpenSubItem(null);
+      setSelectedTeam(null);
+      setSelectedPerson(null);
+    }
+  }, [personnelInfo]);
+
+  const handleToggleExpand = () => {
+    setIsExpanded(!isExpanded);
+    if (isExpanded) {
+      setShowTeamList(false);
+    } else {
+      setShowTeamList(true);
+    }
+  };
+
+  const handleTeamListToggle = () => {
+    if (isPopupOpen) {
+      togglePopup();
+    }
+    setIsExpanded(true);
+    setShowTeamList(true);
+    if (!showTeamList) {
+      setOpenSection(null);
+      setOpenSubItem(null);
+      setSelectedTeam(null);
+      setSelectedPerson(null);
+      clearPersonnelInfo();
+    }
+  };
+
   const renderSidebarItem = useCallback(
     (group, index) => (
-      <li key={index} className="list-none mb-5">
+      <li
+        key={index}
+        className={`list-none w-full text-base mb-7 ${
+          selectedTeam === index && showTeamList
+            ? `${isDark ? "bg-[#1f1f1f]/40" : "bg-white/40"} px-2 py-2 rounded-xl shadow-md`
+            : ""
+        }`}
+      >
         <div
           onClick={() => toggleSection(index)}
           className={`${
-            selectedItem === `${index}` ? "text-sbtDarkBlue font-semibold" : "text-[#424242]"
+            selectedTeam === index && showTeamList
+              ? "text-comBlue font-semibold"
+              : isDark
+              ? "text-white"
+              : "text-[#393939]"
           } cursor-pointer flex items-center gap-2 transition duration-150 ease-in-out transform`}
         >
-          <span>{openSection === index ? <HiMenuAlt1 size={18} /> : <HiOutlineMenu size={18} />}</span>
           {group.title}
         </div>
-        {openSection === index && (
+        {openSection === index && showTeamList && (
           <motion.ul
             initial={{ height: 0 }}
             animate={{ height: "auto" }}
             exit={{ height: 0 }}
             transition={{ duration: 0.08 }}
-            className="pl-5 mt-2 text-[0.9rem]"
+            className="mt-1 text-[0.85rem] w-36"
           >
             {group.subItems.map((person, subIndex) => (
-              <li key={person.ou_seq} className="list-none flex py-1">
+              <li
+                key={person.ou_seq}
+                className={`list-none flex py-2 mb-1 ${
+                  selectedPerson === subIndex && selectedTeam === index && showTeamList
+                    ? "bg-[#91B4FF] rounded-lg"
+                    : "hover:bg-[#91B4FF] hover:rounded-lg"
+                }`}
+              >
                 <div
                   onClick={() => {
                     toggleSubItem(subIndex);
-                    handleItemClick(`${index}-${subIndex}`);
                     setPersonnelInfo(person);
 
                     if (person.ou_seat_cd) {
@@ -200,11 +252,23 @@ const SideBar = () => {
                     }
                   }}
                   className={`${
-                    selectedItem === `${index}-${subIndex}` ? "text-sbtDarkBlue font-semibold" : "text-[#424242]"
-                  } cursor-pointer flex items-center gap-2`}
+                    selectedPerson === subIndex && selectedTeam === index && showTeamList
+                      ? "bg-[#91B4FF] rounded-lg list-none text-black"
+                      : isDark
+                      ? "text-white"
+                      : "text-black"
+                  } cursor-pointer flex items-center gap-1 w-full text-sm pl-2`}
                 >
-                  <IoIdCardOutline size={17} />
-                  {person.ou_nm}
+                  <span>{person.ou_nm}</span>
+                  <span>
+                    {person?.ou_insa_info?.level === "Manager"
+                      ? "매니저"
+                      : person?.ou_insa_info?.level?.includes("Senior")
+                      ? "시니어매니저"
+                      : person?.ou_insa_info?.level
+                      ? person.ou_insa_info.level
+                      : "님"}
+                  </span>
                 </div>
               </li>
             ))}
@@ -212,37 +276,83 @@ const SideBar = () => {
         )}
       </li>
     ),
-    [openSection, selectedItem, toggleSection, toggleSubItem, handleItemClick, setPersonnelInfo, moveCamera]
+    [
+      openSection,
+      selectedTeam,
+      selectedPerson,
+      toggleSection,
+      toggleSubItem,
+      setPersonnelInfo,
+      moveCamera,
+      showTeamList,
+      isDark,
+    ]
   );
 
   return (
-    <div className="flex items-center h-dvh">
-      <aside className="text-[#424242] h-full w-64 overflow-y-auto flex flex-col justify-between">
-        <div>
-          <header className="w-64 h-16 flex items-center px-14 fixed bg-sbtLightBlue/75 backdrop-blur-sm z-10">
-            <img src={logo} alt="logo" draggable={false} className="h-8 object-contain" />
-          </header>
-          <ul className="flex flex-col px-8 py-[5.5rem]">
-            {organizedData.map((group, index) => renderSidebarItem(group, index))}
-            {isAdmin === "Y" && (
-              <div
-                className="flex items-center gap-2 mb-6 cursor-pointer"
-                onClick={handleTogglePopup}
-                role="button"
-                tabIndex={0}
-                aria-label="인사정보관리 열기/닫기"
-                onKeyDown={(e) => e.key === "Enter" && handleTogglePopup()}
-              >
-                <IoSettingsOutline size={18} className={`text-base ${isPopupOpen ? "text-sbtDarkBlue" : ""}`} />
-                <span className={`text-base ${isPopupOpen ? "text-sbtDarkBlue font-semibold" : ""}`}>인사정보관리</span>
-              </div>
-            )}
-          </ul>
-          {personnelInfo && <PersonnelInfoCard personnelInfo={personnelInfo} onClose={handleCloseInfoCard} />}
+    <div className="flex items-center h-[calc(100dvh-4.5rem)] absolute top-16 left-0 z-10 p-2 px-4">
+      <aside
+        className={`${
+          isDark ? "text-white bg-[#1f1f1f]/70" : "text-[#424242] bg-white/70"
+        } h-full overflow-y-auto flex justify-between items-center 
+          backdrop-blur-md rounded-lg p-2 transition-all duration-300 ${
+            isPopupOpen ? "w-[calc(100vw-2rem)]" : isExpanded ? "w-64" : ""
+          }`}
+      >
+        <div
+          className={`w-12 h-full ${
+            isDark ? "bg-[#1f1f1f]/80" : "bg-white/80"
+          } rounded-lg flex flex-col items-center justify-start py-5 shadow-md gap-5`}
+        >
+          <RiTeamFill
+            size={24}
+            className={`text-comBlue cursor-pointer hover:scale-110 transition-transform ${
+              showTeamList ? "text-sbtDarkBlue" : ""
+            }`}
+            onClick={handleTeamListToggle}
+          />
+          <MdManageAccounts
+            size={26}
+            className={`text-comBlue cursor-pointer hover:scale-110 transition-transform ${
+              isPopupOpen ? "text-sbtDarkBlue" : ""
+            }`}
+            onClick={handleTogglePopup}
+          />
+          {showTeamList && (
+            <motion.ul
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className={`flex flex-col absolute top-2 left-16 rounded-lg px-2 py-4 w-44 ${
+                isDark ? "text-white" : "text-[#393939]"
+              } h-[calc(100dvh-6.5rem)] overflow-y-auto`}
+            >
+              {organizedData.map((group, index) => renderSidebarItem(group, index))}
+            </motion.ul>
+          )}
         </div>
-        <WorkGoAndLeave />
+        {isPopupOpen && isAdmin === "Y" && (
+          <div className="absolute left-14 top-0 bottom-0 right-0 p-2">
+            <ManagePersonnelPopup
+              onClose={() => {
+                togglePopup();
+                setShowTeamList(true);
+              }}
+            />
+          </div>
+        )}
+        {!isPopupOpen &&
+          (isExpanded ? (
+            <div onClick={handleToggleExpand} className="w-4 h-6 flex items-center justify-center relative">
+              <MdOutlineKeyboardArrowLeft
+                size={27}
+                className="text-comBlue cursor-pointer hover:scale-110 transition-transform absolute"
+              />
+            </div>
+          ) : (
+            ""
+          ))}
       </aside>
-      {isPopupOpen && isAdmin === "Y" && <ManagePersonnelPopup onClose={togglePopup} />}
     </div>
   );
 };

@@ -20,8 +20,15 @@ export const loginCheckFetch = async (credentials) => {
     }
     throw new Error(res.data.message || "로그인에 실패했습니다.");
   } catch (err) {
-    if (err.response?.status === 404) {
+    console.log("err.response", err.response);
+    if (err.response?.status === 404 || err.response?.data?.status === "401") {
       throw new Error("사번 또는 비밀번호가 올바르지 않습니다.");
+    }
+    if (err.response?.status === 401) {
+      throw new Error("비밀번호가 올바르지 않습니다.");
+    }
+    if (err.response?.status === 500) {
+      throw new Error("서버 오류가 발생했습니다.");
     }
     throw new Error("서버 연결에 실패했습니다.");
   }
