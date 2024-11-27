@@ -420,7 +420,6 @@ const OfficeThree = () => {
       const cameraPos = targetPos.clone().add(new THREE.Vector3(6, 6, 6));
       moveCamera(cameraPos, targetPos);
     }
-
     if (isEmptySeat && isSeatEdit) {
       // 수정 모드에서 빈 자리 클릭 시 테두리만 변경
       Object.keys(seatRef.current).forEach((key) => {
@@ -434,7 +433,6 @@ const OfficeThree = () => {
       });
       setSelectedSeat(seatName);
     } else if (!isEmptySeat && !isSeatEdit) {
-      // 일반 모드에서 사용 중인 자리 클릭 시 인사 정보 표시
       const selectedUser = Array.isArray(userList) && userList.find((user) => user.ou_seat_cd === seatName);
       if (selectedUser) {
         const userWithParsedInfo = {
@@ -702,6 +700,11 @@ const OfficeThree = () => {
       });
       setSelectSeatName(null);
     }
+    if (personnelInfo) {
+      setSelectSeatName(personnelInfo.ou_seat_cd);
+    } else {
+      setSelectSeatName(null);
+    }
   }, [personnelInfo]);
 
   useEffect(() => {
@@ -715,7 +718,7 @@ const OfficeThree = () => {
     if (isLoaded) {
       drawUserIcon();
     }
-  }, [userList, dailyList, isLoaded, selectedSeat]);
+  }, [userList, dailyList, isLoaded]);
 
   useEffect(() => {
     if (mainRef.current) {
@@ -811,14 +814,13 @@ const OfficeThree = () => {
     animateDoor(doorIdx);
   }, [doorIdx]);
 
-  // PersonnelInfoCard가 닫힐 때 원래 상태로 복구하기 위한 useEffect 수정
   useEffect(() => {
     if (!personnelInfo) {
       setIsSeatEdit(false);
       setSelectedSeat(null);
       editSeat();
-      setSelectSeatName(null);
-      drawUserIcon(); // 라벨 위치 업데이트
+      // setSelectSeatName(null);
+      drawUserIcon();
     }
   }, [personnelInfo]);
 
