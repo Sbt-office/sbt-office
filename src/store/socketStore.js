@@ -1,15 +1,19 @@
-import { create } from "zustand";
+import { create } from 'zustand';
 
-const useSocketStore = create((set, get) => ({
-  co2: { time: "", value: "0" },
-  temp: { time: "", value: "0" },
-  humidity: { time: "", value: "0" },
-  dist: { time: "", value: "0" },
-  setCo2: (data) => set({ co2: data }),
-  setTemp: (data) => set({ temp: data }),
-  setHumidity: (data) => set({ humidity: data }),
-  setDist: (data) => set({ dist: data }),
-  getData: (key) => get()[key],
+const useSocketStore = create((set) => ({
+  data: {
+    temp: { value: 0 },
+    humidity: { value: 0 },
+    co2: { value: 0 },
+    dist: { value: 0 },
+  },
+  getData: (key) => useSocketStore.getState().data[key] || { value: 0 },
+  setData: (key, value) => set((state) => ({
+    data: {
+      ...state.data,
+      [key]: { value }
+    }
+  })),
 }));
 
 export default useSocketStore;

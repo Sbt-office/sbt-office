@@ -230,13 +230,13 @@ const ManagePersonnelPopup = ({ onClose }) => {
                     <p
                       className={`${
                         emp.workStatus === "출근"
-                          ? "text-green-600"
+                          ? "text-[#316ff6] font-semibold"
                           : emp.workStatus === "퇴근"
-                          ? "text-blue-500"
-                          : "text-red-500"
+                          ? "text-[#ff4444] font-semibold"
+                          : "text-comGray"
                       } text-sm mt-1`}
                     >
-                      {emp.workStatus === "출근" ? "출근 중" : emp.workStatus === "퇴근" ? "퇴근 완료" : emp.workStatus}
+                      {emp.workStatus === "출근" ? "근무 중" : emp.workStatus === "퇴근" ? "퇴근 완료" : emp.workStatus}
                     </p>
                   </div>
                 </div>
