@@ -1,5 +1,5 @@
-import React from "react";
-
+/* eslint-disable react/prop-types */
+/* eslint-disable react-refresh/only-export-components */
 export const userIcon = () => {
   return (
     <svg fill="none" width="100%" height="100%" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">

@@ -25,11 +25,11 @@ const Header = () => {
           <img src={isDark ? logoWhite : logo} alt="logo" draggable={false} className="h-5 object-contain" />
         </div>
         <div className="flex-1 h-full flex items-center justify-center">
-          <p
+          {/* <p
             className={`text-[0.6rem] 2xl:w-[28rem] 2xl:text-sm lg:w-[24rem] truncate lg:text-xs w-64 h-9 bg-comRed rounded-lg text-white px-2 py-2 flex justify-center items-center`}
           >
             선택된 사용자 구역의 온도가 너무 높습니다. 에어컨을 틀어주세요.
-          </p>
+          </p> */}
         </div>
         <div className="flex-1 h-full flex items-center justify-end pr-7 gap-5">
           <WorkGoAndLeave />
