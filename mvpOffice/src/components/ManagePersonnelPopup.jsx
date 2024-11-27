@@ -6,28 +6,31 @@ import {
   MdOutlineKeyboardDoubleArrowLeft,
   MdOutlineKeyboardDoubleArrowRight,
 } from "react-icons/md";
+import { IoCloseOutline } from "react-icons/io5";
 
 import { Checkbox } from "antd";
 import { useSearch } from "@/hooks/useSearch";
-import { IoMdClose } from "react-icons/io";
 import { useQuery } from "@tanstack/react-query";
 
 import { SearchInput } from "./SearchInput";
 import { useInfiniteUserListQuery } from "@/hooks/useInfiniteUserListQuery";
 import { getDailyListFetch } from "@/utils/api";
+import useThemeStore from "@/store/themeStore";
 
 import profile from "@/assets/images/profile.png";
+import { QueryKeys } from "@/queryClient";
 
 const ManagePersonnelPopup = ({ onClose }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedItems, setSelectedItems] = useState({});
   const [selectedDepartment, setSelectedDepartment] = useState("");
 
+  const isDark = useThemeStore((state) => state.isDark);
   const itemsPerPage = 16;
 
   const { data: infiniteData, fetchNextPage } = useInfiniteUserListQuery(itemsPerPage);
   const { data: dailyList, refetch } = useQuery({
-    queryKey: ["dailyList"],
+    queryKey: [QueryKeys.DAILY_LIST],
     queryFn: getDailyListFetch,
   });
 
@@ -134,64 +137,94 @@ const ManagePersonnelPopup = ({ onClose }) => {
   }, []);
 
   return (
-    <div className=" text-black z-50 bg-white/80 flex flex-col w-full h-full rounded-lg overflow-hidden shadow-lg">
+    <div
+      className={`z-50 flex flex-col 2xl:w-[100rem] lg:w-[65rem] h-full rounded-lg 
+    overflow-hidden ${
+      isDark ? "bg-[#1f1f1f]/70 text-white" : "bg-[#FFFFFF80] text-black"
+    } absolute left-4 top-0 backdrop-blur-md`}
+    >
       {/* 상단 타이틀 */}
-      <header className="relative">
-        <h2 className="text-2xl font-semibold w-full h-16 flex justify-center items-center">인사정보관리</h2>
-        <IoMdClose
-          size={30}
-          className="absolute right-5 top-4 cursor-pointer text-sbtDarkBlue hover:text-black"
+      <header className="relative h-14">
+        <h2
+          className={`text-lg font-medium w-full h-full flex justify-start items-center px-6 py-4 ${
+            isDark ? "text-white" : "text-[#393939]"
+          }`}
+        >
+          인사정보관리
+        </h2>
+        <div
           onClick={onClose}
-        />
-      </header>
-      <div className="w-full h-full flex flex-col px-3 py-7">
-        {/* 검색바 */}
-        <SearchInput value={searchTerm} onChange={handleSearch} />
-        {/* 필터 기능 */}
-        <div className="my-3 flex justify-end">
-          <select
-            value={selectedDepartment}
-            onChange={(e) => handleDepartmentFilter(e.target.value)}
-            className="border rounded p-1"
-          >
-            <option value="">전체</option>
-            {Array.from(new Set(getAllEmployees().map((emp) => emp.department)))
-              .filter(Boolean)
-              .map((department) => (
-                <option key={department} value={department}>
-                  {department}
-                </option>
-              ))}
-          </select>
+          className={`absolute right-4 top-4 cursor-pointer ${isDark ? "bg-[#00000073]" : "bg-[#ffffffa8]"} 
+          rounded-md w-6 h-6 flex justify-center items-center hover:bg-[#393939]/10`}
+        >
+          <IoCloseOutline size={20} className={isDark ? "text-white" : "text-[#393939]"} />
         </div>
-        <div className="h-full relative flex flex-col overflow-y-auto gap-5">
+      </header>
+      <div className="w-full h-full flex flex-col px-6 py-1">
+        <div className="w-full flex justify-between items-center">
+          {/* 검색바 */}
+          <SearchInput value={searchTerm} onChange={handleSearch} />
+          {/* 필터 기능 */}
+          <div className="my-3 flex justify-end w-52 h-10 text-sm">
+            <select
+              value={selectedDepartment}
+              onChange={(e) => handleDepartmentFilter(e.target.value)}
+              className={`rounded-lg outline-none p-1 ${
+                isDark ? "bg-[#00000073] text-white" : "bg-[#ffffffa8] text-[#393939]"
+              }`}
+            >
+              <option value="">전체</option>
+              {Array.from(new Set(getAllEmployees().map((emp) => emp.department)))
+                .filter(Boolean)
+                .map((department) => (
+                  <option key={department} value={department}>
+                    {department}
+                  </option>
+                ))}
+            </select>
+          </div>
+        </div>
+        <div className="h-full relative flex flex-col overflow-y-auto gap-2 2xl:w-[97rem] lg:w-full">
           {/* 직원 리스트 */}
-          <div className="grid grid-cols-4 gap-5">
+          <div className="grid grid-cols-4 gap-2">
             {currentEmployees.map((emp) => (
               <div
                 key={emp.id}
-                className="flex items-center gap-4 px-4 py-4 border-[0.1rem] border-sbtDarkBlue/50 rounded-lg hover:bg-sbtLightBlue2/40 3xl:h-36 h-32"
+                className={`flex items-center 2xl:gap-4 2xl:px-4 2xl:py-4 lg:px-2 lg:py-2 lg:gap-2 rounded-lg 
+                2xl:h-36 h-28 2xl:w-[24rem] lg:w-full 2xl:text-base lg:text-[0.8rem] shadow-md
+                ${isDark ? "bg-[#00000073]" : "bg-white/80"}`}
               >
                 <Checkbox
                   checked={selectedItems[emp.id] || false}
                   onChange={() => handleSelect(emp.id)}
-                  className="w-5 h-5 [&_.ant-checkbox-checked_.ant-checkbox-inner]:bg-sbtDarkBlue [&_.ant-checkbox-checked_.ant-checkbox-inner]:border-sbtDarkBlue [&_.ant-checkbox-inner]:border-sbtDarkBlue hover:[&_.ant-checkbox-inner]:border-sbtDarkBlue"
+                  className="w-5 h-5 [&_.ant-checkbox-checked_.ant-checkbox-inner]:bg-comBlue 
+                  [&_.ant-checkbox-checked_.ant-checkbox-inner]:border-comBlue [&_.ant-checkbox-inner]:border-comBlue 
+                  hover:[&_.ant-checkbox-inner]:border-comBlue"
                 />
-                <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden">
+                <div
+                  className={`2xl:w-24 2xl:h-24 lg:w-12 lg:h-12 rounded-full flex items-center justify-center overflow-hidden shadow-sm 
+                  ${isDark ? "bg-comGray" : "bg-gray-200"}`}
+                >
                   <img
                     src={emp.profile}
                     alt="profile"
-                    className={emp.profile === profile ? "w-7 h-6 object-contain" : "w-full h-full object-cover"}
+                    className={
+                      emp.profile === profile ? "w-10 h-10 opacity-20 object-contain" : "w-full h-full object-cover"
+                    }
                     draggable={false}
                     aria-label="profile"
                   />
                 </div>
-                <div className="flex-1">
+                <div className={`flex-1 ${isDark ? "text-white" : "text-black"}`}>
                   <div className="flex items-center gap-2">
-                    <span className="font-semibold">{emp.name}</span>
-                    <span className="text-sm text-gray-500">{emp.department}</span>
+                    <span className="truncate text-comBlue font-semibold" title={emp.name}>
+                      {emp.name}
+                    </span>
+                    <span className="truncate text-sm" title={emp.department}>
+                      {emp.department}
+                    </span>
                   </div>
-                  <div className="text-sm text-gray-500 gap-1 flex flex-col justify-center items-start">
+                  <div className="flex flex-col justify-center items-start mt-1">
                     <p>{emp.phone}</p>
                     <p>{emp.level}</p>
                     <p
@@ -201,7 +234,7 @@ const ManagePersonnelPopup = ({ onClose }) => {
                           : emp.workStatus === "퇴근"
                           ? "text-blue-500"
                           : "text-red-500"
-                      }`}
+                      } text-sm mt-1`}
                     >
                       {emp.workStatus === "출근" ? "출근 중" : emp.workStatus === "퇴근" ? "퇴근 완료" : emp.workStatus}
                     </p>
@@ -213,7 +246,7 @@ const ManagePersonnelPopup = ({ onClose }) => {
 
           {/* 페이지네이션 */}
           {pageCount > 1 && (
-            <div className="flex justify-center items-center gap-3 absolute bottom-0 left-1/2 transform -translate-x-1/2 py-3 w-64 h-24">
+            <div className="flex justify-center items-center gap-3 absolute bottom-0 left-1/2 transform -translate-x-1/2 2xl:py-3 lg:py-1 w-64 2xl:h-32 lg:h-12">
               {/* 5페이지씩 넘기기 버튼 */}
               <button
                 onClick={() => handlePageChange(currentPage - 5)}
@@ -257,7 +290,11 @@ const ManagePersonnelPopup = ({ onClose }) => {
                       key={i}
                       onClick={() => handlePageChange(pageNumber)}
                       className={`px-3 py-1 rounded ${
-                        currentPage === pageNumber ? "bg-sbtDarkBlue text-white" : "bg-gray-200 hover:bg-gray-300"
+                        currentPage === pageNumber
+                          ? "bg-comBlue text-white"
+                          : isDark
+                          ? "bg-[#2f2f2f] text-white hover:bg-[#3f3f3f]"
+                          : " hover:bg-gray-300"
                       }`}
                     >
                       {pageNumber}
@@ -275,7 +312,7 @@ const ManagePersonnelPopup = ({ onClose }) => {
               >
                 <MdKeyboardArrowRight
                   size={22}
-                  className={`${currentPage === pageCount ? "text-gray-400" : "hover:text-sbtDarkBlue"}`}
+                  className={`${currentPage === pageCount ? "text-comGray" : "hover:text-comBlue"}`}
                 />
               </button>
 
@@ -287,7 +324,7 @@ const ManagePersonnelPopup = ({ onClose }) => {
               >
                 <MdOutlineKeyboardDoubleArrowRight
                   size={22}
-                  className={`${currentPage >= pageCount - 4 ? "text-gray-400" : "hover:text-sbtDarkBlue"}`}
+                  className={`${currentPage >= pageCount - 4 ? "text-comGray" : "hover:text-comBlue"}`}
                 />
               </button>
             </div>

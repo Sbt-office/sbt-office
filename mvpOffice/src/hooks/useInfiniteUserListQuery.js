@@ -1,9 +1,10 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { getUserListFetch } from "@/utils/api";
+import { QueryKeys } from "@/queryClient";
 
 export const useInfiniteUserListQuery = (pageSize = 16) => {
   return useInfiniteQuery({
-    queryKey: ["infiniteUserInfo"],
+    queryKey: [QueryKeys.INFINITE_USER_INFO],
     queryFn: async ({ pageParam = 1 }) => {
       const response = await getUserListFetch();
       const start = (pageParam - 1) * pageSize;
@@ -19,7 +20,5 @@ export const useInfiniteUserListQuery = (pageSize = 16) => {
       };
     },
     getNextPageParam: (lastPage) => lastPage.nextPage,
-    staleTime: 5 * 60 * 1000,
-    cacheTime: 30 * 60 * 1000,
   });
 };

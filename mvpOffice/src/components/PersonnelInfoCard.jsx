@@ -360,7 +360,7 @@ const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
           </div>
           <div
             className={`w-36 h-40 rounded-md ${
-              isDark ? "bg-[#1f1f1f]" : "bg-gray-300"
+              isDark ? "bg-gray-500" : "bg-gray-300"
             } flex items-center justify-center ${isDark ? "text-gray-300" : "text-gray-600"} ml-2 ${
               isEditing ? "cursor-pointer hover:bg-sbtLightBlue/90" : ""
             }`}
@@ -406,8 +406,8 @@ const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
               </button>
               <button
                 loading={isLoading}
-                className={`rounded transition-colors text-white ${
-                  isFormValid() ? "w-20 h-10 hover:bg-sbtDarkBlue/90 bg-comBlue" : "bg-gray-400 cursor-not-allowed"
+                className={`rounded transition-colors text-white w-20 h-10 ${
+                  isFormValid() ? " hover:bg-sbtDarkBlue/90 bg-comBlue" : "bg-gray-400 cursor-not-allowed"
                 }`}
                 onClick={handleSave}
                 disabled={!isFormValid()}

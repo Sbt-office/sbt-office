@@ -296,7 +296,7 @@ const SideBar = () => {
           isDark ? "text-white bg-[#1f1f1f]/70" : "text-[#424242] bg-white/70"
         } h-full overflow-y-auto flex justify-between items-center 
           backdrop-blur-md rounded-lg p-2 transition-all duration-300 ${
-            isPopupOpen ? "w-[calc(100vw-2rem)]" : isExpanded ? "w-64" : ""
+            isPopupOpen ? "w-28" : isExpanded ? "w-64" : ""
           }`}
       >
         <div
@@ -311,13 +311,17 @@ const SideBar = () => {
             }`}
             onClick={handleTeamListToggle}
           />
-          <MdManageAccounts
-            size={26}
-            className={`text-comBlue cursor-pointer hover:scale-110 transition-transform ${
-              isPopupOpen ? "text-sbtDarkBlue" : ""
-            }`}
-            onClick={handleTogglePopup}
-          />
+          {isAdmin === "Y" ? (
+            <MdManageAccounts
+              size={26}
+              className={`text-comBlue cursor-pointer hover:scale-110 transition-transform ${
+                isPopupOpen ? "text-sbtDarkBlue" : ""
+              }`}
+              onClick={handleTogglePopup}
+            />
+          ) : (
+            ""
+          )}
           {showTeamList && (
             <motion.ul
               initial={{ opacity: 0, x: -20 }}
@@ -331,16 +335,7 @@ const SideBar = () => {
             </motion.ul>
           )}
         </div>
-        {isPopupOpen && isAdmin === "Y" && (
-          <div className="absolute left-14 top-0 bottom-0 right-0 p-2">
-            <ManagePersonnelPopup
-              onClose={() => {
-                togglePopup();
-                setShowTeamList(true);
-              }}
-            />
-          </div>
-        )}
+
         {!isPopupOpen &&
           (isExpanded ? (
             <div onClick={handleToggleExpand} className="w-4 h-6 flex items-center justify-center relative">
@@ -353,6 +348,16 @@ const SideBar = () => {
             ""
           ))}
       </aside>
+      {isPopupOpen && isAdmin === "Y" && (
+        <div className="relative w-full h-full">
+          <ManagePersonnelPopup
+            onClose={() => {
+              togglePopup();
+              setShowTeamList(true);
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 };

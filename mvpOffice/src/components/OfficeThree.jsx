@@ -23,7 +23,6 @@ import userGlb from "@/assets/model/user.glb";
 import { userIcon } from "@/utils/icon";
 
 import { clearScene } from "@/utils/three/SceneCleanUp";
-import { getDailyListFetch } from "@/utils/api";
 import { useAllUserListQuery } from "@/hooks/useAllUserListQuery";
 import PersonnelInfoCard from "./PersonnelInfoCard";
 import useWorkStatusStore from "@/store/useWorkStatusStore";
@@ -32,18 +31,20 @@ import RoomCondition from "./RoomCondition";
 import seatListStore from "@/store/seatListStore";
 import useSeatStore from "@/store/seatStore";
 import usePersonnelInfoStore from "@/store/personnelInfoStore";
-import { usePopupStore } from "@/store/usePopupStore";
 import useAdminStore from "@/store/adminStore";
-import { useShallow } from "zustand/react/shallow";
 import { useThreeStore } from "@/store/threeStore";
+import { useShallow } from "zustand/react/shallow";
 
 import { BarLoader } from "react-spinners";
+import { useDailyListQuery } from "@/hooks/useDailyListQuery";
 
 const FLOAT_SPEED = 0.005;
 const FLOAT_HEIGHT = 0.08;
+const USER_LABEL_POSITION_Y = -3.3;
 
 const OfficeThree = () => {
   const { data: userList } = useAllUserListQuery();
+  const { data: dailyList = [] } = useDailyListQuery();
 
   const mainRef = useRef(null);
   const labelRendererRef = useRef(null);
@@ -63,7 +64,6 @@ const OfficeThree = () => {
   const seatRef = useRef({ startDist: 0 });
   const sceneRef = useRef(new THREE.Scene());
 
-  const [dailyList, setDailyList] = useState([]);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isCondition, setIsCondition] = useState(true);
   const [isDaily, setIsDaily] = useState(true);
@@ -73,7 +73,6 @@ const OfficeThree = () => {
    * Store
    */
   const setSeatData = seatListStore((state) => state.setSeatData);
-  const isPopupOpen = usePopupStore((state) => state.isPopupOpen);
   const isWorking = useWorkStatusStore((state) => state.isWorking);
   const sabeon = useAdminStore((state) => state.sabeon);
 
@@ -290,11 +289,11 @@ const OfficeThree = () => {
     // 아바타와 라벨 부유 애니메이션
     if (seatRef.current.userAvatar) {
       const time = Date.now() * FLOAT_SPEED;
-      const newY = 1.8 + Math.sin(time) * FLOAT_HEIGHT;
+      const newY = USER_LABEL_POSITION_Y + Math.sin(time) * FLOAT_HEIGHT;
 
       // 아바타 위치 업데이트
       seatRef.current.userAvatar.position.y = newY;
-      seatRef.current.userAvatar.position.y = 2 + Math.sin(time) * FLOAT_HEIGHT;
+      seatRef.current.userAvatar.position.y = USER_LABEL_POSITION_Y + Math.sin(time) * FLOAT_HEIGHT;
     }
 
     if (rendererRef.current && cameraRef.current) {
@@ -307,7 +306,7 @@ const OfficeThree = () => {
       }
     }
 
-    // 부모영역과 캔버스 영역 비교 후 Resize 실행
+    // 부모영역과 캔버 영역 비교 후 Resize 실행
     if (mainRef.current && canvasRef.current) {
       if (
         mainRef.current.offsetWidth !== canvasRef.current.offsetWidth ||
@@ -506,16 +505,6 @@ const OfficeThree = () => {
     };
   };
 
-  const getDailyList = async () => {
-    try {
-      const res = await getDailyListFetch();
-      if (res) setDailyList(res);
-    } catch (error) {
-      console.error("일일 출근 현황을 가져오는데 실패했습니다:", error);
-      setDailyList([]);
-    }
-  };
-
   const editSeat = () => {
     Object.keys(seatRef.current).map((key) => {
       const item = seatRef.current[key];
@@ -533,9 +522,6 @@ const OfficeThree = () => {
 
   const updateSeat = async () => {
     try {
-      if (isDaily || !isSeatEdit) {
-        await getDailyList();
-      }
       editSeat();
     } catch (error) {
       console.error("좌석 정보 업데이트 중 오류 발생:", error);
@@ -544,7 +530,7 @@ const OfficeThree = () => {
 
   const moveModel = (obj) => {
     if (!obj || !seatRef.current.userAvatar) return;
-    seatRef.current.userAvatar.position.set(obj.position.x, 1.8, obj.position.z);
+    seatRef.current.userAvatar.position.set(obj.position.x, USER_LABEL_POSITION_Y, obj.position.z);
   };
 
   const addModel = (obj) => {
@@ -565,9 +551,9 @@ const OfficeThree = () => {
       userGlb,
       (gltf) => {
         const avatar = gltf.scene;
-        avatar.scale.set(0.15, 0.15, 0.15);
-        avatar.position.set(obj.position.x, 1.8, obj.position.z);
-        avatar.rotation.y = Math.PI / 2;
+        avatar.scale.set(1.6, 1.6, 1.6);
+        avatar.position.set(obj.position.x, USER_LABEL_POSITION_Y, obj.position.z);
+        avatar.rotation.y = Math.PI;
 
         avatar.name = "userAvatar";
         avatar.traverse((node) => {

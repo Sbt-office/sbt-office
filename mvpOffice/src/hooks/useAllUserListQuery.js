@@ -1,13 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { getUserListFetch } from "@/utils/api";
+import { QueryKeys } from "@/queryClient";
 
 export const useAllUserListQuery = () => {
   return useQuery({
-    queryKey: ["userInfo"],
+    queryKey: [QueryKeys.ALL_USER_LIST],
     queryFn: getUserListFetch,
-    staleTime: 0,
-    cacheTime: 30 * 60 * 1000,
-    refetchOnMount: false, 
-    refetchOnWindowFocus: false, 
   });
 };

@@ -91,6 +91,7 @@ export const setDailyFetch = async (data) => {
     if (res.status === 200) {
       if (res.data.status === "200") {
         if (res.data.message === "출근정보 존재") {
+          return { userStatus: 1 };
         } else return { userStatus: data.status };
       }
       throw new Error(res.data.message);

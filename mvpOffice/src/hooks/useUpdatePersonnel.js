@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { updateUserInfoFetch } from "@/utils/api";
 import { useToast } from "./useToast";
 import useAdminStore from "@/store/adminStore";
+import { QueryKeys } from "../queryClient";
 
 export const useUpdatePersonnel = () => {
   const queryClient = useQueryClient();
@@ -29,14 +30,14 @@ export const useUpdatePersonnel = () => {
     },
     onMutate: async (newUserData) => {
       // 진행 중인 관련 쿼리들을 취소
-      await queryClient.cancelQueries({ queryKey: ["userInfo"] });
-      await queryClient.cancelQueries({ queryKey: ["infiniteUserInfo"] });
-      await queryClient.cancelQueries({ queryKey: ["userList"] });
+      await queryClient.cancelQueries({ queryKey: [QueryKeys.USER_INFO] });
+      await queryClient.cancelQueries({ queryKey: [QueryKeys.INFINITE_USER_INFO] });
+      await queryClient.cancelQueries({ queryKey: [QueryKeys.ALL_USER_LIST] });
 
       // 이전 데이터를 스냅샷으로 저장
-      const previousUserInfo = queryClient.getQueryData(["userInfo"]);
-      const previousInfiniteUserInfo = queryClient.getQueryData(["infiniteUserInfo"]);
-      const previousUserList = queryClient.getQueryData(["userList"]);
+      const previousUserInfo = queryClient.getQueryData([QueryKeys.USER_INFO]);
+      const previousInfiniteUserInfo = queryClient.getQueryData([QueryKeys.INFINITE_USER_INFO]);
+      const previousUserList = queryClient.getQueryData([QueryKeys.ALL_USER_LIST]);
 
       // 낙관적으로 캐시를 업데이트
       queryClient.setQueryData(["userInfo"], (old) => ({
@@ -58,9 +59,9 @@ export const useUpdatePersonnel = () => {
     },
     onSettled: () => {
       // mutation이 완료된 후 관련 쿼리들을 무효화하고 다시 가져오기
-      queryClient.invalidateQueries({ queryKey: ["userInfo"] });
-      queryClient.invalidateQueries({ queryKey: ["infiniteUserInfo"] });
-      queryClient.invalidateQueries({ queryKey: ["userList"] });
+      queryClient.invalidateQueries({ queryKey: [QueryKeys.USER_INFO] });
+      queryClient.invalidateQueries({ queryKey: [QueryKeys.INFINITE_USER_INFO] });
+      queryClient.invalidateQueries({ queryKey: [QueryKeys.ALL_USER_LIST] });
     },
   });
 };
