@@ -95,7 +95,7 @@ const WorkGoAndLeave = () => {
     );
   if (error)
     return (
-      <div className="text-center text-red-500 text-sm font-medium flex items-center justify-center gap-1 px-8">
+      <div className="text-center text-red-500 text-[0.73rem] font-medium flex items-center justify-center gap-1 px-8">
         <IoWarningOutline size={20} />
         <span>사용자 정보를 불러오는데 실패했습니다.</span>
       </div>
