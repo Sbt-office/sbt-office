@@ -1,9 +1,9 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useEffect, useRef, useState } from "react";
+import { gsap } from "gsap"; // gsap 추가
 
 // 3D IMPORT
 import * as THREE from "three";
-import { Easing, Tween } from "@tweenjs/tween.js";
 import {
   CSS2DObject,
   CSS2DRenderer,
@@ -33,7 +33,6 @@ import useSeatStore from "@/store/seatStore";
 import usePersonnelInfoStore from "@/store/personnelInfoStore";
 import useAdminStore from "@/store/adminStore";
 import { useThreeStore } from "@/store/threeStore";
-import useDoorStore from "@/store/doorStore";
 
 import { useShallow } from "zustand/react/shallow";
 import { BarLoader } from "react-spinners";
@@ -41,6 +40,7 @@ import { useDailyListQuery } from "@/hooks/useDailyListQuery";
 
 import defaultProfile from "@/assets/images/comLogo.png";
 import { useThrottle } from "@/hooks/useThrottle";
+import useSocketStore from "@/store/socketStore";
 
 const FLOAT_SPEED = 0.005;
 const FLOAT_HEIGHT = 0.08;
@@ -62,7 +62,6 @@ const OfficeThree = () => {
   const css3dRendererRef = useRef(null);
   const conditionPanelRef = useRef(null);
   const css3dObjectRef = useRef({});
-  const tweenRef = useRef([]);
   const labelRef = useRef(null);
   const modelRef = useRef(null);
   const canvasRef = useRef(null);
@@ -74,7 +73,6 @@ const OfficeThree = () => {
   const seatRef = useRef({ startDist: 0 });
   const sceneRef = useRef(new THREE.Scene());
   const doorRef = useRef(null);
-  const doorTweenRef = useRef(null);
   const prevDoorIdxRef = useRef(null);
 
   const [isLoaded, setIsLoaded] = useState(false);
@@ -93,7 +91,9 @@ const OfficeThree = () => {
   const selectedSeat = useSeatStore((state) => state.selectedSeat);
   const personnelInfo = usePersonnelInfoStore((state) => state.personnelInfo);
 
-  const doorIdx = useDoorStore((state) => state.doorIdx);
+  const { getData } = useSocketStore();
+  const doorOpenStatue = getData("dist").value;
+  const doorIdx = doorOpenStatue <= 101 ? 2 : doorOpenStatue <= 120 ? 0 : doorOpenStatue <= 130 ? 1 : 2;
 
   const { isSeatEdit, setSelectedSeat } = useSeatStore(
     useShallow((state) => ({
@@ -179,25 +179,40 @@ const OfficeThree = () => {
   };
 
   const moveCamera = (pos, tar) => {
-    setIsMoving(true);
+    // 이미 진행 중인 애니메이션 중단
+    if (gsap.isTweening(cameraRef.current.position)) {
+      gsap.killTweensOf(cameraRef.current.position);
+    }
+    if (gsap.isTweening(controlsRef.current.target)) {
+      gsap.killTweensOf(controlsRef.current.target);
+    }
 
+    setIsMoving(true);
     const newPos = pos.clone();
     const newTar = tar.clone();
-    const t1 = new Tween(cameraRef.current.position);
-    t1.to(newPos, 1500);
-    t1.easing(Easing.Quadratic.InOut);
-    t1.onStart(() => (controlsRef.current.enabled = false));
-    t1.onComplete(() => {
-      controlsRef.current.enabled = true;
-      tweenRef.current = [];
-      setIsMoving(false);
-    });
-    t1.start();
-    const t2 = new Tween(controlsRef.current.target).to(newTar, 1500);
-    t2.easing(Easing.Quadratic.InOut);
-    t2.start();
 
-    tweenRef.current.push(...[t1, t2]);
+    gsap.to(cameraRef.current.position, {
+      duration: 1.5,
+      x: newPos.x,
+      y: newPos.y,
+      z: newPos.z,
+      ease: "power1.inOut",
+      onStart: () => {
+        controlsRef.current.enabled = false;
+      },
+      onComplete: () => {
+        controlsRef.current.enabled = true;
+        setIsMoving(false);
+      },
+    });
+
+    gsap.to(controlsRef.current.target, {
+      duration: 1.5,
+      x: newTar.x,
+      y: newTar.y,
+      z: newTar.z,
+      ease: "power1.inOut",
+    });
   };
 
   // SCENE CREATE
@@ -364,13 +379,6 @@ const OfficeThree = () => {
       });
     }
 
-    if (tweenRef.current.length > 0) {
-      tweenRef.current.map((tween) => tween.update());
-    }
-    if (doorTweenRef.current) {
-      doorTweenRef.current.update();
-    }
-
     animRef.current = requestAnimationFrame(animate);
   };
 
@@ -434,6 +442,7 @@ const OfficeThree = () => {
         // 카메라 이동
         const targetPos = seatObj.position.clone();
         const cameraPos = targetPos.clone().add(new THREE.Vector3(6, 6, 6));
+        
         moveCamera(cameraPos, targetPos);
       } else {
         // 자리가 없는 경우 기본 위치로 이동
@@ -766,18 +775,20 @@ const OfficeThree = () => {
 
   // moveToUserSeat 함수 수정
   const moveToUserSeat = () => {
-    if (isTopView) return;
-    if (isLoaded && Array.isArray(userList) && sabeon) {
-      const userSeat = userList.find((user) => user.ou_sabeon === sabeon)?.ou_seat_cd;
-      if (userSeat && seatRef.current[userSeat]?.obj) {
-        const seatObj = seatRef.current[userSeat].obj;
-        const targetPos = seatObj.position.clone();
-        const cameraPos = targetPos.clone().add(new THREE.Vector3(6, 6, 6));
-        moveCamera(cameraPos, targetPos);
-      } else {
-        // 자리가 없는 경우 기본 위치로 이동
-        moveCamera(DEFAULT_CAMERA_POSITION, DEFAULT_CAMERA_TARGET);
-      }
+    if (isTopView || !isLoaded || !Array.isArray(userList) || !sabeon) return;
+
+    const userSeat = userList.find((user) => user.ou_sabeon === sabeon)?.ou_seat_cd;
+
+    // 이미 카메라가 이동 중이면 리턴
+    if (useThreeStore.getState().isMoving) return;
+
+    if (userSeat && seatRef.current[userSeat]?.obj) {
+      const seatObj = seatRef.current[userSeat].obj;
+      const targetPos = seatObj.position.clone();
+      const cameraPos = targetPos.clone().add(new THREE.Vector3(6, 6, 6));
+      moveCamera(cameraPos, targetPos);
+    } else {
+      moveCamera(DEFAULT_CAMERA_POSITION, DEFAULT_CAMERA_TARGET);
     }
   };
 
@@ -802,10 +813,6 @@ const OfficeThree = () => {
 
     prevDoorIdxRef.current = doorIdx;
 
-    if (doorTweenRef.current) {
-      doorTweenRef.current.stop();
-    }
-
     const targetRotation = new THREE.Vector3(0, 0, 0);
 
     if (doorIdx === 0) {
@@ -814,10 +821,13 @@ const OfficeThree = () => {
       targetRotation.y = -Math.PI / 2; // 90도 바깥쪽으로
     }
 
-    doorTweenRef.current = new Tween(doorRef.current.rotation)
-      .to(targetRotation, 1000)
-      .easing(Easing.Quadratic.InOut)
-      .start();
+    gsap.to(doorRef.current.rotation, {
+      duration: 1,
+      x: targetRotation.x,
+      y: targetRotation.y,
+      z: targetRotation.z,
+      ease: "power1.inOut",
+    });
   };
 
   // doorIdx 변화 감지를 위한 useEffect 수정
