@@ -34,7 +34,7 @@ const TableRow = ({ color, label, value, message, unit = "" }) => (
 
 const RoomCondition = ({ conditionRef }) => {
   const { getData } = useSocketStore();
-  const setDoorIdx = useDoorStore((state) => state.setDoorIdx);
+  const { setDoorIdx } = useDoorStore();
 
   const temp = getData("temp").value;
   const tempIdx = temp < 17 ? 0 : temp < 22 ? 2 : temp < 26 ? 1 : 3;
@@ -46,7 +46,7 @@ const RoomCondition = ({ conditionRef }) => {
   const co2Idx = co2 < 600 ? 0 : co2 < 800 ? 1 : co2 < 1000 ? 2 : co2 < 1500 ? 3 : 4;
 
   const doorOpenStatue = getData("dist").value;
-  const doorIdx = doorOpenStatue <= 21 ? 0 : doorOpenStatue <= 48 ? 1 : 2;
+  const doorIdx = doorOpenStatue <= 101 ? 2 : doorOpenStatue <= 120 ? 0 : doorOpenStatue <= 130 ? 1 : 2;
 
   useEffect(() => {
     setDoorIdx(doorIdx);

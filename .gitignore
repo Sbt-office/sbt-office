@@ -25,4 +25,4 @@ dist-ssr
 
 /build/
 *.zip
-office.glb
+.glb

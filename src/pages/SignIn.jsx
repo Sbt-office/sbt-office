@@ -179,13 +179,13 @@ const SignIn = () => {
               className="p-2 bg-comBlue ring-1 ring-comBlue text-white rounded-lg disabled:bg-gray-300 text-center transition-colors 
               h-12 text-lg hover:bg-sbtDarkBlue"
             >
-              {register.isLoading ? "가입 중..." : "회원가입"}
+              {register.isLoading ? "Sign Up..." : "Sign Up"}
             </button>
             <Link
               to="/"
               className="text-center p-2 ring-1 ring-comBlue text-comBlue rounded-lg hover:bg-blue-50 transition-colors h-12 text-lg"
             >
-              로그인으로 돌아가기
+              Back to Login
             </Link>
           </div>
         </div>
