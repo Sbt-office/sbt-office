@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useEffect, useRef, useState } from "react";
-import { gsap } from "gsap"; // gsap 추가
+import { gsap } from "gsap";
 
 // 3D IMPORT
 import * as THREE from "three";
@@ -81,6 +81,7 @@ const OfficeThree = () => {
   const [isTopView, setIsTopView] = useState(false);
   const [selectSeatName, setSelectSeatName] = useState(null);
   const [loadingProgress, setLoadingProgress] = useState(0);
+  const [isUserButtonDisabled, setIsUserButtonDisabled] = useState(false);
   /**
    * Store
    */
@@ -179,39 +180,40 @@ const OfficeThree = () => {
   };
 
   const moveCamera = (pos, tar) => {
-    // 이미 진행 중인 애니메이션 중단
     if (gsap.isTweening(cameraRef.current.position)) {
       gsap.killTweensOf(cameraRef.current.position);
     }
     if (gsap.isTweening(controlsRef.current.target)) {
       gsap.killTweensOf(controlsRef.current.target);
     }
-
     setIsMoving(true);
+    setIsUserButtonDisabled(true);
+
     const newPos = pos.clone();
     const newTar = tar.clone();
 
     gsap.to(cameraRef.current.position, {
-      duration: 1.5,
+      duration: 2.5,
       x: newPos.x,
       y: newPos.y,
       z: newPos.z,
-      ease: "power1.inOut",
+      ease: "power4.out",
       onStart: () => {
         controlsRef.current.enabled = false;
       },
       onComplete: () => {
         controlsRef.current.enabled = true;
         setIsMoving(false);
+        setIsUserButtonDisabled(false);
       },
     });
 
     gsap.to(controlsRef.current.target, {
-      duration: 1.5,
+      duration: 2.5,
       x: newTar.x,
       y: newTar.y,
       z: newTar.z,
-      ease: "power1.inOut",
+      ease: "power4.out",
     });
   };
 
@@ -442,7 +444,7 @@ const OfficeThree = () => {
         // 카메라 이동
         const targetPos = seatObj.position.clone();
         const cameraPos = targetPos.clone().add(new THREE.Vector3(6, 6, 6));
-        
+
         moveCamera(cameraPos, targetPos);
       } else {
         // 자리가 없는 경우 기본 위치로 이동
@@ -494,6 +496,8 @@ const OfficeThree = () => {
     profileImg.style.height = "100%";
     profileImg.style.borderRadius = "50%";
     profileImg.style.objectFit = "cover";
+    profileImg.draggable = false;
+    profileImg.alt = "profile";
     profileImg.style.background = "rgba(255, 255, 255, 0.6)";
     iconDiv.appendChild(profileImg);
 
@@ -822,11 +826,11 @@ const OfficeThree = () => {
     }
 
     gsap.to(doorRef.current.rotation, {
-      duration: 1,
+      duration: 2.5,
       x: targetRotation.x,
       y: targetRotation.y,
       z: targetRotation.z,
-      ease: "power1.inOut",
+      ease: "power4.out",
     });
   };
 
@@ -909,8 +913,9 @@ const OfficeThree = () => {
               <button
                 className={`flex-1 text-center rounded-lg py-2 backdrop-blur-sm ${
                   !isTopView ? "bg-comBlue/70" : "bg-comBlue/40"
-                }`}
+                } ${isUserButtonDisabled ? "opacity-50 cursor-not-allowed" : "hover:bg-comBlue/70"}`}
                 onClick={throttledSetIsUser}
+                disabled={isUserButtonDisabled}
               >
                 USER
               </button>
