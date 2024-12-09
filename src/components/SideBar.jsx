@@ -5,19 +5,19 @@ import { useShallow } from "zustand/react/shallow";
 import { useThreeStore } from "@/store/threeStore";
 import { usePopupStore } from "@/store/usePopupStore";
 import useAdminStore from "@/store/adminStore";
-import usePersonnelInfoStore from "@/store/personnelInfoStore";
 import useThemeStore from "@/store/themeStore";
+import usePersonnelInfoStore from "@/store/personnelInfoStore";
 
 import { useThrottle } from "@/hooks/useThrottle";
 import { useUserQuery } from "@/hooks/useUserQuery";
 import { useAllUserListQuery } from "@/hooks/useAllUserListQuery";
 
-import { MdManageAccounts } from "react-icons/md";
+import { MdManageAccounts, MdOutlineKeyboardArrowLeft } from "react-icons/md";
 import { RiTeamFill } from "react-icons/ri";
+import { BiSolidWidget } from "react-icons/bi";
 
 import ManagePersonnelPopup from "./ManagePersonnelPopup";
-
-import { MdOutlineKeyboardArrowLeft } from "react-icons/md";
+import WidgetContainer from "./WidgetContainer";
 
 const SideBar = () => {
   const [openSection, setOpenSection] = useState(null);
@@ -26,6 +26,7 @@ const SideBar = () => {
   const [selectedTeam, setSelectedTeam] = useState(null);
   const [showTeamList, setShowTeamList] = useState(true);
   const [isExpanded, setIsExpanded] = useState(true);
+  const [showWidget, setShowWidget] = useState(false);
 
   const isDark = useThemeStore((state) => state.isDark);
 
@@ -56,16 +57,6 @@ const SideBar = () => {
   const { data: userInfoData } = useUserQuery();
 
   const moveCamera = useThreeStore((state) => state.moveCamera);
-
-  useEffect(() => {
-    if (isPopupOpen) {
-      togglePopup();
-    }
-  }, []);
-
-  useEffect(() => {
-    refetch();
-  }, [userList, refetch]);
 
   const organizedData = useMemo(() => {
     if (!userList?.length) return [];
@@ -131,53 +122,16 @@ const SideBar = () => {
     if (isPopupOpen) {
       setShowTeamList(true);
     } else {
+      setShowWidget(false);
       setShowTeamList(false);
     }
     togglePopup();
   }, 1000);
 
-  useEffect(() => {
-    if (personnelInfo) {
-      const sectionIndex = organizedData.findIndex((group) => group.title === personnelInfo.ou_team_name);
-      if (sectionIndex !== -1) {
-        const subItemIndex = organizedData[sectionIndex].subItems.findIndex(
-          (person) => person.ou_sabeon === personnelInfo.ou_sabeon
-        );
-        if (subItemIndex !== -1) {
-          setOpenSection(sectionIndex);
-          setOpenSubItem(subItemIndex);
-          setSelectedTeam(sectionIndex);
-          setSelectedPerson(subItemIndex);
-        }
-      }
-    }
-  }, [personnelInfo, organizedData]);
-
-  useEffect(() => {
-    if (userInfoData) {
-      setIsAdmin(userInfoData.ou_admin_yn);
-      setSabeon(userInfoData.ou_sabeon);
-    }
-  }, [userInfoData, setIsAdmin, setSabeon]);
-
-  useEffect(() => {
-    return () => {
-      setOpenSection(null);
-      setOpenSubItem(null);
-      setSelectedTeam(null);
-      setSelectedPerson(null);
-      clearPersonnelInfo();
-    };
-  }, [userInfoData, clearPersonnelInfo]);
-
-  useEffect(() => {
-    if (!personnelInfo) {
-      setOpenSection(null);
-      setOpenSubItem(null);
-      setSelectedTeam(null);
-      setSelectedPerson(null);
-    }
-  }, [personnelInfo]);
+  const handleActiveWidget = () => {
+    if (isPopupOpen) return;
+    setShowWidget((prev) => !prev);
+  };
 
   const handleToggleExpand = () => {
     setIsExpanded(!isExpanded);
@@ -289,6 +243,57 @@ const SideBar = () => {
     ]
   );
 
+  useEffect(() => {
+    if (isPopupOpen) togglePopup();
+  }, []);
+
+  useEffect(() => {
+    if (personnelInfo) {
+      const sectionIndex = organizedData.findIndex((group) => group.title === personnelInfo.ou_team_name);
+      if (sectionIndex !== -1) {
+        const subItemIndex = organizedData[sectionIndex].subItems.findIndex(
+          (person) => person.ou_sabeon === personnelInfo.ou_sabeon
+        );
+        if (subItemIndex !== -1) {
+          setOpenSection(sectionIndex);
+          setOpenSubItem(subItemIndex);
+          setSelectedTeam(sectionIndex);
+          setSelectedPerson(subItemIndex);
+        }
+      }
+    }
+  }, [personnelInfo, organizedData]);
+
+  useEffect(() => {
+    if (userInfoData) {
+      setIsAdmin(userInfoData.ou_admin_yn);
+      setSabeon(userInfoData.ou_sabeon);
+    }
+  }, [userInfoData, setIsAdmin, setSabeon]);
+
+  useEffect(() => {
+    if (!personnelInfo) {
+      setOpenSection(null);
+      setOpenSubItem(null);
+      setSelectedTeam(null);
+      setSelectedPerson(null);
+    }
+  }, [personnelInfo]);
+
+  useEffect(() => {
+    refetch();
+  }, [userList, refetch]);
+
+  useEffect(() => {
+    return () => {
+      setOpenSection(null);
+      setOpenSubItem(null);
+      setSelectedTeam(null);
+      setSelectedPerson(null);
+      clearPersonnelInfo();
+    };
+  }, []);
+
   return (
     <div className="flex items-center h-[calc(100dvh-4.5rem)] absolute top-16 left-0 z-10 p-2 px-4">
       <aside
@@ -322,6 +327,17 @@ const SideBar = () => {
           ) : (
             ""
           )}
+          {isAdmin === "Y" ? (
+            <BiSolidWidget
+              size={24}
+              className={`text-comBlue cursor-pointer hover:scale-110 transition-transform ${
+                showWidget ? "text-sbtDarkBlue" : ""
+              }`}
+              onClick={handleActiveWidget}
+            />
+          ) : (
+            ""
+          )}
           {showTeamList && (
             <motion.ul
               initial={{ opacity: 0, x: -20 }}
@@ -335,7 +351,6 @@ const SideBar = () => {
             </motion.ul>
           )}
         </div>
-
         {!isPopupOpen &&
           (isExpanded ? (
             <div onClick={handleToggleExpand} className="w-4 h-6 flex items-center justify-center relative">
@@ -354,10 +369,12 @@ const SideBar = () => {
             onClose={() => {
               togglePopup();
               setShowTeamList(true);
+              setShowWidget(false);
             }}
           />
         </div>
       )}
+      {!isPopupOpen && showWidget && <WidgetContainer />}
     </div>
   );
 };

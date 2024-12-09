@@ -149,6 +149,9 @@ export const updateUserInfoFetch = async (updateData) => {
     }
     return res.data;
   } catch (err) {
+    if (err.response && err.response.status === 413) {
+      throw new Error("잘못된 이미지 파일 또는 사이즈가 큰 사진입니다.");
+    }
     console.error("사용자 정보 업데이트 중 오류 발생:", err.message);
     throw new Error(err.message);
   }

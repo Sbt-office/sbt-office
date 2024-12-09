@@ -14,7 +14,7 @@ export const SearchInput = ({ value, onChange, placeholder = "이름 or 부서�
   const isDark = useThemeStore((state) => state.isDark);
 
   return (
-    <div className="relative w-[24rem] h-11 rounded-lg">
+    <div className="relative w-[21.6rem] h-11 rounded-lg">
       <input
         type="text"
         placeholder={placeholder}

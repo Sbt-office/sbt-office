@@ -13,6 +13,7 @@ import useWorkStatusStore from "@/store/useWorkStatusStore";
 import { useUserStore } from "@/store/userStore";
 import useAdminStore from "@/store/adminStore";
 import useThemeStore from "@/store/themeStore";
+import basicProfileImg from "@/assets/images/profile.png";
 
 const WorkGoAndLeave = () => {
   const isWorking = useWorkStatusStore((state) => state.isWorking);
@@ -110,7 +111,7 @@ const WorkGoAndLeave = () => {
 
   return (
     <div className="flex h-full justify-center items-center 2xl:gap-2 gap-1">
-      <div className="justify-center items-center flex 2xl:w-[16rem] lg:w-[14rem]">
+      <div className="justify-center items-center flex 2xl:w-[15rem] lg:w-[13rem]">
         {userInfo.ou_nm && (
           <div className="flex items-center gap-1 md:flex-col md:justify-center md:items-end">
             <div
@@ -118,25 +119,25 @@ const WorkGoAndLeave = () => {
                 isDark ? "text-white" : "text-black"
               }`}
             >
-              <span className={`2xl:text-sm lg:text-xs text-[0.65rem] ml-2 ${isDark ? "text-white" : "text-black"}`}>
-                안녕하세요.
-              </span>
-              {/* <img
+              <img
                 src={parsedUserInfo.profile_img ? parsedUserInfo.profile_img : basicProfileImg}
                 alt="profile"
                 className={`rounded-full w-5 h-5 ${parsedUserInfo.profile_img ? "" : "border-2 border-comGray"}`}
-              /> */}
+              />
               <p>{userInfo.ou_nm}</p>
               <p>
                 {parsedUserInfo?.level === "Manager"
                   ? "매니저"
                   : parsedUserInfo?.level?.includes("Senior")
-                  ? "시니어매니저"
+                  ? "S/M"
                   : parsedUserInfo?.level
                   ? parsedUserInfo.level
                   : ""}
                 님
               </p>
+              <span className={`2xl:text-sm lg:text-xs text-[0.65rem] ml-1 ${isDark ? "text-white" : "text-black"}`}>
+                안녕하세요.
+              </span>
             </div>
           </div>
         )}

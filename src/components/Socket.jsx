@@ -60,7 +60,7 @@ const Socket = () => {
   useEffect(() => {
     const signalRConnect = () => {
       socketRef.current = new HubConnectionBuilder()
-        .withUrl("http://192.168.0.72:5000/iot", {
+        .withUrl("http://121.135.139.34:5000/iot", {
           timeout: 5000,
           transport: 1,
         })
