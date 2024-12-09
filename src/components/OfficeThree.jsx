@@ -11,7 +11,6 @@ import {
   GLTFLoader,
   OrbitControls,
   RGBELoader,
-  DragControls,
 } from "three/examples/jsm/Addons.js";
 
 import hdr from "@/assets/three.hdr";
