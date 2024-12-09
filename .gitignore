@@ -25,4 +25,4 @@ dist-ssr
 
 /build/
 *.zip
-assets/model/**/*.glb
+.glb
