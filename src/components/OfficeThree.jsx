@@ -1,9 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useEffect, useRef, useState } from "react";
-
-// 3D IMPORT
+import { gsap } from "gsap";
 import * as THREE from "three";
-import { Easing, Tween } from "@tweenjs/tween.js";
 import {
   CSS2DObject,
   CSS2DRenderer,
@@ -15,35 +13,50 @@ import {
   RGBELoader,
 } from "three/examples/jsm/Addons.js";
 
-// 3D MODEL
 import hdr from "@/assets/three.hdr";
 import model from "@/assets/model/office.glb";
 import userGlb from "@/assets/model/user.glb";
+import christmasTree from "@/assets/model/christmasTree.glb";
+import temperature from "@/assets/model/temperature.glb";
+
+// GLB 모델 맵핑
+const modelMap = {
+  christmasTree,
+  temperature,
+  user: userGlb,
+};
 
 import { userIcon } from "@/utils/icon";
+import defaultProfile from "@/assets/images/comLogo.png";
 
 import { clearScene } from "@/utils/three/SceneCleanUp";
 import { useAllUserListQuery } from "@/hooks/useAllUserListQuery";
-import { useDailyListQuery } from "@/hooks/useDailyListQuery";
 import PersonnelInfoCard from "./PersonnelInfoCard";
+import useWorkStatusStore from "@/store/useWorkStatusStore";
 import RoomCondition from "./RoomCondition";
 /** STORE */
 import seatListStore from "@/store/seatListStore";
 import useSeatStore from "@/store/seatStore";
-import useWorkStatusStore from "@/store/useWorkStatusStore";
 import usePersonnelInfoStore from "@/store/personnelInfoStore";
 import useAdminStore from "@/store/adminStore";
+import useSocketStore from "@/store/socketStore";
 import { useThreeStore } from "@/store/threeStore";
+
 import { useShallow } from "zustand/react/shallow";
-
 import { BarLoader } from "react-spinners";
-import useDoorStore from "@/store/doorStore";
 
-import profile from "@/assets/images/profile.png";
+import { useThrottle } from "@/hooks/useThrottle";
+import { useDailyListQuery } from "@/hooks/useDailyListQuery";
 
 const FLOAT_SPEED = 0.005;
 const FLOAT_HEIGHT = 0.08;
-const USER_LABEL_POSITION_Y = -3.3;
+const USER_LABEL_POSITION_Y = -3.6;
+
+const TOP_POSITION = new THREE.Vector3(0.35563883362850046, 34.63425767640605, -4.476855799979857);
+const TOP_TARGET = new THREE.Vector3(0.355329995060846, 0.824055029491148, -4.142916368024322);
+
+const DEFAULT_CAMERA_POSITION = new THREE.Vector3(-3.684, 13.704, -19.717);
+const DEFAULT_CAMERA_TARGET = new THREE.Vector3(-3.84, 1.063, -7.064);
 
 const OfficeThree = () => {
   const { data: userList } = useAllUserListQuery();
@@ -55,7 +68,6 @@ const OfficeThree = () => {
   const css3dRendererRef = useRef(null);
   const conditionPanelRef = useRef(null);
   const css3dObjectRef = useRef({});
-  const tweenRef = useRef([]);
   const labelRef = useRef(null);
   const modelRef = useRef(null);
   const canvasRef = useRef(null);
@@ -67,43 +79,180 @@ const OfficeThree = () => {
   const seatRef = useRef({ startDist: 0 });
   const sceneRef = useRef(new THREE.Scene());
   const doorRef = useRef(null);
-  const doorTweenRef = useRef(null);
   const prevDoorIdxRef = useRef(null);
+  const floorObjectRef = useRef(null);
+  const dropIndicatorRef = useRef(null);
 
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [isCondition, setIsCondition] = useState(false);
   const [isDaily, setIsDaily] = useState(true);
-  const [selectSeatName, setSelectSeatName] = useState(null);
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [isTopView, setIsTopView] = useState(false);
+  const [isCondition, setIsCondition] = useState(true);
+  const [isUserButtonDisabled, setIsUserButtonDisabled] = useState(false);
+
   const [loadingProgress, setLoadingProgress] = useState(0);
-  /**
-   * Store
-   */
+  /** Store*/
   const setSeatData = seatListStore((state) => state.setSeatData);
   const isWorking = useWorkStatusStore((state) => state.isWorking);
   const sabeon = useAdminStore((state) => state.sabeon);
 
-  const { isSeatEdit, setIsSeatEdit, selectedSeat, setSelectedSeat } = useSeatStore(
+  const selectedSeat = useSeatStore((state) => state.selectedSeat);
+  const personnelInfo = usePersonnelInfoStore((state) => state.personnelInfo);
+
+  const { getData } = useSocketStore();
+  const doorOpenStatue = getData("dist").value;
+  const doorIdx = doorOpenStatue <= 101 ? 2 : doorOpenStatue <= 120 ? 0 : doorOpenStatue <= 130 ? 1 : 2;
+
+  const { isSeatEdit, setSelectedSeat } = useSeatStore(
     useShallow((state) => ({
       isSeatEdit: state.isSeatEdit,
-      setIsSeatEdit: state.setIsSeatEdit,
-      selectedSeat: state.selectedSeat,
       setSelectedSeat: state.setSelectedSeat,
     }))
   );
-
-  const { personnelInfo, setPersonnelInfo, clearPersonnelInfo } = usePersonnelInfoStore(
+  const { setPersonnelInfo, clearPersonnelInfo } = usePersonnelInfoStore(
     useShallow((state) => ({
-      personnelInfo: state.personnelInfo,
       setPersonnelInfo: state.setPersonnelInfo,
       clearPersonnelInfo: state.clearPersonnelInfo,
     }))
   );
+  const { cameraPosition, cameraTarget, draggedItem, isDragging, setSeatRefs, setIsMoving } = useThreeStore();
 
-  const { cameraPosition, cameraTarget, setSeatRefs, setIsMoving } = useThreeStore();
+  const [attachedModels, setAttachedModels] = useState([]);
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [dropPosition, setDropPosition] = useState(null);
 
-  // doorStore에서 doorIdx 구독
-  const doorIdx = useDoorStore((state) => state.doorIdx);
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
 
+    if (!isDragging || attachedModels.length >= 3) return;
+
+    const rect = mainRef.current.getBoundingClientRect();
+    const mouseX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    const mouseY = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(new THREE.Vector2(mouseX, mouseY), cameraRef.current);
+
+    const intersects = raycaster.intersectObjects(sceneRef.current.children, true);
+    const floorIntersect = intersects.find(
+      (intersect) => intersect.object.name.includes("floor") || intersect.object.parent.name.includes("floor")
+    );
+
+    if (floorIntersect && dropIndicatorRef.current) {
+      const point = floorIntersect.point;
+      dropIndicatorRef.current.position.set(point.x, point.y + 0.01, point.z);
+      dropIndicatorRef.current.visible = true;
+      // 현재 인디케이터 위치를 저장
+      setDropPosition(dropIndicatorRef.current.position.clone());
+    }
+  };
+
+  const handleDrop = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (!isDragging || attachedModels.length >= 3) {
+      setIsMoving(false);
+      hideDropIndicator();
+      return;
+    }
+
+    const rect = mainRef.current.getBoundingClientRect();
+    const mouseX = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    const mouseY = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(new THREE.Vector2(mouseX, mouseY), cameraRef.current);
+
+    const intersects = raycaster.intersectObjects(sceneRef.current.children, true);
+    const floorIntersect = intersects.find(
+      (intersect) => intersect.object.name.includes("floor") || intersect.object.parent.name.includes("floor")
+    );
+
+    if (floorIntersect && dropIndicatorRef.current) {
+      const point = floorIntersect.point;
+      dropIndicatorRef.current.position.set(point.x, point.y + 0.01, point.z);
+      // 현재 인디케이터 위치를 저장
+      setDropPosition(dropIndicatorRef.current.position.clone());
+      setShowSaveModal(true);
+    }
+  };
+
+  // 드롭 인디케이터를 숨기는 함수
+  const hideDropIndicator = () => {
+    if (dropIndicatorRef.current) {
+      dropIndicatorRef.current.visible = false;
+    }
+  };
+
+  // 모달이 취소될 때 처리
+  const handleModalCancel = () => {
+    setShowSaveModal(false);
+    setDropPosition(null);
+    hideDropIndicator();
+    setIsMoving(false);
+  };
+
+  const handleSaveConfirm = async () => {
+    if (!dropPosition || !draggedItem) return;
+
+    const loader = new GLTFLoader();
+    loader.setDRACOLoader(dracoLoaderRef.current);
+
+    try {
+      const modelFile = modelMap[draggedItem];
+      if (!modelFile) {
+        console.error("Model not found:", draggedItem);
+        return;
+      }
+
+      const gltf = await loader.loadAsync(modelFile);
+      const model = gltf.scene;
+
+      // children들의 position x, z를 0으로 설정
+      model.children.forEach((child) => {
+        child.position.x = 0;
+        child.position.z = 0;
+      });
+
+      // dropPosition에는 이미 초록색 평면의 마지막 위치가 저장되어 있음
+      model.position.copy(dropPosition);
+
+      const scale = 1;
+      model.scale.set(scale, scale, scale);
+
+      sceneRef.current.add(model);
+      setAttachedModels([...attachedModels, { model, position: model.position.clone() }]);
+    } catch (error) {
+      console.error("Error loading model:", error);
+    }
+
+    hideDropIndicator();
+    setShowSaveModal(false);
+    setDropPosition(null);
+    setIsMoving(false);
+  };
+
+  // 드래그 앤 드롭 이벤트 리스너 설정
+  useEffect(() => {
+    if (!mainRef.current) return;
+
+    const element = mainRef.current;
+    element.addEventListener("dragover", handleDragOver);
+    element.addEventListener("drop", handleDrop);
+
+    return () => {
+      element.removeEventListener("dragover", handleDragOver);
+      element.removeEventListener("drop", handleDrop);
+    };
+  }, [isDragging, attachedModels]);
+
+  /** Draco setting */
+  const loader = new GLTFLoader();
+  const dracoLoaderRef = useRef(null);
+  dracoLoaderRef.current = new DRACOLoader();
+  dracoLoaderRef.current.setDecoderPath("https://www.gstatic.com/draco/versioned/decoders/1.5.6/");
+  loader.setDRACOLoader(dracoLoaderRef.current);
   // CAMERA
   const setupCamera = () => {
     cameraRef.current = new THREE.PerspectiveCamera(
@@ -117,7 +266,6 @@ const OfficeThree = () => {
 
     seatRef.current.startDist = cameraRef.current.position.distanceTo(new THREE.Vector3());
   };
-
   // CONTROL
   const setupControls = () => {
     controlsRef.current = new OrbitControls(cameraRef.current, canvasRef.current);
@@ -126,7 +274,6 @@ const OfficeThree = () => {
     controlsRef.current.maxPolarAngle = Math.PI / 2;
     controlsRef.current.minPolarAngle = 0;
   };
-
   // LIGHT
   const setupLights = () => {
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
@@ -140,7 +287,6 @@ const OfficeThree = () => {
     fillLight.position.set(-2, 1, -1);
     sceneRef.current.add(fillLight);
   };
-
   // LABEL
   const setupLabelRenderer = () => {
     labelRendererRef.current = new CSS2DRenderer();
@@ -154,7 +300,7 @@ const OfficeThree = () => {
     labelRendererRef.current.domElement.style.zIndex = 0;
     canvasRef.current.after(labelRendererRef.current.domElement);
   };
-
+  // CSS3D
   const setupCss3dRenderer = () => {
     css3dRendererRef.current = new CSS3DRenderer();
     css3dRendererRef.current.setSize(mainRef.current.offsetWidth, mainRef.current.offsetHeight);
@@ -163,29 +309,44 @@ const OfficeThree = () => {
     css3dRendererRef.current.domElement.style.left = 0;
     canvasRef.current.before(css3dRendererRef.current.domElement);
   };
-
+  // CAMERA MOVE
   const moveCamera = (pos, tar) => {
+    if (gsap.isTweening(cameraRef.current.position)) {
+      gsap.killTweensOf(cameraRef.current.position);
+    }
+    if (gsap.isTweening(controlsRef.current.target)) {
+      gsap.killTweensOf(controlsRef.current.target);
+    }
     setIsMoving(true);
+    setIsUserButtonDisabled(true);
 
     const newPos = pos.clone();
     const newTar = tar.clone();
-    const t1 = new Tween(cameraRef.current.position);
-    t1.to(newPos, 1500);
-    t1.easing(Easing.Quadratic.InOut);
-    t1.onStart(() => (controlsRef.current.enabled = false));
-    t1.onComplete(() => {
-      controlsRef.current.enabled = true;
-      tweenRef.current = [];
-      setIsMoving(false);
+
+    gsap.to(cameraRef.current.position, {
+      duration: 2.5,
+      x: newPos.x,
+      y: newPos.y,
+      z: newPos.z,
+      ease: "power4.out",
+      onStart: () => {
+        controlsRef.current.enabled = false;
+      },
+      onComplete: () => {
+        controlsRef.current.enabled = true;
+        setIsMoving(false);
+        setIsUserButtonDisabled(false);
+      },
     });
-    t1.start();
-    const t2 = new Tween(controlsRef.current.target).to(newTar, 1500);
-    t2.easing(Easing.Quadratic.InOut);
-    t2.start();
 
-    tweenRef.current.push(...[t1, t2]);
+    gsap.to(controlsRef.current.target, {
+      duration: 2.5,
+      x: newTar.x,
+      y: newTar.y,
+      z: newTar.z,
+      ease: "power4.out",
+    });
   };
-
   // SCENE CREATE
   const createScene = () => {
     const canvas = canvasRef.current;
@@ -208,7 +369,6 @@ const OfficeThree = () => {
 
     animRef.current = requestAnimationFrame(animate);
   };
-
   // RESIZE EVENT
   const onWindowResize = () => {
     const w = mainRef.current.offsetWidth;
@@ -236,20 +396,46 @@ const OfficeThree = () => {
         css3dRendererRef.current.setSize(mainRef.current.offsetWidth, mainRef.current.offsetHeight);
       }
     }
+    // 부모영역과 캔버 영역 비교 후 Resize 실행
+    if (mainRef.current && canvasRef.current) {
+      if (
+        mainRef.current.offsetWidth !== canvasRef.current.offsetWidth ||
+        mainRef.current.offsetHeight !== canvasRef.current.offsetHeight
+      )
+        onWindowResize();
+    }
+    // css3dObject resize
+    if (css3dObjectRef.current && css3dObjectRef.current.mesh) {
+      if (conditionRef.current.offsetWidth !== css3dObjectRef.current.mesh.scale.x) {
+        css3dObjectRef.current.mesh.scale.x = conditionRef.current.offsetWidth;
+      }
+      if (conditionRef.current.offsetHeight !== css3dObjectRef.current.mesh.scale.y) {
+        css3dObjectRef.current.mesh.scale.y = conditionRef.current.offsetHeight;
+      }
+    }
+
+    if (cameraRef.current) {
+      const dist = cameraRef.current.position.distanceTo(new THREE.Vector3());
+      const size = seatRef.current.startDist / dist;
+      const newSize = size > 1 ? 1 : size;
+
+      Object.keys(seatRef.current).map((key) => {
+        const dom = document.getElementById("label_" + key);
+        if (dom) dom.style.transform = `${dom.style.transform} scale(${newSize})`;
+      });
+    }
+
+    animRef.current = requestAnimationFrame(animate);
   };
 
-  // LOAD
+  /** 오피스 모델 */
   const loadModel = () => {
-    const loader = new GLTFLoader();
-    const dracoLoader = new DRACOLoader();
-    dracoLoader.setDecoderPath("https://www.gstatic.com/draco/versioned/decoders/1.5.6/");
-    loader.setDRACOLoader(dracoLoader);
+    loader.setDRACOLoader(dracoLoaderRef.current);
 
     new RGBELoader().load(hdr, (texture) => {
       texture.mapping = THREE.EquirectangularReflectionMapping;
       sceneRef.current.environment = texture;
     });
-
     loader.load(
       model,
       (gltf) => {
@@ -279,11 +465,15 @@ const OfficeThree = () => {
             doorRef.current = node;
             node.position.set(node.position.x, node.position.y, node.position.z);
           }
+          if (node.name === "floor" || node.name.includes("Floor")) {
+            floorObjectRef.current = node;
+          }
         });
         setSeatData(seatList);
         sceneRef.current.add(gltf.scene);
         setIsLoaded(true);
         setLoadingProgress(100);
+        loadChristmasTree();
       },
       (xhr) => {
         setLoadingProgress((xhr.loaded / xhr.total) * 100);
@@ -293,99 +483,147 @@ const OfficeThree = () => {
       }
     );
   };
+  /** 크리스마스 트리 모델 */
+  const loadChristmasTree = () => {
+    loader.setDRACOLoader(dracoLoaderRef.current);
 
-  // ANIMATION
-  const animate = () => {
-    if (controlsRef.current) {
-      controlsRef.current.update();
-    }
+    loader.load(
+      christmasTree,
+      (gltf) => {
+        gltf.scene.traverse((node) => {
+          if (node.isMesh) {
+            node.castShadow = true;
+            node.receiveShadow = true;
+          }
+        });
 
-    // 아바타와 라벨 부유 애니메이션
-    if (seatRef.current.userAvatar) {
-      const time = Date.now() * FLOAT_SPEED;
-      const newY = USER_LABEL_POSITION_Y + Math.sin(time) * FLOAT_HEIGHT;
-
-      // 아바타 위치 업데이트
-      seatRef.current.userAvatar.position.y = newY;
-      seatRef.current.userAvatar.position.y = USER_LABEL_POSITION_Y + Math.sin(time) * FLOAT_HEIGHT;
-    }
-
-    if (rendererRef.current && cameraRef.current) {
-      rendererRef.current.render(sceneRef.current, cameraRef.current);
-      if (labelRendererRef.current) {
-        labelRendererRef.current.render(sceneRef.current, cameraRef.current);
-      }
-      if (css3dRendererRef.current) {
-        css3dRendererRef.current.render(sceneRef.current, cameraRef.current);
-      }
-    }
-
-    // 부모영역과 캔버 영역 비교 후 Resize 실행
-    if (mainRef.current && canvasRef.current) {
-      if (
-        mainRef.current.offsetWidth !== canvasRef.current.offsetWidth ||
-        mainRef.current.offsetHeight !== canvasRef.current.offsetHeight
-      )
-        onWindowResize();
-    }
-
-    // css3dObject resize
-    if (css3dObjectRef.current && css3dObjectRef.current.mesh) {
-      if (conditionRef.current.offsetWidth !== css3dObjectRef.current.mesh.scale.x) {
-        css3dObjectRef.current.mesh.scale.x = conditionRef.current.offsetWidth;
-      }
-      if (conditionRef.current.offsetHeight !== css3dObjectRef.current.mesh.scale.y) {
-        css3dObjectRef.current.mesh.scale.y = conditionRef.current.offsetHeight;
-      }
-    }
-
-    if (cameraRef.current) {
-      const dist = cameraRef.current.position.distanceTo(new THREE.Vector3());
-      const size = seatRef.current.startDist / dist;
-      const newSize = size > 1 ? 1 : size;
-
-      Object.keys(seatRef.current).map((key) => {
-        const dom = document.getElementById("label_" + key);
-        if (dom) dom.style.transform = `${dom.style.transform} scale(${newSize})`;
-      });
-    }
-
-    if (tweenRef.current.length > 0) {
-      tweenRef.current.map((tween) => tween.update());
-    }
-
-    if (doorTweenRef.current) {
-      doorTweenRef.current.update();
-    }
-
-    animRef.current = requestAnimationFrame(animate);
-  };
-
-  // 기본 카메라 위치 상수 추가
-  const DEFAULT_CAMERA_POSITION = new THREE.Vector3(-3.684, 13.704, -19.717);
-  const DEFAULT_CAMERA_TARGET = new THREE.Vector3(-3.84, 1.063, -7.064);
-
-  useEffect(() => {
-    if (isLoaded && Array.isArray(userList) && sabeon) {
-      const userSeat = userList.find((user) => user.ou_sabeon === sabeon)?.ou_seat_cd;
-      if (userSeat && seatRef.current[userSeat]?.obj) {
-        const seatObj = seatRef.current[userSeat].obj;
-
-        if (!seatRef.current.userAvatar) {
-          addModel(seatObj);
-        } else {
-          moveModel(seatObj);
+        if (floorObjectRef.current) {
+          const floorY = floorObjectRef.current.position.y;
+          gltf.scene.position.set(0, floorY + 0.001, 0);
         }
 
-        const targetPos = seatObj.position.clone();
-        const cameraPos = targetPos.clone().add(new THREE.Vector3(6, 6, 6));
-        moveCamera(cameraPos, targetPos);
-      } else {
-        moveCamera(DEFAULT_CAMERA_POSITION, DEFAULT_CAMERA_TARGET);
+        sceneRef.current.add(gltf.scene);
+      },
+      undefined,
+      (error) => {
+        console.error("Error loading Christmas tree:", error);
       }
+    );
+  };
+  /** 로그인 사용자 위치 아바타 모델 */
+  const avatarModel = (obj) => {
+    if (!obj) return;
+    // 기존 아바타가 있다면 제거
+    if (seatRef.current.userAvatar) {
+      sceneRef.current.remove(seatRef.current.userAvatar);
+      seatRef.current.userAvatar = null;
     }
-  }, [isLoaded, userList, sabeon]);
+    loader.setDRACOLoader(dracoLoaderRef.current);
 
+    loader.load(
+      userGlb,
+      (gltf) => {
+        const avatar = gltf.scene;
+        avatar.scale.set(1.6, 1.6, 1.6);
+        avatar.position.set(obj.position.x, USER_LABEL_POSITION_Y, obj.position.z);
+        avatar.rotation.y = Math.PI;
+
+        avatar.name = "userAvatar";
+        avatar.traverse((node) => {
+          if (node.isMesh) {
+            node.castShadow = true;
+            node.receiveShadow = true;
+          }
+        });
+
+        sceneRef.current.add(avatar);
+        seatRef.current.userAvatar = avatar;
+      },
+      undefined,
+      (error) => {
+        console.error("An error happened while loading the avatar:", error);
+      }
+    );
+  };
+  /** 라벨 생성 */
+  const createLabel = ({ name, ou_nm, profile, userStatus }) => {
+    if (!labelRef.current) return;
+
+    // 아이콘을 위한 div 생성
+    const iconDiv = document.createElement("div");
+    iconDiv.className = "icon-container";
+    iconDiv.style.width = "60px";
+    iconDiv.style.height = "60px";
+    iconDiv.style.display = "flex";
+    iconDiv.style.alignItems = "center";
+    iconDiv.style.justifyContent = "center";
+
+    const profileImg = document.createElement("img");
+    profileImg.src = profile;
+    profileImg.style.width = "100%";
+    profileImg.style.height = "100%";
+    profileImg.style.borderRadius = "50%";
+    profileImg.style.objectFit = "cover";
+    profileImg.draggable = false;
+    profileImg.alt = "profile";
+    profileImg.style.background = "rgba(255, 255, 255, 0.6)";
+    iconDiv.appendChild(profileImg);
+
+    // 이름을 위한 div 생성
+    const nameDiv = document.createElement("div");
+    nameDiv.className = "name-container";
+    nameDiv.style.position = "absolute";
+    nameDiv.style.top = "100%";
+    nameDiv.style.left = "50%";
+    nameDiv.style.transform = "translateX(-50%)";
+    nameDiv.style.padding = "4px";
+    nameDiv.style.background = "rgba(255, 255, 255, 0.75)";
+    nameDiv.style.backdropFilter = "blur(4px)";
+    nameDiv.style.borderRadius = "4px";
+    nameDiv.style.whiteSpace = "nowrap";
+    nameDiv.style.fontSize = "12px";
+    nameDiv.style.color = "black";
+    nameDiv.innerHTML = ou_nm;
+
+    // 컨테이너 div 생성
+    const containerDiv = document.createElement("div");
+    containerDiv.appendChild(iconDiv);
+    containerDiv.appendChild(nameDiv);
+
+    containerDiv.addEventListener("click", () => {
+      const isEmpty = !userList.find((user) => user.ou_seat_cd === name);
+      handleLabelClick(name, isEmpty);
+    });
+
+    const validStatus = ["미정", "미출근", "출근", "퇴근"].includes(userStatus) ? userStatus : "미출근";
+    const color =
+      validStatus === "미정"
+        ? "#919191"
+        : validStatus === "미출근"
+        ? "#919191"
+        : validStatus === "출근"
+        ? "#1b57da"
+        : "#D64646";
+
+    iconDiv.style.borderColor = color;
+    iconDiv.style.borderStyle = "solid";
+    iconDiv.style.borderWidth = "3.5px";
+    iconDiv.style.borderRadius = "50%";
+
+    const label = new CSS2DObject(containerDiv);
+    label.position.set(0, 0.3, 0.08);
+    label.visible = validStatus !== "미정";
+    label.element.style.cursor = "pointer";
+
+    seatRef.current[name].obj.add(label);
+    seatRef.current[name] = {
+      ...seatRef.current[name],
+      label,
+      isEmpty: validStatus === "미정",
+      userStatus: validStatus,
+    };
+  };
+  /** 사용자 이미지 아이콘 */
   const drawUserIcon = () => {
     if (!Array.isArray(userList) || !Array.isArray(dailyList)) return;
 
@@ -393,48 +631,54 @@ const OfficeThree = () => {
       const sit = seatRef.current[key];
       if (!sit || !sit.obj) return;
 
-      // 기존 라벨 제거
       if (sit.label) {
         sit.obj.remove(sit.label);
+        sit.label = null;
       }
 
       const user = userList.find((item) => item?.ou_seat_cd === key);
+      const userWithParsedInfo = user
+        ? {
+            ...user,
+            ou_insa_info: user.ou_insa_info ? JSON.parse(user.ou_insa_info) : {},
+          }
+        : null;
 
-      if (user) {
-        const daily = dailyList.find((item) => item?.ouds_sabeon === user.ou_sabeon);
+      if (userWithParsedInfo) {
+        const daily = dailyList.find((item) => item?.ouds_sabeon === userWithParsedInfo.ou_sabeon);
         const userStatus = daily?.userStatus || "미출근";
-        createLabel(sit.obj, user.ou_nm, userStatus);
+
+        // 새로운 라벨 생성
+        createLabel({
+          name: key,
+          ou_nm: userWithParsedInfo.ou_nm,
+          profile: userWithParsedInfo.ou_insa_info?.profile_img || defaultProfile,
+          userStatus,
+        });
       } else {
-        createLabel(sit.obj, sit.obj.name, "미정");
+        // 빈 자리 라벨 생성
+        createLabel({
+          name: key,
+          ou_nm: sit.obj.name,
+          profile: defaultProfile,
+          userStatus: "미정",
+        });
       }
     });
-
-    // 라벨 생성 후 editSeat 호출하여 visibility 설정
-    editSeat();
   };
-
+  /** 사용자 이미지 클릭 이벤트 */
   const handleLabelClick = (seatName, isEmptySeat) => {
+    // 해당 좌석 오브젝트의 위치 가져오기
     const seatObj = seatRef.current[seatName]?.obj;
-    if (seatObj) {
+
+    if (seatObj && !isTopView) {
       const targetPos = seatObj.position.clone();
       const cameraPos = targetPos.clone().add(new THREE.Vector3(6, 6, 6));
       moveCamera(cameraPos, targetPos);
     }
-
-    if (isEmptySeat && isSeatEdit) {
-      // 수정 모드에서 빈 자리 클릭 시 테두리만 변경
-      Object.keys(seatRef.current).forEach((key) => {
-        const item = seatRef.current[key];
-        if (item && item.label && item.isEmpty) {
-          const imageDiv = item.label.element.querySelector("div");
-          if (imageDiv) {
-            imageDiv.style.borderColor = key === seatName ? "#00ff00" : "#919191";
-          }
-        }
-      });
+    if (isEmptySeat) {
       setSelectedSeat(seatName);
-    } else if (!isEmptySeat && !isSeatEdit) {
-      // 일반 모드에서 사용 중인 자리 클릭 시 인사 정보 표시
+    } else {
       const selectedUser = Array.isArray(userList) && userList.find((user) => user.ou_seat_cd === seatName);
       if (selectedUser) {
         const userWithParsedInfo = {
@@ -445,7 +689,7 @@ const OfficeThree = () => {
       }
     }
   };
-
+  /** 온습도 생성 */
   const createCss3DObject = () => {
     const obj = new THREE.Object3D();
 
@@ -473,259 +717,230 @@ const OfficeThree = () => {
     sceneRef.current.add(obj);
     css3dObjectRef.current = { obj, mesh };
   };
-
-  const createLabel = (obj, name, daily = "미출근") => {
-    if (!labelRef.current) return;
-
-    const container = document.createElement("div");
-    container.style.position = "relative";
-    container.style.display = "flex";
-    container.style.flexDirection = "column";
-    container.style.alignItems = "center";
-    container.style.gap = "5px";
-
-    // 이미지 컨테이너
-    const imageDiv = document.createElement("div");
-    imageDiv.style.width = "55px";
-    imageDiv.style.height = "55px";
-    imageDiv.style.borderRadius = "50%";
-    imageDiv.style.overflow = "hidden";
-    imageDiv.style.cursor = "pointer";
-    imageDiv.style.display = "flex";
-    imageDiv.style.justifyContent = "center";
-    imageDiv.style.alignItems = "center";
-    imageDiv.style.background = "#ffffff80";
-
-    // 프로필 이미지 설정
-    const user = userList.find((item) => item?.ou_seat_cd === obj.name);
-    let profileImg = profile;
-    let imgSize = "50%";
-
-    if (user && user.ou_insa_info) {
-      try {
-        const parsedInfo = JSON.parse(user.ou_insa_info);
-        profileImg = parsedInfo.profile_img ? parsedInfo.profile_img : profile;
-        imgSize = parsedInfo.profile_img ? "100%" : "50%";
-      } catch (error) {
-        console.error("Error parsing ou_insa_info:", error);
-      }
-    }
-
-    const img = document.createElement("img");
-    const defaultImage = imgSize === "50%";
-
-    img.src = profileImg;
-    img.draggable = false;
-    img.style.width = imgSize;
-    img.style.height = imgSize;
-    img.style.objectFit = defaultImage ? "contain" : "cover";
-    img.style.opacity = defaultImage ? "0.9" : "1";
-
-    // 상태에 따른 테두리 색상 설정
-    const validStatus = ["미정", "미출근", "출근", "퇴근"].includes(daily) ? daily : "미출근";
-    const borderColor =
-      validStatus === "미정"
-        ? "#919191"
-        : validStatus === "미출근"
-        ? "#919191"
-        : validStatus === "출근"
-        ? "#316ff6"
-        : "#ff4444";
-
-    container.addEventListener("click", () => {
-      if (validStatus === "미정") {
-        imageDiv.style.border = `3px solid #00ff00`;
-        setSelectedSeat(obj.name);
-      } else {
-        setSelectSeatName(obj.name === selectSeatName ? null : obj.name);
-      }
-    });
-
-    imageDiv.style.border = `3px solid ${borderColor}`;
-
-    // 이름 라벨
-    const nameDiv = document.createElement("div");
-    nameDiv.textContent = name;
-    nameDiv.style.color = "#000000";
-    nameDiv.style.padding = "3px 8px";
-    nameDiv.style.borderRadius = "10px";
-    nameDiv.style.fontSize = "12px";
-    nameDiv.style.whiteSpace = "nowrap";
-    nameDiv.style.textAlign = "center";
-    nameDiv.style.marginTop = "4px";
-    nameDiv.style.backdropFilter = "blur(3px)";
-    nameDiv.style.backgroundColor = "rgba(255, 255, 255, 0.5)";
-
-    imageDiv.appendChild(img);
-    container.appendChild(imageDiv);
-    container.appendChild(nameDiv);
-
-    container.addEventListener("click", () => {
-      setSelectSeatName(obj.name === selectSeatName ? null : obj.name);
-    });
-
-    const label = new CSS2DObject(container);
-    label.position.set(0, 0.3, 0);
-    label.visible = true;
-    obj.add(label);
-
-    seatRef.current[obj.name] = {
-      ...seatRef.current[obj.name],
-      label,
-      isEmpty: validStatus === "미정",
-    };
-  };
-
+  /** 좌석 이동 이벤트 */
   const editSeat = () => {
     Object.keys(seatRef.current).map((key) => {
       const item = seatRef.current[key];
       if (item.label) {
         if (isSeatEdit) {
-          // 수정 모드일 때
-          if (item.isEmpty) {
-            item.label.visible = true;
-            const imageDiv = item.label.element.querySelector("div");
-            if (imageDiv) {
-              imageDiv.style.borderColor = key === selectedSeat ? "#00ff00" : "#919191";
-            }
-          } else {
-            item.label.visible = false;
-          }
+          if (item.isEmpty) item.label.visible = true;
+          else item.label.visible = false;
         } else {
-          // 일반 모드일 때
-          if (item.isEmpty) {
-            item.label.visible = false;
-          } else {
-            item.label.visible = isDaily;
-          }
-          // 편집 모드가 아닐 때는 모든 테두리 색상을 초기화
-          const imageDiv = item.label.element.querySelector("div");
-          if (imageDiv) {
-            const user = userList.find((u) => u.ou_seat_cd === key);
-            if (user) {
-              const daily = dailyList.find((d) => d?.ouds_sabeon === user.ou_sabeon);
-              const userStatus = daily?.userStatus || "미출근";
-              imageDiv.style.borderColor =
-                userStatus === "출근" ? "#316ff6" : userStatus === "퇴근" ? "#ff4444" : "#919191";
-            } else {
-              imageDiv.style.borderColor = "#919191";
-            }
-          }
+          if (item.isEmpty) item.label.visible = false;
+          else item.label.visible = isDaily;
         }
       }
     });
   };
-
-  const updateSeat = async () => {
+  /** 좌석 이동 후 업데이트 이벤트 */
+  const updateSeat = () => {
     try {
       editSeat();
     } catch (error) {
       console.error("좌석 정보 업데이트 중 오류 발생:", error);
     }
   };
-
+  /** 좌석 업데이트에 맞춰 3D 모델 이동 */
   const moveModel = (obj) => {
     if (!obj || !seatRef.current.userAvatar) return;
     seatRef.current.userAvatar.position.set(obj.position.x, USER_LABEL_POSITION_Y, obj.position.z);
   };
+  /** 업데이트 된 좌석으로 카메라 위치 이동 */
+  const moveToUserSeat = () => {
+    if (isTopView || !isLoaded || !Array.isArray(userList) || !sabeon) return;
 
-  const addModel = (obj) => {
-    if (!obj) return;
+    const userSeat = userList.find((user) => user.ou_sabeon === sabeon)?.ou_seat_cd;
 
-    // 기존 아바타가 있다면 제거
+    // 이미 카메라가 이동 중이면 리턴
+    if (useThreeStore.getState().isMoving) return;
+
+    if (userSeat && seatRef.current[userSeat]?.obj) {
+      const seatObj = seatRef.current[userSeat].obj;
+      const targetPos = seatObj.position.clone();
+      const cameraPos = targetPos.clone().add(new THREE.Vector3(6, 6, 6));
+      moveCamera(cameraPos, targetPos);
+    } else {
+      moveCamera(DEFAULT_CAMERA_POSITION, DEFAULT_CAMERA_TARGET);
+    }
+  };
+  /** ANIMATION */
+  const animate = () => {
+    if (controlsRef.current) {
+      controlsRef.current.update();
+    }
+    // 아바타와 라벨 부유 애니메이션
     if (seatRef.current.userAvatar) {
-      sceneRef.current.remove(seatRef.current.userAvatar);
-      seatRef.current.userAvatar = null;
+      const time = Date.now() * FLOAT_SPEED;
+      const newY = USER_LABEL_POSITION_Y + Math.sin(time) * FLOAT_HEIGHT;
+      // 아바타 위치 업데이트
+      seatRef.current.userAvatar.position.y = newY;
     }
 
-    const loader = new GLTFLoader();
-    const dracoLoader = new DRACOLoader();
-    dracoLoader.setDecoderPath("https://www.gstatic.com/draco/versioned/decoders/1.5.6/");
-    loader.setDRACOLoader(dracoLoader);
-
-    loader.load(
-      userGlb,
-      (gltf) => {
-        const avatar = gltf.scene;
-        avatar.scale.set(1.6, 1.6, 1.6);
-        avatar.position.set(obj.position.x, USER_LABEL_POSITION_Y, obj.position.z);
-        avatar.rotation.y = Math.PI;
-
-        avatar.name = "userAvatar";
-        avatar.traverse((node) => {
-          if (node.isMesh) {
-            node.castShadow = true;
-            node.receiveShadow = true;
-          }
-        });
-
-        sceneRef.current.add(avatar);
-        seatRef.current.userAvatar = avatar;
-      },
-      undefined,
-      (error) => {
-        console.error("An error happened while loading the avatar:", error);
+    if (rendererRef.current && cameraRef.current) {
+      rendererRef.current.render(sceneRef.current, cameraRef.current);
+      if (labelRendererRef.current) {
+        labelRendererRef.current.render(sceneRef.current, cameraRef.current);
       }
-    );
+      if (css3dRendererRef.current) {
+        css3dRendererRef.current.render(sceneRef.current, cameraRef.current);
+      }
+    }
+    // 부모영역과 캔버 영역 비교 후 Resize 실행
+    if (mainRef.current && canvasRef.current) {
+      if (
+        mainRef.current.offsetWidth !== canvasRef.current.offsetWidth ||
+        mainRef.current.offsetHeight !== canvasRef.current.offsetHeight
+      )
+        onWindowResize();
+    }
+    // css3dObject resize
+    if (css3dObjectRef.current && css3dObjectRef.current.mesh) {
+      if (conditionRef.current.offsetWidth !== css3dObjectRef.current.mesh.scale.x) {
+        css3dObjectRef.current.mesh.scale.x = conditionRef.current.offsetWidth;
+      }
+      if (conditionRef.current.offsetHeight !== css3dObjectRef.current.mesh.scale.y) {
+        css3dObjectRef.current.mesh.scale.y = conditionRef.current.offsetHeight;
+      }
+    }
+
+    if (cameraRef.current) {
+      const dist = cameraRef.current.position.distanceTo(new THREE.Vector3());
+      const size = seatRef.current.startDist / dist;
+      const newSize = size > 1 ? 1 : size;
+
+      Object.keys(seatRef.current).map((key) => {
+        const dom = document.getElementById("label_" + key);
+        if (dom) dom.style.transform = `${dom.style.transform} scale(${newSize})`;
+      });
+    }
+
+    animRef.current = requestAnimationFrame(animate);
   };
 
-  // 데이터 변경시 새로고침
+  useEffect(() => {
+    const updateUserAvatar = (seatObj) => {
+      if (!seatRef.current.userAvatar) {
+        avatarModel(seatObj);
+      } else {
+        moveModel(seatObj);
+      }
+    };
+
+    const handleUserSeat = () => {
+      if (isLoaded && Array.isArray(userList) && sabeon) {
+        const userSeat = userList.find((user) => user.ou_sabeon === sabeon)?.ou_seat_cd;
+
+        if (userSeat && seatRef.current[userSeat]?.obj) {
+          const seatObj = seatRef.current[userSeat].obj;
+          updateUserAvatar(seatObj);
+          const targetPos = seatObj.position.clone();
+          const cameraPos = targetPos.clone().add(new THREE.Vector3(6, 6, 6));
+          moveCamera(cameraPos, targetPos);
+        } else {
+          moveCamera(DEFAULT_CAMERA_POSITION, DEFAULT_CAMERA_TARGET);
+        }
+      }
+    };
+
+    handleUserSeat();
+  }, [isLoaded, userList, sabeon]);
+
+  useEffect(() => {
+    const updateLabelStyle = (sit, isTop) => {
+      if (!sit.label) return;
+
+      const iconContainer = sit.label.element.querySelector(".icon-container");
+      const nameContainer = sit.label.element.querySelector(".name-container");
+
+      sit.label.position.set(0, isTop ? 0 : 0.3, isTop ? 0.4 : 0.08);
+
+      if (iconContainer) {
+        iconContainer.style.display = isTop ? "none" : "block";
+      }
+
+      if (nameContainer) {
+        if (isTop) {
+          const validStatus = sit.userStatus || "미출근";
+          const color =
+            validStatus === "미정"
+              ? "#919191"
+              : validStatus === "미출근"
+              ? "#919191"
+              : validStatus === "출근"
+              ? "#1b57da"
+              : "#D64646";
+
+          Object.assign(nameContainer.style, {
+            borderRadius: "4px",
+            display: "block",
+            backgroundColor: color,
+            color: "#fff",
+          });
+        } else {
+          Object.assign(nameContainer.style, {
+            border: "none",
+            background: "rgba(255, 255, 255, 0.75)",
+            backdropFilter: "blur(4px)",
+            color: "#000",
+          });
+        }
+      }
+    };
+
+    const updateAllLabels = () => {
+      Object.values(seatRef.current).forEach((sit) => updateLabelStyle(sit, isTopView));
+    };
+
+    if (isTopView) {
+      moveCamera(TOP_POSITION, TOP_TARGET);
+    } else {
+      moveToUserSeat();
+    }
+
+    updateAllLabels();
+  }, [isTopView]);
+
   useEffect(() => {
     updateSeat();
   }, [isWorking, isDaily, isSeatEdit]);
 
-  // 좌석변경 - 빈 좌석 선택시 하이라이트
   useEffect(() => {
-    if (selectedSeat && isSeatEdit) {
-      Object.keys(seatRef.current).forEach((key) => {
-        const item = seatRef.current[key];
-        if (item && item.label && item.isEmpty) {
-          const imageDiv = item.label.element.querySelector("div");
-          if (imageDiv) {
-            imageDiv.style.borderColor = key === selectedSeat ? "#00ff00" : "#919191";
+    if (!selectedSeat) return;
+
+    Object.entries(seatRef.current).forEach(([key, item]) => {
+      if (item?.label?.element && item.isEmpty) {
+        const iconContainer = item.label.element.querySelector(".icon-container");
+        const nameContainer = item.label.element.querySelector(".name-container");
+        const isSelected = key === selectedSeat;
+
+        if (isTopView) {
+          if (iconContainer) iconContainer.style.borderColor = isSelected ? "#13e513" : "#919191";
+          if (nameContainer) {
+            nameContainer.style.backgroundColor = isSelected ? "#13e513" : "#919191";
+            nameContainer.style.color = "#000";
+          }
+        } else {
+          if (iconContainer) iconContainer.style.borderColor = isSelected ? "#13e513" : "#919191";
+          if (nameContainer) {
+            nameContainer.style.backgroundColor = "rgba(255, 255, 255, 0.75)";
+            nameContainer.style.color = "#000";
           }
         }
-      });
-    }
-  }, [selectedSeat, isSeatEdit]);
+      }
+    });
+  }, [selectedSeat, isTopView]);
 
   useEffect(() => {
-    if (!personnelInfo) {
-      Object.keys(seatRef.current).forEach((key) => {
-        const item = seatRef.current[key];
-        if (item && item.label && item.isEmpty) {
-          const imageDiv = item.label.element.querySelector("div");
-          if (imageDiv) {
-            imageDiv.style.borderColor = "#919191";
-          }
-        }
-      });
-      setSelectSeatName(null);
-    }
-  }, [personnelInfo]);
-
-  useEffect(() => {
-    if (selectSeatName) {
-      const isEmpty = !userList.find((user) => user.ou_seat_cd === selectSeatName);
-      handleLabelClick(selectSeatName, isEmpty);
-    }
-  }, [selectSeatName]);
-
-  useEffect(() => {
-    if (isLoaded) {
-      drawUserIcon();
-    }
-  }, [userList, dailyList, isLoaded, selectedSeat]);
+    if (isLoaded) drawUserIcon();
+  }, [userList, dailyList, isLoaded]);
 
   useEffect(() => {
     if (mainRef.current) {
       createScene();
       loadModel();
     }
-
-    return () => {
+    return () =>
       clearScene(sceneRef.current, controlsRef.current, rendererRef.current, animRef.current, selectRef.current);
-    };
   }, [mainRef]);
 
   useEffect(() => {
@@ -735,7 +950,7 @@ const OfficeThree = () => {
   }, [conditionRef, conditionPanelRef, isLoaded]);
 
   useEffect(() => {
-    if (css3dObjectRef.current && css3dObjectRef.current.obj) {
+    if (css3dObjectRef.current?.obj) {
       css3dObjectRef.current.obj.visible = isCondition;
       if (isCondition) {
         const target = conditionPanelRef.current.position.clone();
@@ -747,50 +962,45 @@ const OfficeThree = () => {
     }
   }, [isCondition]);
 
-  // moveToUserSeat 함수 수정
-  const moveToUserSeat = () => {
-    if (isLoaded && Array.isArray(userList) && sabeon) {
-      const userSeat = userList.find((user) => user.ou_sabeon === sabeon)?.ou_seat_cd;
-      if (userSeat && seatRef.current[userSeat]?.obj) {
-        const seatObj = seatRef.current[userSeat].obj;
-        const targetPos = seatObj.position.clone();
-        const cameraPos = targetPos.clone().add(new THREE.Vector3(6, 6, 6));
-        moveCamera(cameraPos, targetPos);
-      } else {
-        // 자리가 없는 경우 기본 위치로 이동
-        moveCamera(DEFAULT_CAMERA_POSITION, DEFAULT_CAMERA_TARGET);
-      }
-    }
-  };
-
-  // personnelInfo가 null이 될 때(카드가 닫힐 때) 원래 자리로 이동
-  useEffect(() => {
-    if (!personnelInfo) {
-      moveToUserSeat();
-    }
-  }, [personnelInfo]);
-
-  // seatRef가 업데이트될 때마다 store에 저장
   useEffect(() => {
     setSeatRefs(seatRef.current);
   }, [seatRef.current, setSeatRefs]);
 
-  // 카메라 위치가 변경될 때 이동
   useEffect(() => {
     if (cameraPosition && cameraTarget && cameraRef.current) {
       moveCamera(cameraPosition, cameraTarget);
     }
   }, [cameraPosition, cameraTarget]);
 
-  // 문 애니메이션 함수 추가
+  useEffect(() => {
+    // 드롭 인디케이터 생성
+    const geometry = new THREE.PlaneGeometry(0.3, 0.3); // christmas tree 크기에 맞게 조정
+    const material = new THREE.MeshBasicMaterial({
+      color: 0x00ff00,
+      transparent: true,
+      opacity: 0.5,
+      side: THREE.DoubleSide,
+    });
+    const plane = new THREE.Mesh(geometry, material);
+    plane.rotation.x = -Math.PI / 2; // 바닥과 평행하게
+    plane.visible = false;
+    sceneRef.current.add(plane);
+    dropIndicatorRef.current = plane;
+
+    return () => {
+      if (plane) {
+        sceneRef.current.remove(plane);
+        geometry.dispose();
+        material.dispose();
+      }
+    };
+  }, []);
+
+  /** Door 애니메이션 */
   const animateDoor = (doorIdx) => {
     if (!doorRef.current || prevDoorIdxRef.current === doorIdx) return;
 
     prevDoorIdxRef.current = doorIdx;
-
-    if (doorTweenRef.current) {
-      doorTweenRef.current.stop();
-    }
 
     const targetRotation = new THREE.Vector3(0, 0, 0);
 
@@ -800,62 +1010,102 @@ const OfficeThree = () => {
       targetRotation.y = -Math.PI / 2; // 90도 바깥쪽으로
     }
 
-    doorTweenRef.current = new Tween(doorRef.current.rotation)
-      .to(targetRotation, 1000)
-      .easing(Easing.Quadratic.InOut)
-      .start();
+    gsap.to(doorRef.current.rotation, {
+      duration: 2.5,
+      x: targetRotation.x,
+      y: targetRotation.y,
+      z: targetRotation.z,
+      ease: "power4.out",
+    });
   };
-
   // doorIdx 변화 감지를 위한 useEffect 수정
   useEffect(() => {
     animateDoor(doorIdx);
   }, [doorIdx]);
-
-  // PersonnelInfoCard가 닫힐 때 원래 상태로 복구하기 위한 useEffect 수정
+  // personnelInfo가 null이 될 때(카드가 닫힐 때) 원래 자리로 이동
   useEffect(() => {
-    if (!personnelInfo) {
-      setIsSeatEdit(false);
-      setSelectedSeat(null);
-      editSeat();
-      setSelectSeatName(null);
-      drawUserIcon(); // 라벨 위치 업데이트
+    if (!personnelInfo && !isTopView) {
+      moveToUserSeat();
     }
-  }, [personnelInfo]);
+  }, [personnelInfo, isTopView]);
 
-  // isSeatEdit 변경 감지를 위한 useEffect 추가
-  useEffect(() => {
-    if (!isSeatEdit) {
-      setSelectedSeat(null);
-      editSeat();
-    }
-  }, [isSeatEdit]);
+  /** Button 클릭 최적화 */
+  const throttledSetIsTopView = useThrottle(() => setIsTopView((prev) => !prev), 1000);
+  const throttledSetIsCondition = useThrottle(() => setIsCondition((prev) => !prev), 1000);
+  const throttledSetIsDaily = useThrottle(() => setIsDaily((prev) => !prev), 1000);
+  const throttledSetIsUser = useThrottle(() => setIsTopView(false), 1000);
+
+  // useEffect(() => {
+  //   document.addEventListener("keydown", (e) => {
+  //     switch (e.code) {
+  //       case "Space":
+  //         console.log("------------------------");
+  //         console.log(cameraRef.current.position);
+  //         console.log(controlsRef.current.target);
+  //         break;
+  //     }
+  //   });
+  // }, []);
 
   return (
     <main ref={mainRef} className="z-0 bg-[#292929] overflow-hidden w-dvw h-dvh">
       <canvas className="absolute top-0 left-0 w-full h-full" ref={canvasRef} />
+      {showSaveModal && (
+        <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white p-4 rounded-lg shadow-lg z-50">
+          <p>저장하시겠습니까?</p>
+          <div className="flex justify-end mt-4">
+            <button className="px-4 py-2 bg-blue-500 text-white rounded mr-2" onClick={handleSaveConfirm}>
+              저장
+            </button>
+            <button className="px-4 py-2 bg-gray-300 rounded" onClick={handleModalCancel}>
+              취소
+            </button>
+          </div>
+        </div>
+      )}
       {!isLoaded ? (
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
           <BarLoader color="#316ff6" width={200} />
-          <div className="text-white text-center mt-4">Sbt Global Office - {Math.round(loadingProgress)}%</div>
+          <div className="text-white text-center mt-4">
+            Sbt Global Office <b>{Math.round(loadingProgress)}</b>%
+          </div>
         </div>
       ) : (
         <>
           <div className="absolute bottom-4 right-4 flex gap-2 flex-col text-sm text-white">
             <button
-              className={["px-2 py-2 rounded-lg backdrop-blur-sm ", isDaily ? "bg-comBlue/80" : "bg-comBlue/40"].join(
-                " "
-              )}
-              onClick={() => setIsDaily((prev) => !prev)}
+              className={`px-2 py-2 rounded-lg backdrop-blur-sm ${isDaily ? "bg-comBlue/70" : "bg-comBlue/40"}`}
+              onClick={throttledSetIsDaily}
             >
               출퇴근 현황
             </button>
             <button
-              className={["px-2 py-2 rounded-lg", isCondition ? "bg-comBlue/80" : "bg-comBlue/40"].join(" ")}
-              onClick={() => setIsCondition((prev) => !prev)}
+              className={`px-2 py-2 rounded-lg backdrop-blur-sm ${isCondition ? "bg-comBlue/70" : "bg-comBlue/40"}`}
+              onClick={throttledSetIsCondition}
             >
               Green_1 상태
             </button>
+            <div className="w-full flex justify-between items-center gap-1">
+              <button
+                className={`flex-1 text-center rounded-lg py-2 backdrop-blur-sm ${
+                  isTopView ? "bg-comBlue/70" : "bg-comBlue/40"
+                }`}
+                onClick={throttledSetIsTopView}
+              >
+                TOP
+              </button>
+              <button
+                className={`flex-1 text-center rounded-lg py-2 backdrop-blur-sm ${
+                  !isTopView ? "bg-comBlue/70" : "bg-comBlue/40"
+                } ${isUserButtonDisabled ? "opacity-50 cursor-not-allowed" : "hover:bg-comBlue/70"}`}
+                onClick={throttledSetIsUser}
+                disabled={isUserButtonDisabled}
+              >
+                USER
+              </button>
+            </div>
           </div>
+
           <RoomCondition conditionRef={conditionRef} closeEvent={() => setIsCondition(false)} />
           <div
             ref={labelRef}

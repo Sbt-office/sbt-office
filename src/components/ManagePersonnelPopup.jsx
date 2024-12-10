@@ -138,7 +138,7 @@ const ManagePersonnelPopup = ({ onClose }) => {
 
   return (
     <div
-      className={`z-50 flex flex-col 2xl:w-[100rem] lg:w-[65rem] h-full rounded-lg 
+      className={`z-50 flex flex-col 2xl:w-[89.2rem] lg:w-[65rem] h-full rounded-lg 
     overflow-hidden ${
       isDark ? "bg-[#1f1f1f]/70 text-white" : "bg-[#FFFFFF80] text-black"
     } absolute left-4 top-0 backdrop-blur-md`}
@@ -160,7 +160,7 @@ const ManagePersonnelPopup = ({ onClose }) => {
           <IoCloseOutline size={20} className={isDark ? "text-white" : "text-[#393939]"} />
         </div>
       </header>
-      <div className="w-full h-full flex flex-col px-6 py-1">
+      <div className="w-full h-full flex flex-col px-3 py-1">
         <div className="w-full flex justify-between items-center">
           {/* 검색바 */}
           <SearchInput value={searchTerm} onChange={handleSearch} />
@@ -184,14 +184,14 @@ const ManagePersonnelPopup = ({ onClose }) => {
             </select>
           </div>
         </div>
-        <div className="h-full relative flex flex-col overflow-y-auto gap-2 2xl:w-[97rem] lg:w-full">
+        <div className="h-full relative flex flex-col overflow-y-auto gap-2 2xl:w-[87.8rem] lg:w-full">
           {/* 직원 리스트 */}
           <div className="grid grid-cols-4 gap-2">
             {currentEmployees.map((emp) => (
               <div
                 key={emp.id}
                 className={`flex items-center 2xl:gap-4 2xl:px-4 2xl:py-4 lg:px-2 lg:py-2 lg:gap-2 rounded-lg 
-                2xl:h-36 h-28 2xl:w-[24rem] lg:w-full 2xl:text-base lg:text-[0.8rem] shadow-md
+                2xl:h-[7.5rem] h-28 2xl:w-[21.45rem] lg:w-full 2xl:text-base lg:text-[0.8rem] shadow-md
                 ${isDark ? "bg-[#00000073]" : "bg-white/80"}`}
               >
                 <Checkbox
