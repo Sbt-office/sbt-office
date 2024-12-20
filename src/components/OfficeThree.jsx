@@ -87,18 +87,20 @@ const OfficeThree = () => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [isTopView, setIsTopView] = useState(false);
   const [isCondition, setIsCondition] = useState(true);
+  const [showSaveModal, setShowSaveModal] = useState(false);
   const [isUserButtonDisabled, setIsUserButtonDisabled] = useState(false);
 
+  const [dropPosition, setDropPosition] = useState(null);
+  const [attachedModels, setAttachedModels] = useState([]);
   const [loadingProgress, setLoadingProgress] = useState(0);
+
   /** Store*/
+  const { getData } = useSocketStore();
+  const sabeon = useAdminStore((state) => state.sabeon);
   const setSeatData = seatListStore((state) => state.setSeatData);
   const isWorking = useWorkStatusStore((state) => state.isWorking);
-  const sabeon = useAdminStore((state) => state.sabeon);
-
   const selectedSeat = useSeatStore((state) => state.selectedSeat);
   const personnelInfo = usePersonnelInfoStore((state) => state.personnelInfo);
-
-  const { getData } = useSocketStore();
   const doorOpenStatue = getData("dist").value;
   const doorIdx = doorOpenStatue <= 101 ? 2 : doorOpenStatue <= 120 ? 0 : doorOpenStatue <= 130 ? 1 : 2;
 
@@ -108,144 +110,15 @@ const OfficeThree = () => {
       setSelectedSeat: state.setSelectedSeat,
     }))
   );
+
   const { setPersonnelInfo, clearPersonnelInfo } = usePersonnelInfoStore(
     useShallow((state) => ({
       setPersonnelInfo: state.setPersonnelInfo,
       clearPersonnelInfo: state.clearPersonnelInfo,
     }))
   );
+
   const { cameraPosition, cameraTarget, draggedItem, isDragging, setSeatRefs, setIsMoving } = useThreeStore();
-
-  const [attachedModels, setAttachedModels] = useState([]);
-  const [showSaveModal, setShowSaveModal] = useState(false);
-  const [dropPosition, setDropPosition] = useState(null);
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    if (!isDragging || attachedModels.length >= 3) return;
-
-    const rect = mainRef.current.getBoundingClientRect();
-    const mouseX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-    const mouseY = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-
-    const raycaster = new THREE.Raycaster();
-    raycaster.setFromCamera(new THREE.Vector2(mouseX, mouseY), cameraRef.current);
-
-    const intersects = raycaster.intersectObjects(sceneRef.current.children, true);
-    const floorIntersect = intersects.find(
-      (intersect) => intersect.object.name.includes("floor") || intersect.object.parent.name.includes("floor")
-    );
-
-    if (floorIntersect && dropIndicatorRef.current) {
-      const point = floorIntersect.point;
-      dropIndicatorRef.current.position.set(point.x, point.y + 0.01, point.z);
-      dropIndicatorRef.current.visible = true;
-      // 현재 인디케이터 위치를 저장
-      setDropPosition(dropIndicatorRef.current.position.clone());
-    }
-  };
-
-  const handleDrop = (event) => {
-    event.preventDefault();
-    event.stopPropagation();
-
-    if (!isDragging || attachedModels.length >= 3) {
-      setIsMoving(false);
-      hideDropIndicator();
-      return;
-    }
-
-    const rect = mainRef.current.getBoundingClientRect();
-    const mouseX = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-    const mouseY = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-
-    const raycaster = new THREE.Raycaster();
-    raycaster.setFromCamera(new THREE.Vector2(mouseX, mouseY), cameraRef.current);
-
-    const intersects = raycaster.intersectObjects(sceneRef.current.children, true);
-    const floorIntersect = intersects.find(
-      (intersect) => intersect.object.name.includes("floor") || intersect.object.parent.name.includes("floor")
-    );
-
-    if (floorIntersect && dropIndicatorRef.current) {
-      const point = floorIntersect.point;
-      dropIndicatorRef.current.position.set(point.x, point.y + 0.01, point.z);
-      // 현재 인디케이터 위치를 저장
-      setDropPosition(dropIndicatorRef.current.position.clone());
-      setShowSaveModal(true);
-    }
-  };
-
-  // 드롭 인디케이터를 숨기는 함수
-  const hideDropIndicator = () => {
-    if (dropIndicatorRef.current) {
-      dropIndicatorRef.current.visible = false;
-    }
-  };
-
-  // 모달이 취소될 때 처리
-  const handleModalCancel = () => {
-    setShowSaveModal(false);
-    setDropPosition(null);
-    hideDropIndicator();
-    setIsMoving(false);
-  };
-
-  const handleSaveConfirm = async () => {
-    if (!dropPosition || !draggedItem) return;
-
-    const loader = new GLTFLoader();
-    loader.setDRACOLoader(dracoLoaderRef.current);
-
-    try {
-      const modelFile = modelMap[draggedItem];
-      if (!modelFile) {
-        console.error("Model not found:", draggedItem);
-        return;
-      }
-
-      const gltf = await loader.loadAsync(modelFile);
-      const model = gltf.scene;
-
-      // children들의 position x, z를 0으로 설정
-      model.children.forEach((child) => {
-        child.position.x = 0;
-        child.position.z = 0;
-      });
-
-      // dropPosition에는 이미 초록색 평면의 마지막 위치가 저장되어 있음
-      model.position.copy(dropPosition);
-
-      const scale = 1;
-      model.scale.set(scale, scale, scale);
-
-      sceneRef.current.add(model);
-      setAttachedModels([...attachedModels, { model, position: model.position.clone() }]);
-    } catch (error) {
-      console.error("Error loading model:", error);
-    }
-
-    hideDropIndicator();
-    setShowSaveModal(false);
-    setDropPosition(null);
-    setIsMoving(false);
-  };
-
-  // 드래그 앤 드롭 이벤트 리스너 설정
-  useEffect(() => {
-    if (!mainRef.current) return;
-
-    const element = mainRef.current;
-    element.addEventListener("dragover", handleDragOver);
-    element.addEventListener("drop", handleDrop);
-
-    return () => {
-      element.removeEventListener("dragover", handleDragOver);
-      element.removeEventListener("drop", handleDrop);
-    };
-  }, [isDragging, attachedModels]);
 
   /** Draco setting */
   const loader = new GLTFLoader();
@@ -673,7 +546,7 @@ const OfficeThree = () => {
 
     if (seatObj && !isTopView) {
       const targetPos = seatObj.position.clone();
-      const cameraPos = targetPos.clone().add(new THREE.Vector3(6, 6, 6));
+      const cameraPos = targetPos.clone().add(new THREE.Vector3(4, 4, 4));
       moveCamera(cameraPos, targetPos);
     }
     if (isEmptySeat) {
@@ -757,7 +630,7 @@ const OfficeThree = () => {
     if (userSeat && seatRef.current[userSeat]?.obj) {
       const seatObj = seatRef.current[userSeat].obj;
       const targetPos = seatObj.position.clone();
-      const cameraPos = targetPos.clone().add(new THREE.Vector3(6, 6, 6));
+      const cameraPos = targetPos.clone().add(new THREE.Vector3(4, 4, 4));
       moveCamera(cameraPos, targetPos);
     } else {
       moveCamera(DEFAULT_CAMERA_POSITION, DEFAULT_CAMERA_TARGET);
@@ -834,7 +707,7 @@ const OfficeThree = () => {
           const seatObj = seatRef.current[userSeat].obj;
           updateUserAvatar(seatObj);
           const targetPos = seatObj.position.clone();
-          const cameraPos = targetPos.clone().add(new THREE.Vector3(6, 6, 6));
+          const cameraPos = targetPos.clone().add(new THREE.Vector3(4, 4, 4));
           moveCamera(cameraPos, targetPos);
         } else {
           moveCamera(DEFAULT_CAMERA_POSITION, DEFAULT_CAMERA_TARGET);
@@ -1034,6 +907,130 @@ const OfficeThree = () => {
   const throttledSetIsCondition = useThrottle(() => setIsCondition((prev) => !prev), 1000);
   const throttledSetIsDaily = useThrottle(() => setIsDaily((prev) => !prev), 1000);
   const throttledSetIsUser = useThrottle(() => setIsTopView(false), 1000);
+
+  /** Tree Widget 모델 Drag and Drop */
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!isDragging || attachedModels.length >= 3) return;
+
+    const rect = mainRef.current.getBoundingClientRect();
+    const mouseX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    const mouseY = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(new THREE.Vector2(mouseX, mouseY), cameraRef.current);
+
+    const intersects = raycaster.intersectObjects(sceneRef.current.children, true);
+    const floorIntersect = intersects.find(
+      (intersect) => intersect.object.name.includes("floor") || intersect.object.parent.name.includes("floor")
+    );
+
+    if (floorIntersect && dropIndicatorRef.current) {
+      const point = floorIntersect.point;
+      dropIndicatorRef.current.position.set(point.x, point.y + 0.01, point.z);
+      dropIndicatorRef.current.visible = true;
+      // 현재 인디케이터 위치를 저장
+      setDropPosition(dropIndicatorRef.current.position.clone());
+    }
+  };
+  const handleDrop = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (!isDragging || attachedModels.length >= 3) {
+      setIsMoving(false);
+      hideDropIndicator();
+      return;
+    }
+
+    const rect = mainRef.current.getBoundingClientRect();
+    const mouseX = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    const mouseY = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(new THREE.Vector2(mouseX, mouseY), cameraRef.current);
+
+    const intersects = raycaster.intersectObjects(sceneRef.current.children, true);
+    const floorIntersect = intersects.find(
+      (intersect) => intersect.object.name.includes("floor") || intersect.object.parent.name.includes("floor")
+    );
+
+    if (floorIntersect && dropIndicatorRef.current) {
+      const point = floorIntersect.point;
+      dropIndicatorRef.current.position.set(point.x, point.y + 0.01, point.z);
+      // 현재 인디케이터 위치를 저장
+      setDropPosition(dropIndicatorRef.current.position.clone());
+      setShowSaveModal(true);
+    }
+  };
+  // 드롭 인디케이터를 숨기는 함수
+  const hideDropIndicator = () => {
+    if (dropIndicatorRef.current) {
+      dropIndicatorRef.current.visible = false;
+    }
+  };
+  // 모달이 취소될 때 처리
+  const handleModalCancel = () => {
+    setShowSaveModal(false);
+    setDropPosition(null);
+    hideDropIndicator();
+    setIsMoving(false);
+  };
+  // 모달 attach 저장
+  const handleSaveConfirm = async () => {
+    if (!dropPosition || !draggedItem) return;
+
+    const loader = new GLTFLoader();
+    loader.setDRACOLoader(dracoLoaderRef.current);
+
+    try {
+      const modelFile = modelMap[draggedItem];
+      if (!modelFile) {
+        console.error("Model not found:", draggedItem);
+        return;
+      }
+
+      const gltf = await loader.loadAsync(modelFile);
+      const model = gltf.scene;
+
+      // children들의 position x, z를 0으로 설정
+      model.children.forEach((child) => {
+        child.position.x = 0;
+        child.position.z = 0;
+      });
+
+      // dropPosition에는 이미 초록색 평면의 마지막 위치가 저장되어 있음
+      model.position.copy(dropPosition);
+
+      const scale = 1;
+      model.scale.set(scale, scale, scale);
+
+      sceneRef.current.add(model);
+      setAttachedModels([...attachedModels, { model, position: model.position.clone() }]);
+    } catch (error) {
+      console.error("Error loading model:", error);
+    }
+
+    hideDropIndicator();
+    setShowSaveModal(false);
+    setDropPosition(null);
+    setIsMoving(false);
+  };
+  // 드래그 앤 드롭 이벤트 리스너 설정
+  useEffect(() => {
+    if (!mainRef.current) return;
+
+    const element = mainRef.current;
+    element.addEventListener("dragover", handleDragOver);
+    element.addEventListener("drop", handleDrop);
+
+    return () => {
+      element.removeEventListener("dragover", handleDragOver);
+      element.removeEventListener("drop", handleDrop);
+    };
+  }, [isDragging, attachedModels]);
 
   // useEffect(() => {
   //   document.addEventListener("keydown", (e) => {

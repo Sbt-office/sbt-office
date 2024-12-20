@@ -19,6 +19,7 @@ import { useAllUserListQuery } from "@/hooks/useAllUserListQuery";
 import { useImageCompression } from "@/hooks/useImageCompression";
 
 import { DEPARTMENTS, POSITIONS } from "@/data/companyInfo";
+import TemplateWidget from "./TemplateWidget";
 
 const InfoRow = ({ label, value, isEditing, onChange, type = "text", options, onClick, required = false }) => {
   const isDark = useThemeStore((state) => state.isDark);
@@ -310,121 +311,124 @@ const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
   }
 
   return (
-    <div
-      className={`w-[26rem] ${
-        isDark ? "bg-[#1f1f1f]/60" : "bg-white/60"
-      } shadow-lg backdrop-blur-md rounded-2xl overflow-hidden z-10 absolute bottom-4 right-4`}
-    >
-      <div className={`p-4 ${isDark ? "text-gray-200" : "text-[#393939]"}`}>
-        <h2 className="text-lg font-medium text-center mt-2">인사 정보</h2>
-      </div>
-      <div className={`px-8 py-6 w-full ${isDark ? "text-gray-200" : "text-[#393939]"}`}>
-        <div className="flex items-center w-full justify-center">
-          <div className="space-y-2">
-            <InfoRow label="성함" value={displayData.name} />
-            <InfoRow
-              label="자리"
-              value={displayData.seatNo}
-              isEditing={isEditing}
-              onChange={(val) => setEditData({ ...editData, seatNo: val })}
-              onClick={handleSeatClick}
-              required
-            />
-            <InfoRow
-              label="부서"
-              value={displayData.teamName}
-              isEditing={isEditing}
-              type="select"
-              options={DEPARTMENTS}
-              onChange={(val) => setEditData({ ...editData, teamName: val })}
-              required
-            />
-            <InfoRow
-              label="직급"
-              value={displayData.level}
-              isEditing={isEditing}
-              type="select"
-              options={POSITIONS}
-              onChange={(val) => setEditData({ ...editData, level: val })}
-              required
-            />
-            <InfoRow
-              label="H.P"
-              value={displayData.hp}
-              isEditing={isEditing}
-              onChange={(val, isValid) => {
-                setEditData({ ...editData, hp: val });
-                setIsValidPhone(isValid);
-              }}
-            />
-          </div>
-          <div
-            className={`w-36 h-40 rounded-md ${
-              isDark ? "bg-gray-500" : "bg-gray-300"
-            } flex items-center justify-center ${isDark ? "text-gray-300" : "text-gray-600"} ml-2 ${
-              isEditing ? "cursor-pointer hover:bg-sbtLightBlue/90" : ""
-            }`}
-            onClick={() => isEditing && fileInputRef.current?.click()}
-            role={isEditing ? "button" : ""}
-            tabIndex={isEditing ? 0 : -1}
-            aria-label={isEditing ? "프로필 이미지 업로드" : "프로필 이미지"}
-          >
-            <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageUpload} />
-            <img
-              src={isEditing ? editData.profile_img || profile : personnelInfo.ou_insa_info?.profile_img || profile}
-              alt="profile"
-              className={`${isEditing ? "cursor-pointer hover:opacity-80" : ""} ${
-                editData.profile_img ? "w-full h-full object-fill" : "w-20 h-24"
-              } rounded-md`}
-              draggable={false}
-              aria-label="profile"
-            />
+    <>
+      <div
+        className={`w-[26rem] ${
+          isDark ? "bg-[#1f1f1f]/60" : "bg-white/60"
+        } shadow-lg backdrop-blur-md rounded-2xl overflow-hidden z-10 absolute bottom-4 right-4`}
+      >
+        <div className={`p-4 ${isDark ? "text-gray-200" : "text-[#393939]"}`}>
+          <h2 className="text-lg font-medium text-center mt-2">인사 정보</h2>
+        </div>
+        <div className={`px-8 py-6 w-full ${isDark ? "text-gray-200" : "text-[#393939]"}`}>
+          <div className="flex items-center w-full justify-center">
+            <div className="space-y-2">
+              <InfoRow label="성함" value={displayData.name} />
+              <InfoRow
+                label="자리"
+                value={displayData.seatNo}
+                isEditing={isEditing}
+                onChange={(val) => setEditData({ ...editData, seatNo: val })}
+                onClick={handleSeatClick}
+                required
+              />
+              <InfoRow
+                label="부서"
+                value={displayData.teamName}
+                isEditing={isEditing}
+                type="select"
+                options={DEPARTMENTS}
+                onChange={(val) => setEditData({ ...editData, teamName: val })}
+                required
+              />
+              <InfoRow
+                label="직급"
+                value={displayData.level}
+                isEditing={isEditing}
+                type="select"
+                options={POSITIONS}
+                onChange={(val) => setEditData({ ...editData, level: val })}
+                required
+              />
+              <InfoRow
+                label="H.P"
+                value={displayData.hp}
+                isEditing={isEditing}
+                onChange={(val, isValid) => {
+                  setEditData({ ...editData, hp: val });
+                  setIsValidPhone(isValid);
+                }}
+              />
+            </div>
+            <div
+              className={`w-36 h-40 rounded-md ${
+                isDark ? "bg-gray-500" : "bg-gray-300"
+              } flex items-center justify-center ${isDark ? "text-gray-300" : "text-gray-600"} ml-2 ${
+                isEditing ? "cursor-pointer hover:bg-sbtLightBlue/90" : ""
+              }`}
+              onClick={() => isEditing && fileInputRef.current?.click()}
+              role={isEditing ? "button" : ""}
+              tabIndex={isEditing ? 0 : -1}
+              aria-label={isEditing ? "프로필 이미지 업로드" : "프로필 이미지"}
+            >
+              <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageUpload} />
+              <img
+                src={isEditing ? editData.profile_img || profile : personnelInfo.ou_insa_info?.profile_img || profile}
+                alt="profile"
+                className={`${isEditing ? "cursor-pointer hover:opacity-80" : ""} ${
+                  editData.profile_img ? "w-full h-full object-fill" : "w-20 h-24"
+                } rounded-md`}
+                draggable={false}
+                aria-label="profile"
+              />
+            </div>
           </div>
         </div>
-      </div>
-      <div className="flex justify-between px-10 py-3 mb-4">
-        <button
-          className={`rounded transition-colors w-20 h-10 ${
-            isMoving
-              ? "text-gray-400 border-gray-300 cursor-not-allowed pointer-events-none"
-              : "text-black bg-[#919191] hover:bg-[#919191]/40"
-          }`}
-          onClick={handleClose}
-          disabled={isLoading || isMoving}
-        >
-          닫기
-        </button>
-        {canEdit &&
-          (isEditing ? (
-            <div className="flex gap-3">
+        <div className="flex justify-between px-10 py-3 mb-4">
+          <button
+            className={`rounded transition-colors w-20 h-10 ${
+              isMoving
+                ? "text-gray-400 border-gray-300 cursor-not-allowed pointer-events-none"
+                : "text-black bg-[#919191] hover:bg-[#919191]/40"
+            }`}
+            onClick={handleClose}
+            disabled={isLoading || isMoving}
+          >
+            닫기
+          </button>
+          {canEdit &&
+            (isEditing ? (
+              <div className="flex gap-3">
+                <button
+                  loading={isLoading}
+                  className="rounded transition-colors bg-[#919191] text-black w-20 h-10 hover:bg-[#919191]/40"
+                  onClick={handleIsCancelSave}
+                >
+                  취소
+                </button>
+                <button
+                  loading={isLoading}
+                  className={`rounded transition-colors text-white w-20 h-10 ${
+                    isFormValid() ? " hover:bg-sbtDarkBlue/90 bg-comBlue" : "bg-gray-400 cursor-not-allowed"
+                  }`}
+                  onClick={handleSave}
+                  disabled={!isFormValid()}
+                >
+                  저장
+                </button>
+              </div>
+            ) : (
               <button
-                loading={isLoading}
-                className="rounded transition-colors bg-[#919191] text-black w-20 h-10 hover:bg-[#919191]/40"
-                onClick={handleIsCancelSave}
+                className="rounded transition-colors text-white bg-comBlue hover:bg-sbtDarkBlue/90 w-20 h-10"
+                onClick={() => setIsEditing(true)}
               >
-                취소
+                수정
               </button>
-              <button
-                loading={isLoading}
-                className={`rounded transition-colors text-white w-20 h-10 ${
-                  isFormValid() ? " hover:bg-sbtDarkBlue/90 bg-comBlue" : "bg-gray-400 cursor-not-allowed"
-                }`}
-                onClick={handleSave}
-                disabled={!isFormValid()}
-              >
-                저장
-              </button>
-            </div>
-          ) : (
-            <button
-              className="rounded transition-colors text-white bg-comBlue hover:bg-sbtDarkBlue/90 w-20 h-10"
-              onClick={() => setIsEditing(true)}
-            >
-              수정
-            </button>
-          ))}
+            ))}
+        </div>
       </div>
-    </div>
+      {personnelInfo && <TemplateWidget />}
+    </>
   );
 };
 

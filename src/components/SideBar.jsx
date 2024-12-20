@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { useShallow } from "zustand/react/shallow";
@@ -12,12 +13,14 @@ import { useThrottle } from "@/hooks/useThrottle";
 import { useUserQuery } from "@/hooks/useUserQuery";
 import { useAllUserListQuery } from "@/hooks/useAllUserListQuery";
 
-import { MdManageAccounts, MdOutlineKeyboardArrowLeft } from "react-icons/md";
 import { RiTeamFill } from "react-icons/ri";
+import { CgTemplate } from "react-icons/cg";
 import { BiSolidWidget } from "react-icons/bi";
+import { MdManageAccounts, MdOutlineKeyboardArrowLeft } from "react-icons/md";
 
 import ManagePersonnelPopup from "./ManagePersonnelPopup";
 import WidgetContainer from "./WidgetContainer";
+import TemplateWidget from "./TemplateWidget";
 
 const SideBar = () => {
   const [openSection, setOpenSection] = useState(null);
@@ -27,6 +30,7 @@ const SideBar = () => {
   const [showTeamList, setShowTeamList] = useState(true);
   const [isExpanded, setIsExpanded] = useState(true);
   const [showWidget, setShowWidget] = useState(false);
+  const [showTemplate, setShowTemplate] = useState(false);
 
   const isDark = useThemeStore((state) => state.isDark);
 
@@ -124,14 +128,41 @@ const SideBar = () => {
     } else {
       setShowWidget(false);
       setShowTeamList(false);
+      setShowTemplate(false);
     }
     togglePopup();
   }, 1000);
 
-  const handleActiveWidget = () => {
+  const handleActiveWidget = useThrottle(() => {
     if (isPopupOpen) return;
+    setShowTemplate(false);
     setShowWidget((prev) => !prev);
-  };
+  }, 500);
+
+  const handleActiveTemplate = useThrottle(() => {
+    if (isPopupOpen) {
+      togglePopup(); // 팝업이 열려있으면 닫기
+    }
+    setIsExpanded(true); // 항상 expanded 상태로
+
+    setShowTemplate((prev) => {
+      if (prev) {
+        // 템플릿이 열려있을 때 닫기
+        handleTeamListToggle();
+        return false;
+      } else {
+        // 템플릿이 닫혀있을 때 열기
+        setShowWidget(false);
+        setShowTeamList(false);
+        setSelectedTeam(null);
+        setSelectedPerson(null);
+        setOpenSection(null);
+        setOpenSubItem(null);
+        clearPersonnelInfo();
+        return true;
+      }
+    });
+  }, 500);
 
   const handleToggleExpand = () => {
     setIsExpanded(!isExpanded);
@@ -148,6 +179,7 @@ const SideBar = () => {
     }
     setIsExpanded(true);
     setShowTeamList(true);
+    setShowTemplate(false);
     if (!showTeamList) {
       setOpenSection(null);
       setOpenSubItem(null);
@@ -295,87 +327,97 @@ const SideBar = () => {
   }, []);
 
   return (
-    <div className="flex items-center h-[calc(100dvh-4.5rem)] absolute top-16 left-0 z-10 p-2 px-4">
-      <aside
-        className={`${
-          isDark ? "text-white bg-[#1f1f1f]/70" : "text-[#424242] bg-white/70"
-        } h-full overflow-y-auto flex justify-between items-center 
+    <>
+      <div className="flex items-center h-[calc(100dvh-4.5rem)] absolute top-16 left-0 z-10 p-2 px-4">
+        <aside
+          className={`${
+            isDark ? "text-white bg-[#1f1f1f]/70" : "text-[#424242] bg-white/70"
+          } h-full overflow-y-auto flex justify-between items-center 
           backdrop-blur-md rounded-lg p-2 transition-all duration-300 ${
             isPopupOpen ? "w-28" : isExpanded ? "w-64" : ""
           }`}
-      >
-        <div
-          className={`w-12 h-full ${
-            isDark ? "bg-[#1f1f1f]/80" : "bg-white/80"
-          } rounded-lg flex flex-col items-center justify-start py-5 shadow-md gap-5`}
         >
-          <RiTeamFill
-            size={24}
-            className={`text-comBlue cursor-pointer hover:scale-110 transition-transform ${
-              showTeamList ? "text-sbtDarkBlue" : ""
-            }`}
-            onClick={handleTeamListToggle}
-          />
-          {isAdmin === "Y" ? (
-            <MdManageAccounts
-              size={26}
-              className={`text-comBlue cursor-pointer hover:scale-110 transition-transform ${
-                isPopupOpen ? "text-sbtDarkBlue" : ""
-              }`}
-              onClick={handleTogglePopup}
-            />
-          ) : (
-            ""
-          )}
-          {isAdmin === "Y" ? (
-            <BiSolidWidget
+          <div
+            className={`w-12 h-full ${
+              isDark ? "bg-[#1f1f1f]/80" : "bg-white/80"
+            } rounded-lg flex flex-col items-center justify-start py-5 shadow-md gap-5`}
+          >
+            <RiTeamFill
               size={24}
               className={`text-comBlue cursor-pointer hover:scale-110 transition-transform ${
-                showWidget ? "text-sbtDarkBlue" : ""
+                showTeamList ? "text-sbtDarkBlue" : ""
               }`}
-              onClick={handleActiveWidget}
+              onClick={handleTeamListToggle}
             />
-          ) : (
-            ""
-          )}
-          {showTeamList && (
-            <motion.ul
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              className={`flex flex-col absolute top-2 left-16 rounded-lg px-2 py-4 w-44 ${
-                isDark ? "text-white" : "text-[#393939]"
-              } h-[calc(100dvh-6.5rem)] overflow-y-auto`}
-            >
-              {organizedData.map((group, index) => renderSidebarItem(group, index))}
-            </motion.ul>
-          )}
-        </div>
-        {!isPopupOpen &&
-          (isExpanded ? (
-            <div onClick={handleToggleExpand} className="w-4 h-6 flex items-center justify-center relative">
-              <MdOutlineKeyboardArrowLeft
-                size={27}
-                className="text-comBlue cursor-pointer hover:scale-110 transition-transform absolute"
+            {isAdmin === "Y" ? (
+              <MdManageAccounts
+                size={26}
+                className={`text-comBlue cursor-pointer hover:scale-110 transition-transform ${
+                  isPopupOpen ? "text-sbtDarkBlue" : ""
+                }`}
+                onClick={handleTogglePopup}
               />
-            </div>
-          ) : (
-            ""
-          ))}
-      </aside>
-      {isPopupOpen && isAdmin === "Y" && (
-        <div className="relative w-full h-full">
-          <ManagePersonnelPopup
-            onClose={() => {
-              togglePopup();
-              setShowTeamList(true);
-              setShowWidget(false);
-            }}
-          />
-        </div>
-      )}
-      {!isPopupOpen && showWidget && <WidgetContainer />}
-    </div>
+            ) : (
+              ""
+            )}
+            <CgTemplate
+              size={24}
+              className={`text-comBlue cursor-pointer hover:scale-110 transition-transform ${
+                showTemplate ? "text-sbtDarkBlue" : ""
+              }`}
+              onClick={handleActiveTemplate}
+            />
+            {isAdmin === "Y" ? (
+              <BiSolidWidget
+                size={24}
+                className={`text-comBlue cursor-pointer hover:scale-110 transition-transform ${
+                  showWidget ? "text-sbtDarkBlue" : ""
+                }`}
+                onClick={handleActiveWidget}
+              />
+            ) : (
+              ""
+            )}
+            {showTeamList && (
+              <motion.ul
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className={`flex flex-col absolute top-2 left-16 rounded-lg px-2 py-4 w-44 ${
+                  isDark ? "text-white" : "text-[#393939]"
+                } h-[calc(100dvh-6.5rem)] overflow-y-auto`}
+              >
+                {organizedData.map((group, index) => renderSidebarItem(group, index))}
+              </motion.ul>
+            )}
+          </div>
+          {!isPopupOpen &&
+            (isExpanded ? (
+              <div onClick={handleToggleExpand} className="w-4 h-6 flex items-center justify-center relative">
+                <MdOutlineKeyboardArrowLeft
+                  size={27}
+                  className="text-comBlue cursor-pointer hover:scale-110 transition-transform absolute"
+                />
+              </div>
+            ) : (
+              ""
+            ))}
+        </aside>
+        {isPopupOpen && isAdmin === "Y" && (
+          <div className="relative w-full h-full">
+            <ManagePersonnelPopup
+              onClose={() => {
+                togglePopup();
+                setShowTeamList(true);
+                setShowWidget(false);
+              }}
+            />
+          </div>
+        )}
+        {!isPopupOpen && showWidget && <WidgetContainer />}
+      </div>
+      {!isPopupOpen && showTemplate && <TemplateWidget />}
+    </>
   );
 };
 

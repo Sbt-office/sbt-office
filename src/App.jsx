@@ -7,6 +7,7 @@ import MainLayout from "./layouts/MainLayout";
 import Toast from "./components/Toast";
 import SignIn from "./pages/SignIn";
 import PrivateRoute from "./components/PrivateRoute";
+import LoginOffice from "./components/LoginOffice";
 
 const App = () => {
   const ErrorFallback = (error) => <div>An error occurred: {error.message}</div>;
@@ -17,7 +18,8 @@ const App = () => {
         <ErrorBoundary FallbackComponent={ErrorFallback}>
           <Routes>
             {/* Public Routes */}
-            <Route path="/" element={<Login />} />
+            <Route path="/" element={<LoginOffice />} />
+            <Route path="/login" element={<Login />} />
             <Route path="/signin" element={<SignIn />} />
 
             {/* Protected Routes */}

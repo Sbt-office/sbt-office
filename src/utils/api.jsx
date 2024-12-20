@@ -2,12 +2,10 @@ import axios from "axios";
 
 axios.defaults.timeout = 3000;
 
-// VITE_BASE_URL = http://192.168.0.75:3000
 const baseURL = import.meta.env.VITE_BASE_URL;
 
-/**
- * 로그인
- */
+// --------------- Auth ---------------
+/** 로그인 */
 export const loginCheckFetch = async (credentials) => {
   try {
     const res = await axios.post(`${baseURL}/login`, credentials);
@@ -33,10 +31,7 @@ export const loginCheckFetch = async (credentials) => {
     throw new Error("서버 연결에 실패했습니다.");
   }
 };
-
-/**
- * 회원가입
- */
+/** 회원가입 */
 export const registerFetch = async (userData) => {
   try {
     const res = await axios.post(`${baseURL}/register`, userData);
@@ -52,35 +47,7 @@ export const registerFetch = async (userData) => {
   }
 };
 
-/**
- * 회사멤버 전체 리스트
- */
-export const getUserListFetch = async () => {
-  try {
-    const res = await axios.get(`${baseURL}/api/office_user_all`);
-    if (res.status === 200) return res.data;
-    throw new Error(res.data.message);
-  } catch (err) {
-    throw new Error(err.message);
-  }
-};
-
-/**
- * 출퇴근 리스트
- */
-export const getDailyListFetch = async () => {
-  try {
-    const res = await axios.get(`${baseURL}/api/office_daily_list`);
-    if (res.status === 200) {
-      if (res.data.status === "200") return res.data.data;
-      throw new Error(res.data.message);
-    }
-    throw new Error(res.message);
-  } catch (err) {
-    throw new Error(err.message);
-  }
-};
-
+// --------------- 개인 USER ---------------
 /**
  * 개인별 출퇴근 체크
  * status => 1: 출근 2: 퇴근
@@ -101,10 +68,7 @@ export const setDailyFetch = async (data) => {
     throw new Error(err.message);
   }
 };
-
-/**
- * 개인별 출퇴근 상태
- */
+/** 개인별 출퇴근 상태 */
 export const getDailyFetch = async (sabeon) => {
   try {
     const res = await axios.get(`${baseURL}/api/office_daily/${sabeon}`);
@@ -121,10 +85,7 @@ export const getDailyFetch = async (sabeon) => {
     throw new Error(err.message || "출퇴근 상태 조회 실패");
   }
 };
-
-/**
- * 개인 별 인사정보
- */
+/** 개인 별 인사정보 */
 export const getUserInfoFetch = async (sabeon) => {
   try {
     const res = await axios.get(`${baseURL}/api/office_user/${sabeon}`);
@@ -133,10 +94,41 @@ export const getUserInfoFetch = async (sabeon) => {
     console.log(err);
   }
 };
+/** 개인 별 위젯 정보 */
+export const getUserWidgetListsFetch = async (sabeon) => {
+  try {
+    const res = await axios.get(`${baseURL}/api/office_myWidget/${sabeon}`);
+    return res.data;
+  } catch (err) {
+    console.log(err);
+  }
+};
 
-/**
- * 인사정보 수정
- */
+// --------------- 회사 데이터 ---------------
+/** 회사멤버 전체 리스트 */
+export const getUserListFetch = async () => {
+  try {
+    const res = await axios.get(`${baseURL}/api/office_user_all`);
+    if (res.status === 200) return res.data;
+    throw new Error(res.data.message);
+  } catch (err) {
+    throw new Error(err.message);
+  }
+};
+/** 출퇴근 리스트 */
+export const getDailyListFetch = async () => {
+  try {
+    const res = await axios.get(`${baseURL}/api/office_daily_list`);
+    if (res.status === 200) {
+      if (res.data.status === "200") return res.data.data;
+      throw new Error(res.data.message);
+    }
+    throw new Error(res.message);
+  } catch (err) {
+    throw new Error(err.message);
+  }
+};
+/** 인사정보 수정 */
 export const updateUserInfoFetch = async (updateData) => {
   try {
     const res = await axios.post(`${baseURL}/api/office_user_save`, {

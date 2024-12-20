@@ -10,11 +10,12 @@ import usePersonnelInfoStore from "@/store/personnelInfoStore";
 
 export const useLogin = () => {
   const navigate = useNavigate();
-  const setUser = useAuthStore((state) => state.setUser);
   const { addToast } = useToast();
+
+  const setUser = useAuthStore((state) => state.setUser);
+  const togglePopup = usePopupStore((state) => state.togglePopup);
   const setIsAdmin = useAdminStore((state) => state.setIsAdmin);
   const setSabeon = useAdminStore((state) => state.setSabeon);
-  const { togglePopup } = usePopupStore();
 
   return useMutation({
     mutationFn: loginCheckFetch,
@@ -46,7 +47,7 @@ export const useRegister = () => {
     onSuccess: (data) => {
       if (data.status === "200") {
         addToast({ type: "success", message: "회원가입이 완료되었습니다." });
-        navigate("/");
+        navigate("/login");
       } else {
         addToast({ type: "error", message: data.message || "회원가입에 실패했습니다." });
       }

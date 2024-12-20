@@ -20,7 +20,7 @@ const WidgetContainer = () => {
     <div
       className={`z-50 flex flex-col 2xl:w-[75rem] lg:w-[65rem] h-24 rounded-lg 
     overflow-hidden absolute left-[17.8rem] top-2 backdrop-blur-md ${
-      isDark ? "bg-[#1f1f1f]/70 text-white" : "bg-white/80"
+      isDark ? "bg-[#1f1f1f]/70 text-white" : "bg-white/60"
     } `}
     >
       <ul className="flex w-full h-full items-center justify-start p-2">

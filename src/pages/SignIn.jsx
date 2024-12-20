@@ -182,7 +182,7 @@ const SignIn = () => {
               {register.isLoading ? "Sign Up..." : "Sign Up"}
             </button>
             <Link
-              to="/"
+              to="/login"
               className="text-center p-2 ring-1 ring-comBlue text-comBlue rounded-lg hover:bg-blue-50 transition-colors h-12 text-lg"
             >
               Back to Login
