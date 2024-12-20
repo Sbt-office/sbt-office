@@ -6,6 +6,8 @@ import pdfImage from "../assets/images/widgets/pdf.png";
 import zipImage from "../assets/images/widgets/zip.png";
 import hwpImage from "../assets/images/widgets/hwp.png";
 import youtubeImage from "../assets/images/widgets/youtube.png";
+import videoImage from "../assets/images/widgets/video.png";
+import imageFileImage from "../assets/images/widgets/image.png";
 
 export const widgetList = [
   {
@@ -77,9 +79,27 @@ export const fileWidgetList = [
     id: 7,
     src: youtubeImage,
     name: "youtube",
-    extension: ["mp4", "webm", "ogg", "mp3", "wav", "m4a", "flv", "mov", "mkv", "avi"],
+    extension: ["youtube"],
     alt: "youtube",
     title: "Youtube",
     description: "Youtube File",
+  },
+  {
+    id: 8,
+    src: videoImage,
+    name: "video",
+    extension: ["mp4", "webm", "ogg", "mp3", "wav", "m4a", "flv", "mov", "mkv", "avi"],
+    alt: "video",
+    title: "Video",
+    description: "Video File",
+  },
+  {
+    id: 9,
+    src: imageFileImage,
+    name: "image",
+    extension: ["jpg", "jpeg", "png", "gif", "bmp", "svg", "webp"],
+    alt: "image",
+    title: "Image",
+    description: "Image File",
   },
 ];
