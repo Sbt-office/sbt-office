@@ -16,15 +16,13 @@ import {
 import hdr from "@/assets/three.hdr";
 import model from "@/assets/model/office.glb";
 import userGlb from "@/assets/model/user.glb";
-import christmasTree from "@/assets/model/christmasTree.glb";
-import temperature from "@/assets/model/temperature.glb";
+import christmas from "@/assets/model/christmasTree.glb";
 import air from "@/assets/model/airmc.glb";
 import fire from "@/assets/model/fire.glb";
 
 // GLB 모델 맵핑
 const modelMap = {
-  christmasTree,
-  temperature,
+  christmas,
   air,
   fire,
   user: userGlb,
@@ -1037,7 +1035,6 @@ const OfficeThree = () => {
 
     const raycaster = new THREE.Raycaster();
     raycaster.setFromCamera(new THREE.Vector2(mouseX, mouseY), cameraRef.current);
-
     const widgetModels = attachedModels.filter((model) => {
       return widgetList.some((widget) => model.model?.children[0].name.includes(widget.name));
     });

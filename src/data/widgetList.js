@@ -15,7 +15,7 @@ export const widgetList = [
   {
     id: 1,
     src: treeImage,
-    name: "christmasTree",
+    name: "christmas",
     alt: "christmas tree",
     title: "Christmas Tree",
     description: "Christmas Tree",

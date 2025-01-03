@@ -18,8 +18,11 @@ import { useUpdatePersonnel } from "@/hooks/useUpdatePersonnel";
 import { useAllUserListQuery } from "@/hooks/useAllUserListQuery";
 import { useImageCompression } from "@/hooks/useImageCompression";
 
-import { DEPARTMENTS, POSITIONS } from "@/data/companyInfo";
+import { POSITIONS } from "@/data/companyInfo";
 import TemplateWidget from "./TemplateWidget";
+import { getOfficeListFetch } from "../utils/api";
+import { useQuery } from "@tanstack/react-query";
+import { QueryKeys } from "../queryClient";
 
 const InfoRow = ({ label, value, isEditing, onChange, type = "text", options, onClick, required = false }) => {
   const isDark = useThemeStore((state) => state.isDark);
@@ -118,6 +121,16 @@ const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
   const isMoving = useThreeStore((state) => state.isMoving);
 
   const canEdit = isAdmin === "Y" || sabeon === personnelInfo.ou_sabeon;
+
+  const { data: departmentsData = [] } = useQuery({
+    queryKey: [QueryKeys.DEPARTMENTS],
+    queryFn: getOfficeListFetch,
+  });
+
+  const departmentOptions = departmentsData?.map((dept) => ({
+    value: dept.depart_name,
+    label: dept.depart_name,
+  }));
 
   const { addToast } = useToast();
 
@@ -337,8 +350,14 @@ const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
                 value={displayData.teamName}
                 isEditing={isEditing}
                 type="select"
-                options={DEPARTMENTS}
-                onChange={(val) => setEditData({ ...editData, teamName: val })}
+                options={departmentOptions}
+                onChange={(val) =>
+                  setEditData({
+                    ...editData,
+                    teamName: val,
+                    team_cd: departmentsData.find((dept) => dept.depart_name === val)?.depart_cd || "",
+                  })
+                }
                 required
               />
               <InfoRow

@@ -128,6 +128,16 @@ export const getDailyListFetch = async () => {
     throw new Error(err.message);
   }
 };
+/** 회사 부서 리스트 */
+export const getOfficeListFetch = async () => {
+  try {
+    const res = await axios.get(`${baseURL}/api/office_code/department`);
+    if (res.status === 200) return res.data.data;
+    throw new Error(res.data.message);
+  } catch (err) {
+    throw new Error(err.message);
+  }
+};
 /** 인사정보 수정 */
 export const updateUserInfoFetch = async (updateData) => {
   try {
