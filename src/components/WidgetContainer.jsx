@@ -8,6 +8,10 @@ const WidgetContainer = () => {
   const setIsDragging = useThreeStore((state) => state.setIsDragging);
 
   const handleDragStart = (e, item) => {
+    const dragImage = new Image();
+    dragImage.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+    e.dataTransfer.setDragImage(dragImage, 0, 0);
+
     setDraggedItem(item);
     setIsDragging(true);
   };
@@ -23,12 +27,12 @@ const WidgetContainer = () => {
       isDark ? "bg-[#1f1f1f]/70 text-white" : "bg-white/60"
     } `}
     >
-      <ul className="flex w-full h-full items-center justify-start p-2">
+      <ul className="flex w-full h-full items-center justify-start p-2 gap-2">
         {widgetList.map((item) => (
           <li
             key={item.id}
-            className={`w-20 h-20 flex items-center justify-center shadow-md cursor-pointer 
-            px-3 py-2 rounded-md ${isDark ? "bg-[#1f1f1f]/80 text-white" : "bg-white/80"}`}
+            className={`w-20 h-20 flex items-center justify-center shadow-md shadow-black/40 cursor-pointer 
+            px-3 py-2 rounded-md`}
             draggable={true}
             onDragStart={(e) => handleDragStart(e, item.name)}
             onDragEnd={handleDragEnd}

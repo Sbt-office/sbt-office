@@ -9,8 +9,8 @@ import {
   CSS3DRenderer,
   DRACOLoader,
   GLTFLoader,
-  OrbitControls,
   RGBELoader,
+  OrbitControls,
 } from "three/examples/jsm/Addons.js";
 
 import hdr from "@/assets/three.hdr";
@@ -18,11 +18,15 @@ import model from "@/assets/model/office.glb";
 import userGlb from "@/assets/model/user.glb";
 import christmasTree from "@/assets/model/christmasTree.glb";
 import temperature from "@/assets/model/temperature.glb";
+import air from "@/assets/model/airmc.glb";
+import fire from "@/assets/model/fire.glb";
 
 // GLB 모델 맵핑
 const modelMap = {
   christmasTree,
   temperature,
+  air,
+  fire,
   user: userGlb,
 };
 
@@ -47,6 +51,8 @@ import { BarLoader } from "react-spinners";
 
 import { useThrottle } from "@/hooks/useThrottle";
 import { useDailyListQuery } from "@/hooks/useDailyListQuery";
+import useThemeStore from "../store/themeStore";
+import { widgetList } from "../data/widgetList";
 
 const FLOAT_SPEED = 0.005;
 const FLOAT_HEIGHT = 0.08;
@@ -86,7 +92,7 @@ const OfficeThree = () => {
   const [isDaily, setIsDaily] = useState(true);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isTopView, setIsTopView] = useState(false);
-  const [isCondition, setIsCondition] = useState(true);
+  const [isCondition, setIsCondition] = useState(false);
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [isUserButtonDisabled, setIsUserButtonDisabled] = useState(false);
 
@@ -96,6 +102,7 @@ const OfficeThree = () => {
 
   /** Store*/
   const { getData } = useSocketStore();
+  const isDark = useThemeStore((state) => state.isDark);
   const sabeon = useAdminStore((state) => state.sabeon);
   const setSeatData = seatListStore((state) => state.setSeatData);
   const isWorking = useWorkStatusStore((state) => state.isWorking);
@@ -346,7 +353,6 @@ const OfficeThree = () => {
         sceneRef.current.add(gltf.scene);
         setIsLoaded(true);
         setLoadingProgress(100);
-        loadChristmasTree();
       },
       (xhr) => {
         setLoadingProgress((xhr.loaded / xhr.total) * 100);
@@ -356,33 +362,7 @@ const OfficeThree = () => {
       }
     );
   };
-  /** 크리스마스 트리 모델 */
-  const loadChristmasTree = () => {
-    loader.setDRACOLoader(dracoLoaderRef.current);
 
-    loader.load(
-      christmasTree,
-      (gltf) => {
-        gltf.scene.traverse((node) => {
-          if (node.isMesh) {
-            node.castShadow = true;
-            node.receiveShadow = true;
-          }
-        });
-
-        if (floorObjectRef.current) {
-          const floorY = floorObjectRef.current.position.y;
-          gltf.scene.position.set(0, floorY + 0.001, 0);
-        }
-
-        sceneRef.current.add(gltf.scene);
-      },
-      undefined,
-      (error) => {
-        console.error("Error loading Christmas tree:", error);
-      }
-    );
-  };
   /** 로그인 사용자 위치 아바타 모델 */
   const avatarModel = (obj) => {
     if (!obj) return;
@@ -845,29 +825,56 @@ const OfficeThree = () => {
     }
   }, [cameraPosition, cameraTarget]);
 
-  useEffect(() => {
-    // 드롭 인디케이터 생성
-    const geometry = new THREE.PlaneGeometry(0.3, 0.3); // christmas tree 크기에 맞게 조정
+  // 모델의 크기를 계산하는 함수
+  const getModelSize = (model) => {
+    if (!model) return { width: 0.3, height: 0.3 }; // 기본 크기 반환
+
+    const box = new THREE.Box3();
+    box.setFromObject(model);
+    const size = new THREE.Vector3();
+    box.getSize(size);
+
+    return {
+      width: size.x || 0.3,
+      height: size.z || 0.3, // PlaneGeometry는 xz 평면에 생성
+    };
+  };
+
+  const createDropIndicator = (model) => {
+    const { width, height } = getModelSize(model);
+    const geometry = new THREE.PlaneGeometry(width, height);
     const material = new THREE.MeshBasicMaterial({
-      color: 0x00ff00,
+      color: 0x1366a2,
       transparent: true,
       opacity: 0.5,
       side: THREE.DoubleSide,
     });
     const plane = new THREE.Mesh(geometry, material);
-    plane.rotation.x = -Math.PI / 2; // 바닥과 평행하게
+    plane.rotation.x = -Math.PI / 2;
     plane.visible = false;
-    sceneRef.current.add(plane);
-    dropIndicatorRef.current = plane;
+    return plane;
+  };
+
+  useEffect(() => {
+    if (!draggedItem || !modelMap[draggedItem]) return;
+
+    const loader = new GLTFLoader();
+    loader.setDRACOLoader(dracoLoaderRef.current);
+
+    loader.load(modelMap[draggedItem], (gltf) => {
+      const plane = createDropIndicator(gltf.scene);
+      sceneRef.current.add(plane);
+      dropIndicatorRef.current = plane;
+    });
 
     return () => {
-      if (plane) {
-        sceneRef.current.remove(plane);
-        geometry.dispose();
-        material.dispose();
+      if (dropIndicatorRef.current) {
+        dropIndicatorRef.current.geometry.dispose();
+        dropIndicatorRef.current.material.dispose();
+        sceneRef.current.remove(dropIndicatorRef.current);
       }
     };
-  }, []);
+  }, [draggedItem]);
 
   /** Door 애니메이션 */
   const animateDoor = (doorIdx) => {
@@ -903,12 +910,15 @@ const OfficeThree = () => {
   }, [personnelInfo, isTopView]);
 
   /** Button 클릭 최적화 */
-  const throttledSetIsTopView = useThrottle(() => setIsTopView((prev) => !prev), 1000);
-  const throttledSetIsCondition = useThrottle(() => setIsCondition((prev) => !prev), 1000);
-  const throttledSetIsDaily = useThrottle(() => setIsDaily((prev) => !prev), 1000);
-  const throttledSetIsUser = useThrottle(() => setIsTopView(false), 1000);
+  const throttledSetIsTopView = useThrottle(() => setIsTopView(true), 500);
+  const throttledSetIsCondition = useThrottle(() => setIsCondition((prev) => !prev), 500);
+  const throttledSetIsDaily = useThrottle(() => setIsDaily((prev) => !prev), 500);
+  const throttledSetIsUser = useThrottle(() => setIsTopView(false), 500);
 
   /** Tree Widget 모델 Drag and Drop */
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedModelRoot, setSelectedModelRoot] = useState(null);
+
   const handleDragOver = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -939,7 +949,7 @@ const OfficeThree = () => {
     event.preventDefault();
     event.stopPropagation();
 
-    if (!isDragging || attachedModels.length >= 3) {
+    if (!isDragging) {
       setIsMoving(false);
       hideDropIndicator();
       return;
@@ -1018,6 +1028,77 @@ const OfficeThree = () => {
     setDropPosition(null);
     setIsMoving(false);
   };
+
+  const handleModelClick = (event) => {
+    event.preventDefault();
+    const rect = mainRef.current.getBoundingClientRect();
+    const mouseX = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    const mouseY = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(new THREE.Vector2(mouseX, mouseY), cameraRef.current);
+
+    const widgetModels = attachedModels.filter((model) => {
+      return widgetList.some((widget) => model.model?.children[0].name.includes(widget.name));
+    });
+
+    const intersects = raycaster.intersectObjects(
+      widgetModels.map((item) => item.model),
+      true
+    );
+
+    if (intersects.length > 0) {
+      const selectedObject = intersects[0].object;
+      let modelRoot = selectedObject;
+
+      while (modelRoot.parent && modelRoot.parent !== sceneRef.current) {
+        modelRoot = modelRoot.parent;
+      }
+
+      setSelectedModelRoot(modelRoot);
+      setShowDeleteModal(true);
+    }
+  };
+
+  const handleDeleteConfirm = () => {
+    if (!selectedModelRoot) return;
+
+    // 리소스 정리
+    selectedModelRoot.traverse((child) => {
+      if (child.isMesh) {
+        child.geometry.dispose();
+        if (Array.isArray(child.material)) {
+          child.material.forEach((material) => material.dispose());
+        } else {
+          child.material.dispose();
+        }
+      }
+    });
+    // 씬에서 제거
+    selectedModelRoot.removeFromParent();
+    // attachedModels 배열에서 제거
+    setAttachedModels((prev) => prev.filter((model) => model.model !== selectedModelRoot));
+    // 모달 닫기 및 상태 초기화
+    setShowDeleteModal(false);
+    setSelectedModelRoot(null);
+  };
+
+  const handleDeleteCancel = () => {
+    setShowDeleteModal(false);
+    setSelectedModelRoot(null);
+  };
+
+  useEffect(() => {
+    if (!mainRef.current) return;
+
+    const element = mainRef.current;
+    element.addEventListener("click", handleModelClick);
+
+    return () => {
+      element.removeEventListener("click", handleModelClick);
+    };
+  }, [attachedModels]);
+
   // 드래그 앤 드롭 이벤트 리스너 설정
   useEffect(() => {
     if (!mainRef.current) return;
@@ -1032,29 +1113,37 @@ const OfficeThree = () => {
     };
   }, [isDragging, attachedModels]);
 
-  // useEffect(() => {
-  //   document.addEventListener("keydown", (e) => {
-  //     switch (e.code) {
-  //       case "Space":
-  //         console.log("------------------------");
-  //         console.log(cameraRef.current.position);
-  //         console.log(controlsRef.current.target);
-  //         break;
-  //     }
-  //   });
-  // }, []);
-
   return (
     <main ref={mainRef} className="z-0 bg-[#292929] overflow-hidden w-dvw h-dvh">
       <canvas className="absolute top-0 left-0 w-full h-full" ref={canvasRef} />
+      {showDeleteModal && (
+        <div
+          className={`fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 ${
+            isDark ? "bg-[#1f1f1f]/80 text-white" : "bg-white/80"
+          } backdrop-blur-sm p-4 rounded-lg shadow-lg z-50`}
+        >
+          <p className={`text-center ${isDark ? "text-white" : "text-black"}`}>위젯을 삭제하시겠습니까?</p>
+          <div className="flex justify-between items-center w-full mt-4 gap-2">
+            <button className="flex-1 py-1 bg-red-500 text-white rounded mr-2" onClick={handleDeleteConfirm}>
+              삭제
+            </button>
+            <button className="flex-1 py-1 bg-gray-400 text-white rounded" onClick={handleDeleteCancel}>
+              취소
+            </button>
+          </div>
+        </div>
+      )}
       {showSaveModal && (
-        <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white p-4 rounded-lg shadow-lg z-50">
-          <p>저장하시겠습니까?</p>
-          <div className="flex justify-end mt-4">
-            <button className="px-4 py-2 bg-blue-500 text-white rounded mr-2" onClick={handleSaveConfirm}>
+        <div
+          className={`fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 
+          ${isDark ? "bg-[#1f1f1f]/80 text-white" : "bg-white/80"} backdrop-blur-sm p-4 rounded-lg shadow-lg z-50`}
+        >
+          <p className={`text-center  ${isDark ? "text-white" : "text-black"}`}>해당 위치에 저장하겠습니까?</p>
+          <div className="flex justify-between items-center w-full mt-4 gap-2">
+            <button className="flex-1 py-1 bg-sbtDarkBlue text-white rounded mr-2" onClick={handleSaveConfirm}>
               저장
             </button>
-            <button className="px-4 py-2 bg-gray-300 rounded" onClick={handleModalCancel}>
+            <button className="flex-1 py-1 bg-gray-400 text-white rounded" onClick={handleModalCancel}>
               취소
             </button>
           </div>
@@ -1071,29 +1160,36 @@ const OfficeThree = () => {
         <>
           <div className="absolute bottom-4 right-4 flex gap-2 flex-col text-sm text-white">
             <button
-              className={`px-2 py-2 rounded-lg backdrop-blur-sm ${isDaily ? "bg-comBlue/70" : "bg-comBlue/40"}`}
+              className={`px-2 py-2 rounded-lg backdrop-blur-sm ${
+                isDaily ? "bg-comBlue/70" : "bg-comBlue/30 text-white/50"
+              } ${isUserButtonDisabled ? "opacity-50 cursor-not-allowed" : "hover:bg-comBlue/70"}`}
               onClick={throttledSetIsDaily}
+              disabled={isUserButtonDisabled}
             >
               출퇴근 현황
             </button>
             <button
-              className={`px-2 py-2 rounded-lg backdrop-blur-sm ${isCondition ? "bg-comBlue/70" : "bg-comBlue/40"}`}
+              className={`px-2 py-2 rounded-lg backdrop-blur-sm ${
+                isCondition ? "bg-comBlue/70" : "bg-comBlue/30 text-white/50"
+              } ${isUserButtonDisabled ? "opacity-50 cursor-not-allowed" : "hover:bg-comBlue/70"}`}
               onClick={throttledSetIsCondition}
+              disabled={isUserButtonDisabled}
             >
               Green_1 상태
             </button>
             <div className="w-full flex justify-between items-center gap-1">
               <button
                 className={`flex-1 text-center rounded-lg py-2 backdrop-blur-sm ${
-                  isTopView ? "bg-comBlue/70" : "bg-comBlue/40"
-                }`}
+                  isTopView ? "bg-comBlue/70" : "bg-comBlue/30 text-white/50"
+                } ${isUserButtonDisabled ? "opacity-50 cursor-not-allowed" : "hover:bg-comBlue/70"}`}
                 onClick={throttledSetIsTopView}
+                disabled={isUserButtonDisabled}
               >
                 TOP
               </button>
               <button
                 className={`flex-1 text-center rounded-lg py-2 backdrop-blur-sm ${
-                  !isTopView ? "bg-comBlue/70" : "bg-comBlue/40"
+                  !isTopView ? "bg-comBlue/70" : "bg-comBlue/30 text-white/50"
                 } ${isUserButtonDisabled ? "opacity-50 cursor-not-allowed" : "hover:bg-comBlue/70"}`}
                 onClick={throttledSetIsUser}
                 disabled={isUserButtonDisabled}

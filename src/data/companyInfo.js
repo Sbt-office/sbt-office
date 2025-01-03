@@ -1,14 +1,13 @@
 export const DEPARTMENTS = [
-  { value: "전략TF그룹", label: "전략TF그룹" },
   { value: "경영지원 본부", label: "경영지원 본부" },
-  { value: "기업부설연구소", label: "기업부설연구소" },
-  { value: "영업본부", label: "영업본부" },
+  { value: "Digital Twin", label: "Digital Twin" },
   { value: "솔루션사업 본부", label: "솔루션사업 본부" },
-  { value: "DX사업부문", label: "DX사업부문" },
-  { value: "ERP컨버젼사업 본부", label: "ERP컨버젼사업 본부" },
-  { value: "ITO사업본부", label: "ITO사업본부" },
-  { value: "디지털사업 본부", label: "디지털사업 본부" },
+  { value: "Data Platform", label: "Data Platform" },
+  { value: "영업본부", label: "영업본부" },
+  { value: "Mendix", label: "Mendix" },
+  { value: "Salesforce", label: "Salesforce" },
   { value: "외주", label: "외주" },
+  { value: "SAP", label: "SAP" },
 ];
 
 export const POSITIONS = [

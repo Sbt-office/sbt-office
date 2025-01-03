@@ -1,4 +1,6 @@
 import treeImage from "../assets/images/widgets/treeImage.png";
+import airmcImage from "../assets/images/widgets/airmc.png";
+import fireImage from "../assets/images/widgets/fire.png";
 import excelImage from "../assets/images/widgets/excel.png";
 import wordImage from "../assets/images/widgets/word.png";
 import pptImage from "../assets/images/widgets/ppt.png";
@@ -17,6 +19,22 @@ export const widgetList = [
     alt: "christmas tree",
     title: "Christmas Tree",
     description: "Christmas Tree",
+  },
+  {
+    id: 2,
+    src: airmcImage,
+    name: "air",
+    alt: "air purifier",
+    title: "Air Purifier",
+    description: "Air Purifier",
+  },
+  {
+    id: 3,
+    src: fireImage,
+    name: "fire",
+    alt: "fire extinguisher",
+    title: "Fire Extinguisher",
+    description: "Fire Extinguisher",
   },
 ];
 

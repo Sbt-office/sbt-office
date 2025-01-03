@@ -37,7 +37,7 @@ function Model({ onLoaded }) {
     if (!config) return;
 
     gsap.to(camera.position, {
-      duration: 2,
+      duration: 1,
       x: config.cameraPosition.x,
       y: config.cameraPosition.y,
       z: config.cameraPosition.z,
@@ -46,7 +46,7 @@ function Model({ onLoaded }) {
 
     if (controlsRef.current) {
       gsap.to(controlsRef.current.target, {
-        duration: 2,
+        duration: 1,
         x: config.targetPosition.x,
         y: config.targetPosition.y,
         z: config.targetPosition.z,
@@ -102,6 +102,58 @@ function Model({ onLoaded }) {
       onLoaded();
     }
   }, [modelScene, onLoaded]);
+
+  useEffect(() => {
+    if (modelScene) {
+      const logoObject = modelScene.getObjectByName("logo");
+
+      if (logoObject) {
+        const material = new THREE.ShaderMaterial({
+          uniforms: {
+            fillAmount: { value: 0.0 },
+            fillColor: { value: new THREE.Color(0xffffff) },
+          },
+          vertexShader: `
+            varying vec2 vUv;
+            void main() {
+              vUv = uv;
+              gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            }
+          `,
+          fragmentShader: `
+            uniform float fillAmount;
+            uniform vec3 fillColor;
+            varying vec2 vUv;
+            
+            void main() {
+              float fill = step(vUv.x, fillAmount);
+              vec4 color = vec4(fillColor, 1.0);
+              vec4 transparent = vec4(0.0, 0.0, 0.0, 0.0);
+              gl_FragColor = mix(transparent, color, fill);
+            }
+          `,
+          transparent: true,
+          side: THREE.DoubleSide,
+        });
+
+        logoObject.material = material;
+
+        gsap.fromTo(
+          material.uniforms.fillAmount,
+          { value: 0 },
+          {
+            value: 1,
+            duration: 3,
+            delay: 1,
+            ease: "sine.out",
+            repeat: -1,
+            repeatDelay: 4,
+            yoyo: true,
+          }
+        );
+      }
+    }
+  }, [modelScene]);
 
   const handleClick = (event) => {
     event.preventDefault();
@@ -276,26 +328,26 @@ function CameraController({ startAnimation, moveToConference, moveToLobby, selec
     }
   }, [moveToLobby]);
 
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.code === "Space") {
-        console.log("------------------------");
-        console.log("Camera position:", {
-          x: camera.position.x,
-          y: camera.position.y,
-          z: camera.position.z,
-        });
-        console.log("Controls target:", controlsRef.current?.target);
-      }
-    };
+  // useEffect(() => {
+  //   const handleKeyDown = (e) => {
+  //     if (e.code === "Space") {
+  //       console.log("------------------------");
+  //       console.log("Camera position:", {
+  //         x: camera.position.x,
+  //         y: camera.position.y,
+  //         z: camera.position.z,
+  //       });
+  //       console.log("Controls target:", controlsRef.current?.target);
+  //     }
+  //   };
 
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [camera]);
+  //   document.addEventListener("keydown", handleKeyDown);
+  //   return () => document.removeEventListener("keydown", handleKeyDown);
+  // }, [camera]);
 
   useFrame(() => {
     if (animating) {
-      progress.current += 0.015;
+      progress.current += 0.025;
 
       if (progress.current >= 1) {
         if ((currentAnimation === "con1" || currentAnimation === "con2") && conferenceStep === 1) {
