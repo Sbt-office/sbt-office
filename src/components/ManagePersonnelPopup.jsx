@@ -1,11 +1,6 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react/prop-types */
 import { useState, useEffect } from "react";
-import {
-  MdKeyboardArrowLeft,
-  MdKeyboardArrowRight,
-  MdOutlineKeyboardDoubleArrowLeft,
-  MdOutlineKeyboardDoubleArrowRight,
-} from "react-icons/md";
 import { IoCloseOutline } from "react-icons/io5";
 
 import { Checkbox } from "antd";
@@ -13,12 +8,13 @@ import { useSearch } from "@/hooks/useSearch";
 import { useQuery } from "@tanstack/react-query";
 
 import { SearchInput } from "./SearchInput";
-import { useInfiniteUserListQuery } from "@/hooks/useInfiniteUserListQuery";
 import { getDailyListFetch } from "@/utils/api";
 import useThemeStore from "@/store/themeStore";
 
 import profile from "@/assets/images/profile.png";
 import { QueryKeys } from "@/queryClient";
+import { getUserListFetch } from "@/utils/api";
+import { MdKeyboardArrowLeft, MdKeyboardArrowRight } from "react-icons/md";
 
 const ManagePersonnelPopup = ({ onClose }) => {
   const [currentPage, setCurrentPage] = useState(1);
@@ -28,46 +24,51 @@ const ManagePersonnelPopup = ({ onClose }) => {
   const isDark = useThemeStore((state) => state.isDark);
   const itemsPerPage = 16;
 
-  const { data: infiniteData, fetchNextPage } = useInfiniteUserListQuery(itemsPerPage);
+  const { data: userList, refetch: refetchUserList } = useQuery({
+    queryKey: [QueryKeys.ALL_USER_LIST],
+    queryFn: getUserListFetch,
+  });
   const { data: dailyList, refetch } = useQuery({
     queryKey: [QueryKeys.DAILY_LIST],
     queryFn: getDailyListFetch,
   });
 
   useEffect(() => {
+    refetchUserList();
+  }, []);
+
+  useEffect(() => {
     refetch();
-  }, [dailyList]);
+  }, []);
 
   // 전체 직원 데이터 가져오기
   const getAllEmployees = () => {
-    if (!infiniteData?.pages) return [];
+    if (!userList) return [];
 
-    return infiniteData.pages.flatMap((page) =>
-      page.items.map((person) => {
-        let insaInfo = person.ou_insa_info;
-        if (typeof insaInfo === "string") {
-          try {
-            insaInfo = JSON.parse(insaInfo);
-          } catch (e) {
-            insaInfo = {};
-          }
+    return userList.map((person) => {
+      let insaInfo = person.ou_insa_info;
+      if (typeof insaInfo === "string") {
+        try {
+          insaInfo = JSON.parse(insaInfo);
+        } catch (e) {
+          console.log(e);
+          insaInfo = {};
         }
+      }
 
-        // 해당 직원의 출퇴근 상태 찾기
-        const dailyStatus = dailyList?.find((daily) => daily.ouds_sabeon === person.ou_sabeon)?.userStatus;
-        const workStatus = dailyStatus ? dailyStatus : "로그아웃 상태";
+      const dailyStatus = dailyList?.find((daily) => daily.ouds_sabeon === person.ou_sabeon)?.userStatus;
+      const workStatus = dailyStatus ? dailyStatus : "로그아웃 상태";
 
-        return {
-          id: person.ou_sabeon,
-          name: person.ou_nm,
-          department: person.ou_team_name || "소속 미지정",
-          phone: insaInfo?.hp || "연락처 미등록",
-          level: insaInfo?.level || "직급 미지정",
-          profile: insaInfo?.profile_img || profile,
-          workStatus,
-        };
-      })
-    );
+      return {
+        id: person.ou_sabeon,
+        name: person.ou_nm,
+        department: person.ou_team_name || "소속 미지정",
+        phone: insaInfo?.hp || "연락처 미등록",
+        level: insaInfo?.level || "직급 미지정",
+        profile: insaInfo?.profile_img || profile,
+        workStatus,
+      };
+    });
   };
 
   // 검색과 필터링은 전체 데이터로 수행
@@ -78,16 +79,16 @@ const ManagePersonnelPopup = ({ onClose }) => {
 
   // 현재 페이지의 데이터만 가져오기
   const getCurrentPageData = () => {
-    if (!infiniteData?.pages) return [];
+    if (!userList) return { data: [], totalItems: 0 };
 
     const allEmployees = getAllEmployees();
     let filteredEmployees = allEmployees;
 
+    // 검색어나 부서 필터 적용
     if (searchTerm) {
       filteredEmployees = filteredEmployees.filter(
         (emp) => emp.name.includes(searchTerm) || emp.department.includes(searchTerm)
       );
-      // 검색 시 첫 페이지로 이동
       if (currentPage !== 1) {
         setCurrentPage(1);
       }
@@ -99,22 +100,20 @@ const ManagePersonnelPopup = ({ onClose }) => {
 
     const start = (currentPage - 1) * itemsPerPage;
     const end = start + itemsPerPage;
-    return filteredEmployees.slice(start, end);
+
+    return {
+      data: filteredEmployees.slice(start, end),
+      totalItems: filteredEmployees.length,
+    };
   };
 
-  const currentEmployees = getCurrentPageData();
+  const currentEmployees = getCurrentPageData()?.data;
 
-  const totalEmployees = infiniteData?.pages[0]?.totalItems || 0;
+  const totalEmployees = userList?.length || 0;
   const pageCount = Math.ceil(totalEmployees / itemsPerPage);
 
-  const handlePageChange = async (newPage) => {
+  const handlePageChange = (newPage) => {
     if (newPage < 1 || newPage > pageCount) return;
-
-    // 해당 페이지의 데이터가 없는 경우에만 fetchNextPage 호출
-    if (!infiniteData?.pages[newPage - 1]) {
-      await fetchNextPage({ pageParam: newPage });
-    }
-
     setCurrentPage(newPage);
     window.scrollTo(0, 0);
   };
@@ -125,7 +124,8 @@ const ManagePersonnelPopup = ({ onClose }) => {
 
   const handleDepartmentFilter = (department) => {
     setSelectedDepartment(department);
-    setCurrentPage(1); // 필터 변경 시 첫 페이지로 이동
+    setCurrentPage(1);
+    handleSearch("");
   };
 
   useEffect(() => {
@@ -243,22 +243,9 @@ const ManagePersonnelPopup = ({ onClose }) => {
               </div>
             ))}
           </div>
-
           {/* 페이지네이션 */}
-          {pageCount > 1 && (
+          {getCurrentPageData().totalItems > itemsPerPage && (
             <div className="flex justify-center items-center gap-3 absolute bottom-0 left-1/2 transform -translate-x-1/2 2xl:py-3 lg:py-1 w-64 2xl:h-32 lg:h-12">
-              {/* 5페이지씩 넘기기 버튼 */}
-              <button
-                onClick={() => handlePageChange(currentPage - 5)}
-                disabled={currentPage <= 5}
-                className="py-1 rounded"
-              >
-                <MdOutlineKeyboardDoubleArrowLeft
-                  size={22}
-                  className={`${currentPage <= 5 ? "text-gray-400" : "hover:text-sbtDarkBlue"}`}
-                />
-              </button>
-
               {/* 이전 페이지 */}
               <button
                 onClick={() => handlePageChange(currentPage - 1)}
@@ -267,22 +254,17 @@ const ManagePersonnelPopup = ({ onClose }) => {
               >
                 <MdKeyboardArrowLeft
                   size={22}
-                  className={`${currentPage === 1 ? "text-gray-400" : "hover:text-sbtDarkBlue"}`}
+                  className={currentPage === 1 ? "text-gray-400" : "hover:text-sbtDarkBlue"}
                 />
               </button>
 
               {/* 페이지 번호들 */}
-              {[...Array(pageCount)].map((_, i) => {
+              {[...Array(Math.ceil(getCurrentPageData().totalItems / itemsPerPage))].map((_, i) => {
                 const pageNumber = i + 1;
 
-                // 32명 미만일 경우 3페이지 이상은 표시하지 않음
-                if (totalEmployees <= itemsPerPage * 2 && pageNumber > 2) {
-                  return null;
-                }
-
-                // 현재 페이지를 중심으로 앞뒤 1페이지씩 표시
-                const windowStart = Math.max(1, Math.min(currentPage - 1, pageCount - 2));
-                const windowEnd = Math.min(pageCount, Math.max(currentPage + 1, 3));
+                // 현재 페이지 기준으로 앞뒤로 2페이지씩 표시 (총 5페이지)
+                const windowStart = Math.max(1, currentPage - 2);
+                const windowEnd = Math.min(Math.ceil(getCurrentPageData().totalItems / itemsPerPage), currentPage + 2);
 
                 if (pageNumber >= windowStart && pageNumber <= windowEnd) {
                   return (
@@ -294,7 +276,7 @@ const ManagePersonnelPopup = ({ onClose }) => {
                           ? "bg-comBlue text-white"
                           : isDark
                           ? "bg-[#2f2f2f] text-white hover:bg-[#3f3f3f]"
-                          : " hover:bg-gray-300"
+                          : "hover:bg-gray-300"
                       }`}
                     >
                       {pageNumber}
@@ -307,24 +289,16 @@ const ManagePersonnelPopup = ({ onClose }) => {
               {/* 다음 페이지 */}
               <button
                 onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === pageCount}
+                disabled={currentPage === Math.ceil(getCurrentPageData().totalItems / itemsPerPage)}
                 className="px-3 py-1 rounded"
               >
                 <MdKeyboardArrowRight
                   size={22}
-                  className={`${currentPage === pageCount ? "text-comGray" : "hover:text-comBlue"}`}
-                />
-              </button>
-
-              {/* 5페이지씩 넘기기 버튼 */}
-              <button
-                onClick={() => handlePageChange(currentPage + 5)}
-                disabled={currentPage >= pageCount - 4}
-                className="py-1 rounded"
-              >
-                <MdOutlineKeyboardDoubleArrowRight
-                  size={22}
-                  className={`${currentPage >= pageCount - 4 ? "text-comGray" : "hover:text-comBlue"}`}
+                  className={
+                    currentPage === Math.ceil(getCurrentPageData().totalItems / itemsPerPage)
+                      ? "text-comGray"
+                      : "hover:text-comBlue"
+                  }
                 />
               </button>
             </div>
