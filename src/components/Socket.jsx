@@ -69,19 +69,16 @@ const Socket = () => {
       socketRef.current.on(TopicCo2, (data) => {
         const now = dayjs().format("YYYY-MM-DD HH:mm:ss");
         setCo2({ time: now, value: data.split(": ")[1] });
-        console.log("TopicCo2", data);
       });
       socketRef.current.on(TopicTemp, (data) => {
         const split = data.split(", ");
         const now = dayjs().format("YYYY-MM-DD HH:mm:ss");
         setTemp({ time: now, value: split[0].split(": ")[1] });
         setHumidity({ time: now, value: split[1].split(": ")[1] });
-        console.log("TopicTemp", data);
       });
       socketRef.current.on(TopicDist, (data) => {
         const now = dayjs().format("YYYY-MM-DD HH:mm:ss");
         setDist({ time: now, value: data.split(": ")[1] });
-        console.log("TopicDist", data);
       });
 
       socketRef.current

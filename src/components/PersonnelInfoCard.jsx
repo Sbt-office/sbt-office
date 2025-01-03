@@ -1,6 +1,5 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react/prop-types */
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Select, Input } from "antd";
 import ClipLoader from "react-spinners/ClipLoader";
 
@@ -110,7 +109,6 @@ const InfoRow = ({ label, value, isEditing, onChange, type = "text", options, on
 
 const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
   const isDark = useThemeStore((state) => state.isDark);
-  const fileInputRef = useRef(null);
   const selectedSeat = useSeatStore((state) => state.selectedSeat);
   const setSelectedSeat = useSeatStore((state) => state.setSelectedSeat);
   const setIsSeatEdit = useSeatStore((state) => state.setIsSeatEdit);
@@ -180,33 +178,12 @@ const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
       setIsSeatEdit(false);
       setSelectedSeat(null);
       setIsEditing(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
     };
   }, [setIsSeatEdit, setSelectedSeat]);
 
   const { compressImage } = useImageCompression();
   const { mutateAsync, isLoading } = useUpdatePersonnel();
   const { refetch: refetchUserList } = useAllUserListQuery();
-
-  const handleImageUpload = async (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      try {
-        const compressedImage = await compressImage(file);
-        setEditData((prev) => ({
-          ...prev,
-          profile_img: compressedImage,
-        }));
-      } catch (error) {
-        addToast({ type: "error", message: error.message });
-        if (fileInputRef.current) {
-          fileInputRef.current.value = "";
-        }
-      }
-    }
-  };
 
   const handleSave = async () => {
     if (!isFormValid()) {
@@ -323,6 +300,37 @@ const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
     );
   }
 
+  const handleImageUploadClick = () => {
+    if (isEditing) {
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = "image/*";
+      input.style.display = "none";
+
+      input.onchange = async (event) => {
+        const file = event.target.files[0];
+        if (file) {
+          try {
+            const compressedImage = await compressImage(file);
+            setEditData((prev) => ({
+              ...prev,
+              profile_img: compressedImage,
+            }));
+          } catch (error) {
+            addToast({
+              type: "error",
+              message: error.message,
+            });
+          }
+        }
+        document.body.removeChild(input);
+      };
+
+      document.body.appendChild(input);
+      input.click();
+    }
+  };
+
   return (
     <>
       <div
@@ -385,12 +393,11 @@ const PersonnelInfoCard = ({ personnelInfo, onClose }) => {
               } flex items-center justify-center ${isDark ? "text-gray-300" : "text-gray-600"} ml-2 ${
                 isEditing ? "cursor-pointer hover:bg-sbtLightBlue/90" : ""
               }`}
-              onClick={() => isEditing && fileInputRef.current?.click()}
+              onClick={handleImageUploadClick}
               role={isEditing ? "button" : ""}
               tabIndex={isEditing ? 0 : -1}
               aria-label={isEditing ? "프로필 이미지 업로드" : "프로필 이미지"}
             >
-              <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageUpload} />
               <img
                 src={isEditing ? editData.profile_img || profile : personnelInfo.ou_insa_info?.profile_img || profile}
                 alt="profile"

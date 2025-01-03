@@ -8,10 +8,6 @@ const WidgetContainer = () => {
   const setIsDragging = useThreeStore((state) => state.setIsDragging);
 
   const handleDragStart = (e, item) => {
-    const dragImage = new Image();
-    dragImage.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
-    e.dataTransfer.setDragImage(dragImage, 0, 0);
-
     setDraggedItem(item);
     setIsDragging(true);
   };
@@ -37,7 +33,7 @@ const WidgetContainer = () => {
             onDragStart={(e) => handleDragStart(e, item.name)}
             onDragEnd={handleDragEnd}
           >
-            <img src={item.src} alt={item.alt} className="w-full h-full object-fill" draggable={false} />
+            <img src={item.src} alt={item.alt} className="w-full h-full object-fill" />
           </li>
         ))}
       </ul>

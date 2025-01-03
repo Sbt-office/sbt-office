@@ -328,23 +328,6 @@ function CameraController({ startAnimation, moveToConference, moveToLobby, selec
     }
   }, [moveToLobby]);
 
-  // useEffect(() => {
-  //   const handleKeyDown = (e) => {
-  //     if (e.code === "Space") {
-  //       console.log("------------------------");
-  //       console.log("Camera position:", {
-  //         x: camera.position.x,
-  //         y: camera.position.y,
-  //         z: camera.position.z,
-  //       });
-  //       console.log("Controls target:", controlsRef.current?.target);
-  //     }
-  //   };
-
-  //   document.addEventListener("keydown", handleKeyDown);
-  //   return () => document.removeEventListener("keydown", handleKeyDown);
-  // }, [camera]);
-
   useFrame(() => {
     if (animating) {
       progress.current += 0.025;

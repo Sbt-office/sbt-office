@@ -5,7 +5,6 @@ import useThemeStore from "@/store/themeStore";
 const PaginationComponent = ({ handlePageChange, currentPage, pageCount, totalItems, itemsPerPage }) => {
   const isDark = useThemeStore((state) => state.isDark);
   if (totalItems <= itemsPerPage) return null;
-  console.log("totalItems", totalItems);
   return (
     <div className="flex justify-center items-center gap-3 absolute bottom-0 left-1/2 transform -translate-x-1/2 2xl:py-3 lg:py-1 w-64 2xl:h-32 lg:h-12">
       <button
