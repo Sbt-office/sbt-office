@@ -942,7 +942,7 @@ const OfficeThree = () => {
     e.preventDefault();
     e.stopPropagation();
 
-    if (!isDragging || attachedModels.length >= 3) return;
+    if (!isDragging) return;
 
     const rect = mainRef.current.getBoundingClientRect();
     const mouseX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
