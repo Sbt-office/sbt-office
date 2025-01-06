@@ -8,6 +8,7 @@ export const useThreeStore = create((set, get) => ({
   isMoving: false,
   isDragging: false,
   draggedItem: "",
+  isTopView: false,
 
   setSeatRefs: (refs) => set({ seatRefs: refs }),
   setIsMoving: (moving) => set({ isMoving: moving }),
@@ -26,4 +27,5 @@ export const useThreeStore = create((set, get) => ({
       });
     }
   },
+  setIsTopView: (value) => set({ isTopView: value }),
 }));

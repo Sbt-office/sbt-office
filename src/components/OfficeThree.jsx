@@ -89,7 +89,6 @@ const OfficeThree = () => {
 
   const [isDaily, setIsDaily] = useState(true);
   const [isLoaded, setIsLoaded] = useState(false);
-  const [isTopView, setIsTopView] = useState(false);
   const [isCondition, setIsCondition] = useState(false);
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [isUserButtonDisabled, setIsUserButtonDisabled] = useState(false);
@@ -123,7 +122,8 @@ const OfficeThree = () => {
     }))
   );
 
-  const { cameraPosition, cameraTarget, draggedItem, isDragging, setSeatRefs, setIsMoving } = useThreeStore();
+  const { cameraPosition, cameraTarget, draggedItem, isDragging, setSeatRefs, setIsMoving, isTopView, setIsTopView } =
+    useThreeStore();
 
   /** Draco setting */
   const loader = new GLTFLoader();
@@ -397,17 +397,39 @@ const OfficeThree = () => {
     );
   };
   /** 라벨 생성 */
-  const createLabel = ({ name, ou_nm, profile, userStatus }) => {
+  const createLabel = ({ name, ou_nm, profile, userStatus, isTopView }) => {
     if (!labelRef.current) return;
+
+    // 상태에 따른 색상 설정
+    const getStatusColor = (status) => {
+      switch (status) {
+        case "미정":
+          return "#919191";
+        case "미출근":
+          return "#919191";
+        case "출근":
+          return "#1b57da";
+        case "퇴근":
+          return "#D64646";
+        default:
+          return "#919191";
+      }
+    };
+
+    const color = getStatusColor(userStatus);
 
     // 아이콘을 위한 div 생성
     const iconDiv = document.createElement("div");
     iconDiv.className = "icon-container";
     iconDiv.style.width = "60px";
     iconDiv.style.height = "60px";
-    iconDiv.style.display = "flex";
+    iconDiv.style.display = isTopView ? "none" : "flex";
     iconDiv.style.alignItems = "center";
     iconDiv.style.justifyContent = "center";
+    iconDiv.style.borderWidth = "3.5px";
+    iconDiv.style.borderStyle = "solid";
+    iconDiv.style.borderColor = color;
+    iconDiv.style.borderRadius = "50%";
 
     const profileImg = document.createElement("img");
     profileImg.src = profile;
@@ -428,12 +450,20 @@ const OfficeThree = () => {
     nameDiv.style.left = "50%";
     nameDiv.style.transform = "translateX(-50%)";
     nameDiv.style.padding = "4px";
-    nameDiv.style.background = "rgba(255, 255, 255, 0.75)";
-    nameDiv.style.backdropFilter = "blur(4px)";
-    nameDiv.style.borderRadius = "4px";
     nameDiv.style.whiteSpace = "nowrap";
     nameDiv.style.fontSize = "12px";
-    nameDiv.style.color = "black";
+    nameDiv.style.borderRadius = "4px";
+
+    // isTopView에 따른 스타일 적용
+    if (isTopView) {
+      nameDiv.style.backgroundColor = color;
+      nameDiv.style.color = "#ffffff";
+    } else {
+      nameDiv.style.backgroundColor = "rgba(255, 255, 255, 0.75)";
+      nameDiv.style.backdropFilter = "blur(4px)";
+      nameDiv.style.color = "black";
+    }
+
     nameDiv.innerHTML = ou_nm;
 
     // 컨테이너 div 생성
@@ -446,32 +476,17 @@ const OfficeThree = () => {
       handleLabelClick(name, isEmpty);
     });
 
-    const validStatus = ["미정", "미출근", "출근", "퇴근"].includes(userStatus) ? userStatus : "미출근";
-    const color =
-      validStatus === "미정"
-        ? "#919191"
-        : validStatus === "미출근"
-        ? "#919191"
-        : validStatus === "출근"
-        ? "#1b57da"
-        : "#D64646";
-
-    iconDiv.style.borderColor = color;
-    iconDiv.style.borderStyle = "solid";
-    iconDiv.style.borderWidth = "3.5px";
-    iconDiv.style.borderRadius = "50%";
-
     const label = new CSS2DObject(containerDiv);
-    label.position.set(0, 0.3, 0.08);
-    label.visible = validStatus !== "미정";
+    label.position.set(0, isTopView ? 0 : 0.3, isTopView ? 0.4 : 0.08);
+    label.visible = userStatus !== "미정";
     label.element.style.cursor = "pointer";
 
     seatRef.current[name].obj.add(label);
     seatRef.current[name] = {
       ...seatRef.current[name],
       label,
-      isEmpty: validStatus === "미정",
-      userStatus: validStatus,
+      isEmpty: userStatus === "미정",
+      userStatus,
     };
   };
   /** 사용자 이미지 아이콘 */
@@ -505,6 +520,7 @@ const OfficeThree = () => {
           ou_nm: userWithParsedInfo.ou_nm,
           profile: userWithParsedInfo.ou_insa_info?.profile_img || defaultProfile,
           userStatus,
+          isTopView: isTopView,
         });
       } else {
         // 빈 자리 라벨 생성
@@ -513,20 +529,26 @@ const OfficeThree = () => {
           ou_nm: sit.obj.name,
           profile: defaultProfile,
           userStatus: "미정",
+          isTopView: isTopView,
         });
       }
     });
   };
+
   /** 사용자 이미지 클릭 이벤트 */
   const handleLabelClick = (seatName, isEmptySeat) => {
     // 해당 좌석 오브젝트의 위치 가져오기
     const seatObj = seatRef.current[seatName]?.obj;
 
-    if (seatObj && !isTopView) {
+    // store에서 직접 현재 상태 가져오기
+    const currentIsTopView = useThreeStore.getState().isTopView;
+
+    if (seatObj && !currentIsTopView) {
       const targetPos = seatObj.position.clone();
       const cameraPos = targetPos.clone().add(new THREE.Vector3(4, 4, 4));
       moveCamera(cameraPos, targetPos);
     }
+
     if (isEmptySeat) {
       setSelectedSeat(seatName);
     } else {
@@ -704,7 +726,6 @@ const OfficeThree = () => {
       const nameContainer = sit.label.element.querySelector(".name-container");
 
       sit.label.position.set(0, isTop ? 0 : 0.3, isTop ? 0.4 : 0.08);
-
       if (iconContainer) {
         iconContainer.style.display = isTop ? "none" : "block";
       }
@@ -749,7 +770,7 @@ const OfficeThree = () => {
     }
 
     updateAllLabels();
-  }, [isTopView]);
+  }, [isTopView, userList]);
 
   useEffect(() => {
     updateSeat();
