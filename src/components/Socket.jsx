@@ -4,6 +4,9 @@ import useSocketStore from "../store/socketStore";
 import dayjs from "dayjs";
 import { HubConnectionBuilder } from "@microsoft/signalr";
 
+// const IOT_URL = import.meta.env.VITE_IOT_URL;
+const IOT_URL = import.meta.env.VITE_IOT_POC_URL;
+
 const Socket = () => {
   const socketRef = useRef();
   // const socketRef2 = useRef();
@@ -60,7 +63,7 @@ const Socket = () => {
   useEffect(() => {
     const signalRConnect = () => {
       socketRef.current = new HubConnectionBuilder()
-        .withUrl("http://121.135.139.34:5000/iot", {
+        .withUrl(IOT_URL, {
           timeout: 5000,
           transport: 1,
         })

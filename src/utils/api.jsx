@@ -2,7 +2,8 @@ import axios from "axios";
 
 axios.defaults.timeout = 3000;
 
-const baseURL = import.meta.env.VITE_BASE_URL;
+// const baseURL = import.meta.env.VITE_BASE_URL; // 테스트 서버
+const baseURL = import.meta.env.VITE_BASE_POC; // 포트폴리오 서버
 
 // --------------- Auth ---------------
 /** 로그인 */
